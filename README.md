@@ -7,7 +7,7 @@
 ## Aperçu
 
 MaxOS est un OS fait from scratch en C et Assembly x86 32-bit.
-- Interface style Windows 11
+- Interface style Windows 11 (non mdr)
 - Bloc-Notes avec édition de texte
 - Terminal avec commandes
 - Horloge en temps réel
