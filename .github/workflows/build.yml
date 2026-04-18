@@ -1,8 +1,8 @@
-name: 🔨 Build & Test
+name: Build
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -12,21 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🛠️ Installer
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y nasm gcc make
+      - name: Install
+        run: sudo apt-get install -y nasm gcc make -qq
 
-      - name: 🔨 Compiler MaxOS
+      - name: Build
         run: make
 
-      - name: ✅ Vérifier image
-        run: |
-          ls -lh build/os.img
-          file build/os.img
-
-      - name: 📦 Upload image
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: maxos-${{ github.sha }}
+          name: maxos-build-${{ github.sha }}
           path: build/os.img
+          if-no-files-found: ignore
