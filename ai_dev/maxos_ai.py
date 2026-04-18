@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 #  CONSTANTES
 # ═══════════════════════════════════════════════════════════════════════════════
 
-VERSION     = "14.0"
+VERSION     = "14.1"
 DEBUG       = os.environ.get("MAXOS_DEBUG", "0") == "1"
 START_TIME  = time.time()
 MAX_RUNTIME = 3300   # 55 min
@@ -76,15 +76,30 @@ def _prov(ptype, pid, key, model, url):
                 cooldown=0.0, errors=0, calls=0, tokens=0,
                 dead=False, last_ok=0.0)
 
+def _find_keys(prefix):
+    """
+    Cherche toutes les variantes d'un secret:
+    PREFIX, PREFIX_2, PREFIX_3 ... PREFIX_9
+    Retourne la liste des clés trouvées (non-vides).
+    """
+    keys = []
+    # Variante sans suffixe (= clé n°1)
+    v = os.environ.get(prefix, "").strip()
+    if v: keys.append(v)
+    # Variantes _2 ... _9
+    for i in range(2, 10):
+        v = os.environ.get(f"{prefix}_{i}", "").strip()
+        if v: keys.append(v)
+    return keys
+
 def load_providers():
     pools = []   # une liste par type ; on les interleave ensuite
 
-    # Gemini
+    # ── Gemini ────────────────────────────────────────────────────────────────
+    gem_keys = _find_keys("GEMINI_API_KEY")
+    print(f"  [load] GEMINI_API_KEY: {len(gem_keys)} clé(s)")
     gem = []
-    for i in range(1, 10):
-        suf = "" if i == 1 else f"_{i}"
-        key = os.environ.get(f"GEMINI_API_KEY{suf}", "").strip()
-        if not key: continue
+    for i, key in enumerate(gem_keys, 1):
         for m in GEMINI_MODELS:
             base = (f"https://generativelanguage.googleapis.com"
                     f"/v1beta/models/{m}:generateContent")
@@ -92,41 +107,38 @@ def load_providers():
             gem.append(_prov("gemini", pid, key, m, f"{base}?key={key}"))
     if gem: pools.append(gem)
 
-    # OpenRouter
+    # ── OpenRouter ─────────────────────────────────────────────────────────────
+    or_keys = _find_keys("OPENROUTER_KEY")
+    print(f"  [load] OPENROUTER_KEY: {len(or_keys)} clé(s)")
     orl = []
-    for i in range(1, 10):
-        suf = "" if i == 1 else f"_{i}"
-        key = os.environ.get(f"OPENROUTER_KEY{suf}", "").strip()
-        if not key: continue
+    for i, key in enumerate(or_keys, 1):
         for m in OPENROUTER_MODELS:
             short = m.split("/")[-1].replace(":free","")[:12]
             orl.append(_prov("openrouter", f"or{i}_{short}", key, m,
                              "https://openrouter.ai/api/v1/chat/completions"))
     if orl: pools.append(orl)
 
-    # Groq
+    # ── Groq ───────────────────────────────────────────────────────────────────
+    groq_keys = _find_keys("GROQ_KEY")
+    print(f"  [load] GROQ_KEY:       {len(groq_keys)} clé(s)")
     gro = []
-    for i in range(1, 10):
-        suf = "" if i == 1 else f"_{i}"
-        key = os.environ.get(f"GROQ_KEY{suf}", "").strip()
-        if not key: continue
+    for i, key in enumerate(groq_keys, 1):
         for m in GROQ_MODELS:
             gro.append(_prov("groq", f"gr{i}_{m[:12]}", key, m,
                              "https://api.groq.com/openai/v1/chat/completions"))
     if gro: pools.append(gro)
 
-    # Mistral
+    # ── Mistral ────────────────────────────────────────────────────────────────
+    mis_keys = _find_keys("MISTRAL_KEY")
+    print(f"  [load] MISTRAL_KEY:    {len(mis_keys)} clé(s)")
     mis = []
-    for i in range(1, 10):
-        suf = "" if i == 1 else f"_{i}"
-        key = os.environ.get(f"MISTRAL_KEY{suf}", "").strip()
-        if not key: continue
+    for i, key in enumerate(mis_keys, 1):
         for m in MISTRAL_MODELS:
             mis.append(_prov("mistral", f"ms{i}_{m[:12]}", key, m,
                              "https://api.mistral.ai/v1/chat/completions"))
     if mis: pools.append(mis)
 
-    # Interleave: gm0, or0, gr0, ms0, gm1, or1, ...
+    # ── Interleave par type: gm0,or0,gr0,ms0, gm1,or1,gr1,ms1 ... ───────────
     result  = []
     max_len = max((len(p) for p in pools), default=0)
     for i in range(max_len):
@@ -341,7 +353,13 @@ def ai_call(prompt, max_tokens=32768, timeout=150, tag="?"):
                 penalize(p)
                 other = [x for x in alive() if x is not p]
                 if not other:
-                    wait = min(p["cooldown"] - time.time() + 1, 45)
+                    # Attendre le prochain provider dispo, plafonné à 20s
+                    nd_local = non_dead()
+                    if nd_local:
+                        nxt = min(x["cooldown"] for x in nd_local) - time.time()
+                        wait = max(min(nxt + 0.5, 20), 1)
+                    else:
+                        wait = 20
                     log(f"[{tag}] Rien d'autre dispo, attente {int(wait)}s", "TIME")
                     time.sleep(max(wait, 1))
 
