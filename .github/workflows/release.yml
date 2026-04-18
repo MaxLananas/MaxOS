@@ -1,0 +1,40 @@
+name: 🚀 Release MaxOS
+
+on:
+  push:
+    tags:
+      - 'v*'   # Déclenché quand tu fais : git tag v1.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🛠️ Installer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y nasm gcc make
+
+      - name: 🔨 Compiler
+        run: make
+
+      - name: 🚀 Créer la Release GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/os.img
+          name: MaxOS ${{ github.ref_name }}
+          body: |
+            ## MaxOS ${{ github.ref_name }}
+
+            ### Télécharger et tester :
+            ```bash
+            qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr
+            ```
+
+            ### Contrôles :
+            - **TAB** : Changer d'application
+            - **F1** : Bloc-Notes
+            - **F2** : Terminal
+            - **F3** : Système
+            - **F4** : À propos
