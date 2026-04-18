@@ -55,6 +55,17 @@ static void delay(unsigned int n) {
     for (i = 0; i < n; i++) __asm__ volatile("nop");
 }
 
+/* Définitions factices pour résoudre les erreurs de linkage */
+void si_key(char k) {
+    /* Ne fait rien, car le code source de sysinfo n'est pas fourni */
+    (void)k; /* Supprime l'avertissement de variable non utilisée */
+}
+
+void ab_key(char k) {
+    /* Ne fait rien, car le code source d'about n'est pas fourni */
+    (void)k; /* Supprime l'avertissement de variable non utilisée */
+}
+
 void kernel_main(void) {
     v_init();
     kb_init();
@@ -93,9 +104,7 @@ void kernel_main(void) {
         if (k == KEY_F3) { active = 2; redraw_app(); continue; }
         if (k == KEY_F4) { active = 3; redraw_app(); continue; }
 
-        /* Méthode 2 : Ctrl+1/2/3/4
-           (si QEMU vole les F) */
-        /* TAB = naviguer entre apps */
+        /* Méthode 2 : TAB = naviguer entre apps */
         if (k == KEY_TAB) {
             active = (active + 1) % 4;
             redraw_app();
@@ -106,6 +115,8 @@ void kernel_main(void) {
         switch (active) {
             case 0: np_key(k); break;
             case 1: tm_key(k); break;
+            case 2: si_key(k); break; /* Appel à la fonction factice */
+            case 3: ab_key(k); break; /* Appel à la fonction factice */
             default: break;
         }
 
