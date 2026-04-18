@@ -1,131 +1,134 @@
-[BITS 16]
-[ORG 0x7C00]
+ASM  = nasm
+CC   = gcc
+LD   = ld
+QEMU = qemu-system-i386
 
-start:
-    cli
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
-    mov ss, ax
-    mov sp, 0x7C00
-    mov [boot_drive], dl
-    sti
+BUILD_DIR = build
 
-    ; Reset disque
-    xor ah, ah
-    mov dl, [boot_drive]
-    int 0x13
-    jc disk_error ; Jump if carry flag is set (error)
+CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-builtin \
+         -fno-pic -fno-pie -nostdlib -nostdinc -w -c
 
-    ; Lire le kernel
-    ; On suppose que le kernel fait 28 secteurs (14KB)
-    ; On va lire 28 secteurs (0x1C) à partir du secteur 2 (0x02)
-    ; vers l'adresse 0x0000:0x8000 (qui correspond à 0x8000 en mémoire linéaire)
-    mov ah, 0x02          ; Service: Lire secteurs
-    mov al, 28            ; Nombre de secteurs à lire
-    mov ch, 0             ; Cylindre 0
-    mov cl, 2             ; Secteur 2 (après le bootloader)
-    mov dh, 0             ; Tête 0
-    mov dl, [boot_drive]  ; Disque de boot
-    xor bx, bx            ; Offset dans le buffer
-    mov es, bx            ; Segment ES = 0x0000
-    mov bx, 0x8000        ; Offset dans le buffer = 0x8000
-    int 0x13
-    jc disk_error ; Jump if carry flag is set (error)
+LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
-    ; Vérifier la taille du kernel
-    ; Le kernel est censé être à 0x8000.
-    ; On va lire les 4 premiers octets pour obtenir la taille.
-    ; On suppose que la taille est stockée en little-endian.
-    mov esi, 0x8000       ; Adresse du début du kernel
-    mov eax, [esi]        ; Lire les 4 premiers octets (taille du kernel)
-    mov [kernel_size], eax
+.PHONY: all clean run run-nographic
 
-    ; Vérifier si la taille est raisonnable (par exemple, moins de 1MB)
-    cmp eax, 1048576      ; 1MB
-    ja kernel_too_large
+all: prepare $(BUILD_DIR)/os.img
+	@echo ""
+	@echo "  MaxOS compile !"
+	@echo "  make run pour lancer"
+	@echo ""
 
-    ; Mode protege
-    cli
-    lgdt [gdt_descriptor]
-    mov eax, cr0
-    or  eax, 1
-    mov cr0, eax
-    jmp CODE_SEG:start32
+prepare:
+	@mkdir -p $(BUILD_DIR)
 
-disk_error:
-    ; Afficher un message d'erreur simple
-    mov si, error_msg_disk
-    call print_string
-    cli
-    hlt
+$(BUILD_DIR)/boot.bin: boot/boot.asm
+	$(ASM) -f bin $< -o $@
 
-kernel_too_large:
-    ; Afficher un message d'erreur simple
-    mov si, error_msg_kernel_size
-    call print_string
-    cli
-    hlt
+$(BUILD_DIR)/kernel_entry.o: kernel/kernel_entry.asm
+	$(ASM) -f elf $< -o $@
 
-print_string:
-    ; Affiche une chaîne de caractères terminée par 0
-    ; SI pointe vers la chaîne
-    mov ah, 0x0E ; Teletype output
-.loop:
-    lodsb
-    or al, al
-    jz .done
-    int 0x10
-    jmp .loop
-.done:
-    ret
+$(BUILD_DIR)/kernel.o: kernel/kernel.c
+	$(CC) $(CFLAGS) $< -o $@
 
-[BITS 32]
-start32:
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov ss, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ebp, 0x90000
-    mov esp, ebp
-    call 0x8000 ; Appel au kernel
-    ; Ne jamais revenir ici
-    cli
-    hlt
+$(BUILD_DIR)/screen.o: drivers/screen.c
+	$(CC) $(CFLAGS) $< -o $@
 
-[BITS 16]
-boot_drive db 0
-kernel_size dd 0
+$(BUILD_DIR)/keyboard.o: drivers/keyboard.c
+	$(CC) $(CFLAGS) $< -o $@
 
-error_msg_disk db 'Erreur de lecture disque !', 0
-error_msg_kernel_size db 'Taille du kernel trop grande !', 0
+$(BUILD_DIR)/ui.o: ui/ui.c
+	$(CC) $(CFLAGS) $< -o $@
 
-gdt_start:
-dq 0
-gdt_code:
-    dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 10011010b ; Present, Ring 0, Code, Executable, Read
-    db 11001111b ; Granularity, 32-bit, Limit high
-    db 0x00
-gdt_data:
-    dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 10010010b ; Present, Ring 0, Data, ReadWrite
-    db 11001111b ; Granularity, 32-bit, Limit high
-    db 0x00
-gdt_end:
+$(BUILD_DIR)/notepad.o: apps/notepad.c
+	$(CC) $(CFLAGS) $< -o $@
 
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1 ; Limit (size - 1)
-    dd gdt_start              ; Base address
+$(BUILD_DIR)/terminal.o: apps/terminal.c
+	$(CC) $(CFLAGS) $< -o $@
 
-CODE_SEG equ gdt_code - gdt_start
-DATA_SEG equ gdt_data - gdt_start
+$(BUILD_DIR)/sysinfo.o: apps/sysinfo.c
+	$(CC) $(CFLAGS) $< -o $@
 
-times 510-($-$$) db 0
-dw 0xAA55
+$(BUILD_DIR)/about.o: apps/about.c
+	$(CC) $(CFLAGS) $< -o $@
+
+# Nouveaux modules kernel (crees par l'IA)
+$(BUILD_DIR)/idt.o: kernel/idt.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/timer.o: kernel/timer.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/memory.o: kernel/memory.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/vga.o: drivers/vga.c
+	$(CC) $(CFLAGS) $< -o $@
+
+# Detecter quels fichiers .o existent pour le link
+KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
+               $(BUILD_DIR)/kernel.o \
+               $(BUILD_DIR)/screen.o \
+               $(BUILD_DIR)/keyboard.o \
+               $(BUILD_DIR)/ui.o \
+               $(BUILD_DIR)/notepad.o \
+               $(BUILD_DIR)/terminal.o \
+               $(BUILD_DIR)/sysinfo.o \
+               $(BUILD_DIR)/about.o
+
+# Ajouter les modules optionnels s'ils existent
+IDT_SRC    := $(wildcard kernel/idt.c)
+TIMER_SRC  := $(wildcard kernel/timer.c)
+MEMORY_SRC := $(wildcard kernel/memory.c)
+VGA_SRC    := $(wildcard drivers/vga.c)
+
+ifneq ($(IDT_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/idt.o
+endif
+ifneq ($(TIMER_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/timer.o
+endif
+ifneq ($(MEMORY_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/memory.o
+endif
+ifneq ($(VGA_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/vga.o
+endif
+
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJS)
+	$(LD) $(LFLAGS) $^ -o $@
+
+$(BUILD_DIR)/os.img: $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin
+	@echo "Construction image disque..."
+	@# Calculer le nombre de secteurs du kernel (512 bytes par secteur)
+	@KERNEL_SIZE=$$(wc -c < $(BUILD_DIR)/kernel.bin); \
+	 SECTORS=$$(( (KERNEL_SIZE + 511) / 512 )); \
+	 echo "  Kernel: $$KERNEL_SIZE bytes = $$SECTORS secteurs"; \
+	 if [ $$SECTORS -gt 2879 ]; then \
+	   echo "ERREUR: Kernel trop grand ($$SECTORS secteurs > 2879)"; \
+	   exit 1; \
+	 fi; \
+	 echo "  Secteurs OK: $$SECTORS"
+	@cat $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin > $(BUILD_DIR)/os.img
+	@truncate -s 1474560 $(BUILD_DIR)/os.img
+	@echo "Image creee: $(BUILD_DIR)/os.img"
+
+run: $(BUILD_DIR)/os.img
+	$(QEMU) \
+		-drive format=raw,file=$(BUILD_DIR)/os.img,if=floppy \
+		-boot a \
+		-vga std \
+		-k fr \
+		-m 32 \
+		-no-fd-bootchk \
+		-no-reboot
+
+run-nographic: $(BUILD_DIR)/os.img
+	$(QEMU) \
+		-drive format=raw,file=$(BUILD_DIR)/os.img,if=floppy \
+		-boot a \
+		-nographic \
+		-no-reboot
+
+clean:
+	@rm -rf $(BUILD_DIR)
+	@echo "Nettoyage termine"
