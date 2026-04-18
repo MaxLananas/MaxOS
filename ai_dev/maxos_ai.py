@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MaxOS AI Developer
-Utilise Gemini pour améliorer MaxOS automatiquement
+MaxOS AI Developer v2.0
+Gemini 1.5 Flash - Gratuit 1500 req/jour
 """
 
 import os
@@ -10,23 +10,25 @@ import json
 import time
 import subprocess
 import urllib.request
-import urllib.parse
 import urllib.error
 from datetime import datetime
 
 # ══════════════════════════════════════════
-# CONFIG - Mets tes vraies valeurs ici
+# CONFIG
 # ══════════════════════════════════════════
 GEMINI_API_KEY  = "AIzaSyCwJrs7K9ccjW2oxieRkNQ8zfViqyCf3q0"
-DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1494861509615161364/UYmuRYBGBDAxAUSCUoTjjx8AG0sgaGjYAqpFVqhcWhXkOh9zPrYm9rZ6FRCQOeHxywlx"  # Après avoir recréé !
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1494873787596800080/sPhaZzBYUtPC_vhUgI94fPGXMMCyMc10-PbUGN62lZWDnurOot8ghD4Mm0Fki9EfZAoo"
 REPO_PATH       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GEMINI_URL      = (
-    "https://generativelanguage.googleapis.com/v1beta/"
-    "models/gemini-2.0-flash:generateContent"
-    "?key=" + GEMINI_API_KEY
+
+# ✅ Modèle gratuit qui fonctionne
+GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_URL   = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    + GEMINI_MODEL
+    + ":generateContent?key="
+    + GEMINI_API_KEY
 )
 
-# Fichiers à lire pour le contexte
 SOURCE_FILES = [
     "kernel/kernel.c",
     "drivers/screen.c",
@@ -40,7 +42,6 @@ SOURCE_FILES = [
     "apps/sysinfo.c",
     "apps/about.c",
     "boot/boot.asm",
-    "kernel/kernel_entry.asm",
     "Makefile",
     "linker.ld",
 ]
@@ -49,13 +50,16 @@ SOURCE_FILES = [
 # DISCORD
 # ══════════════════════════════════════════
 def discord_send(title, message, color=0x0099FF, fields=None):
-    """Envoie une notification Discord."""
+    if not DISCORD_WEBHOOK or "TON_NOUVEAU" in DISCORD_WEBHOOK:
+        print(f"[Discord] Skipped (pas de webhook): {title}")
+        return
+
     embed = {
         "title": title,
-        "description": message,
+        "description": str(message)[:2000],
         "color": color,
-        "timestamp": datetime.utcnow().isoformat(),
-        "footer": {"text": "MaxOS AI Developer"},
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "footer": {"text": "MaxOS AI Developer v2.0"},
         "fields": fields or []
     }
     payload = json.dumps({"embeds": [embed]}).encode("utf-8")
@@ -67,493 +71,498 @@ def discord_send(title, message, color=0x0099FF, fields=None):
     )
     try:
         urllib.request.urlopen(req, timeout=10)
-        print(f"[Discord] Notification envoyée : {title}")
+        print(f"[Discord] OK: {title}")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"[Discord] Erreur {e.code}: {body[:200]}")
     except Exception as e:
-        print(f"[Discord] Erreur : {e}")
+        print(f"[Discord] Erreur: {e}")
 
-def discord_success(title, msg, fields=None):
+def ok(title, msg, fields=None):
     discord_send(f"✅ {title}", msg, 0x00FF00, fields)
 
-def discord_error(title, msg):
+def err(title, msg):
     discord_send(f"❌ {title}", msg, 0xFF0000)
 
-def discord_info(title, msg, fields=None):
+def info(title, msg, fields=None):
     discord_send(f"ℹ️ {title}", msg, 0x0099FF, fields)
 
-def discord_progress(title, msg):
+def progress(title, msg):
     discord_send(f"⚙️ {title}", msg, 0xFFAA00)
 
 # ══════════════════════════════════════════
-# LIRE LE CODE SOURCE
+# GEMINI
+# ══════════════════════════════════════════
+def gemini_ask(prompt, retries=3):
+    """Appelle Gemini avec retry automatique."""
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "maxOutputTokens": 8192,
+            "temperature": 0.2,
+        }
+    }).encode("utf-8")
+
+    for attempt in range(retries):
+        req = urllib.request.Request(
+            GEMINI_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()
+            print(f"[Gemini] Erreur {e.code} (tentative {attempt+1}/{retries})")
+
+            if e.code == 429:
+                # Rate limit - attendre
+                wait = 65 * (attempt + 1)
+                print(f"[Gemini] Rate limit, attente {wait}s...")
+                time.sleep(wait)
+            elif e.code == 400:
+                print(f"[Gemini] Erreur 400: {body[:300]}")
+                return None
+            else:
+                print(f"[Gemini] {body[:300]}")
+                time.sleep(10)
+
+        except Exception as e:
+            print(f"[Gemini] Exception: {e}")
+            time.sleep(10)
+
+    return None
+
+# ══════════════════════════════════════════
+# SOURCES
 # ══════════════════════════════════════════
 def read_sources():
-    """Lit tous les fichiers sources."""
     sources = {}
     for f in SOURCE_FILES:
         path = os.path.join(REPO_PATH, f)
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8", errors="ignore") as fh:
                 sources[f] = fh.read()
-        else:
-            sources[f] = ""
     return sources
 
 def build_context(sources):
-    """Construit le contexte complet pour Gemini."""
-    ctx = "=== CODE SOURCE DE MAXOS ===\n\n"
+    ctx = "=== CODE SOURCE MAXOS ===\n\n"
     for fname, content in sources.items():
         if content:
-            ctx += f"--- FICHIER: {fname} ---\n"
-            ctx += content
-            ctx += "\n\n"
+            # Limiter la taille pour ne pas dépasser les tokens
+            content_limited = content[:3000]
+            ctx += f"--- {fname} ---\n{content_limited}\n\n"
     return ctx
-
-# ══════════════════════════════════════════
-# GEMINI API
-# ══════════════════════════════════════════
-def gemini_ask(prompt, max_tokens=8192):
-    """Envoie une requête à Gemini."""
-    payload = json.dumps({
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
-        "generationConfig": {
-            "maxOutputTokens": max_tokens,
-            "temperature": 0.3,
-        }
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        GEMINI_URL,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-    except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        print(f"[Gemini] HTTP Error {e.code}: {body}")
-        return None
-    except Exception as e:
-        print(f"[Gemini] Erreur : {e}")
-        return None
 
 # ══════════════════════════════════════════
 # GIT
 # ══════════════════════════════════════════
-def git_run(args):
-    """Exécute une commande git."""
-    result = subprocess.run(
+def git(args):
+    r = subprocess.run(
         ["git"] + args,
         cwd=REPO_PATH,
         capture_output=True,
         text=True
     )
-    return result.returncode == 0, result.stdout, result.stderr
+    return r.returncode == 0, r.stdout, r.stderr
 
-def git_status():
-    ok, out, _ = git_run(["status", "--porcelain"])
-    return out.strip()
-
-def git_commit_push(message):
-    """Add, commit et push."""
-    git_run(["add", "-A"])
-    ok, out, err = git_run(["commit", "-m", message])
-    if not ok:
-        print(f"[Git] Commit échoué : {err}")
+def commit_push(msg):
+    git(["add", "-A"])
+    ok_c, _, err_c = git(["commit", "-m", msg])
+    if not ok_c:
+        if "nothing to commit" in err_c:
+            print("[Git] Rien à committer")
+            return True
+        print(f"[Git] Commit échoué: {err_c}")
         return False
-    ok, out, err = git_run(["push"])
-    if not ok:
-        print(f"[Git] Push échoué : {err}")
+    ok_p, _, err_p = git(["push"])
+    if not ok_p:
+        print(f"[Git] Push échoué: {err_p}")
         return False
+    print(f"[Git] Commit+Push OK: {msg}")
     return True
 
 def make_build():
-    """Compile MaxOS."""
-    result = subprocess.run(
-        ["make", "clean", "&&", "make"],
-        cwd=REPO_PATH,
-        capture_output=True,
-        text=True,
-        shell=False
-    )
-    # make clean puis make séparément
-    r1 = subprocess.run(["make", "clean"], cwd=REPO_PATH,
-                        capture_output=True, text=True)
-    r2 = subprocess.run(["make"], cwd=REPO_PATH,
-                        capture_output=True, text=True)
-    success = r2.returncode == 0
-    return success, r2.stdout + r2.stderr
+    subprocess.run(["make", "clean"], cwd=REPO_PATH,
+                   capture_output=True)
+    r = subprocess.run(["make"], cwd=REPO_PATH,
+                       capture_output=True, text=True)
+    return r.returncode == 0, r.stdout + r.stderr
 
 # ══════════════════════════════════════════
-# PARSER LA RÉPONSE DE GEMINI
+# PARSER FICHIERS
 # ══════════════════════════════════════════
 def parse_files(response):
-    """
-    Extrait les fichiers de la réponse Gemini.
-    Format attendu :
-    === FILE: chemin/fichier.c ===
-    [contenu]
-    === END FILE ===
-    """
+    """Extrait les fichiers de la réponse Gemini."""
     files = {}
     lines = response.split("\n")
     current_file = None
-    current_content = []
+    current_lines = []
     in_file = False
 
     for line in lines:
-        if line.startswith("=== FILE:") and line.strip().endswith("==="):
-            # Nouveau fichier
-            fname = line.replace("=== FILE:", "").replace("===", "").strip()
+        stripped = line.strip()
+
+        # Détecter début fichier
+        if stripped.startswith("=== FILE:") and stripped.endswith("==="):
+            fname = stripped[9:-3].strip()
             current_file = fname
-            current_content = []
+            current_lines = []
             in_file = True
-        elif line.strip() == "=== END FILE ===" and in_file:
+            continue
+
+        # Détecter fin fichier
+        if stripped == "=== END FILE ===" and in_file:
             if current_file:
-                files[current_file] = "\n".join(current_content)
+                # Enlever les blocs ```c et ``` si présents
+                content = "\n".join(current_lines)
+                content = content.strip()
+                if content.startswith("```"):
+                    lines2 = content.split("\n")
+                    lines2 = lines2[1:]  # Enlever ```c
+                    if lines2 and lines2[-1].strip() == "```":
+                        lines2 = lines2[:-1]
+                    content = "\n".join(lines2)
+                files[current_file] = content
             current_file = None
-            current_content = []
+            current_lines = []
             in_file = False
-        elif in_file:
-            current_content.append(line)
+            continue
+
+        if in_file:
+            current_lines.append(line)
 
     return files
 
 def write_files(files):
-    """Écrit les fichiers sur le disque."""
     written = []
     for path, content in files.items():
-        full_path = os.path.join(REPO_PATH, path)
-        # Créer le dossier si nécessaire
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, "w", encoding="utf-8") as f:
+        # Sécurité : pas de chemin absolu ou ../
+        if path.startswith("/") or ".." in path:
+            print(f"[Security] Chemin refusé: {path}")
+            continue
+        full = os.path.join(REPO_PATH, path)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w", encoding="utf-8") as f:
             f.write(content)
         written.append(path)
-        print(f"[Files] Écrit : {path}")
+        print(f"[Write] {path} ({len(content)} chars)")
     return written
 
 # ══════════════════════════════════════════
-# TÂCHES D'AMÉLIORATION
+# TÂCHES
 # ══════════════════════════════════════════
-
 TASKS = [
     {
-        "name": "Analyse et rapport",
-        "prompt_suffix": """
-Analyse le code de MaxOS et réponds en JSON :
+        "name": "Analyse du code",
+        "type": "analyse",
+        "prompt": """
+Analyse ce code d'OS bare metal x86 et donne un rapport JSON :
 {
-  "score_global": 0-100,
-  "points_forts": ["..."],
-  "points_faibles": ["..."],
-  "bugs_detectes": ["..."],
-  "priorites": ["amélioration 1", "amélioration 2", "..."]
+  "score": 0-100,
+  "bugs": ["bug 1", "bug 2"],
+  "ameliorations": ["idée 1", "idée 2", "idée 3"],
+  "complexite": "simple/moyen/complexe",
+  "commentaire": "résumé en une phrase"
 }
-Ne génère PAS de code, juste l'analyse JSON.
+Réponds UNIQUEMENT avec le JSON, rien d'autre.
 """
     },
     {
-        "name": "Amélioration Interface UI",
-        "prompt_suffix": """
-Améliore UNIQUEMENT les fichiers ui/ui.c et ui/ui.h de MaxOS.
+        "name": "Amélioration UI",
+        "type": "code",
+        "files": ["ui/ui.h", "ui/ui.c"],
+        "prompt": """
+Améliore l'interface utilisateur de MaxOS (fichiers ui/ui.h et ui/ui.c).
+
+OBJECTIF : Interface style Windows 11, propre et moderne.
 
 CONTRAINTES ABSOLUES :
-- C pur, pas de librairies externes
-- Tourne sur x86 32-bit bare metal
-- VGA texte 80x25, 16 couleurs uniquement
-- Pas de malloc, pas de printf, pas de stdlib
-- Interface style Windows 11 (propre, moderne)
-- Barres topbar et taskbar plus belles
-- Ajoute des icônes ASCII artistiques
+- C pur, zéro librairie externe
+- x86 32-bit bare metal
+- VGA texte 80x25, 16 couleurs max
+- Pas de malloc, printf, stdlib
+- Le code DOIT compiler avec : gcc -m32 -ffreestanding -fno-pic -fno-pie -nostdlib -nostdinc
 
-Réponds UNIQUEMENT avec les fichiers dans ce format exact :
+AMÉLIORATIONS SOUHAITÉES :
+- Topbar plus élégante avec séparateurs
+- Taskbar style Win11 avec icônes ASCII
+- Meilleure utilisation des couleurs
+
+FORMAT DE RÉPONSE OBLIGATOIRE :
 === FILE: ui/ui.h ===
-[contenu complet du fichier]
+[contenu complet]
 === END FILE ===
 
 === FILE: ui/ui.c ===
-[contenu complet du fichier]
-=== END FILE ===
-"""
-    },
-    {
-        "name": "Amélioration Bloc-Notes",
-        "prompt_suffix": """
-Améliore UNIQUEMENT apps/notepad.c et apps/notepad.h.
-
-CONTRAINTES :
-- C pur bare metal x86 32-bit
-- Ajoute : sélection de texte, recherche simple
-- Améliore le rendu visuel
-- Curseur plus visible
-- Scrolling si le texte dépasse
-
-Format de réponse :
-=== FILE: apps/notepad.h ===
-[contenu]
-=== END FILE ===
-
-=== FILE: apps/notepad.c ===
-[contenu]
+[contenu complet]
 === END FILE ===
 """
     },
     {
         "name": "Amélioration Terminal",
-        "prompt_suffix": """
-Améliore UNIQUEMENT apps/terminal.c et apps/terminal.h.
+        "type": "code",
+        "files": ["apps/terminal.h", "apps/terminal.c"],
+        "prompt": """
+Améliore le terminal de MaxOS.
 
 CONTRAINTES :
 - C pur bare metal x86 32-bit
-- Ajoute plus de commandes : cat, pwd, whoami, ps, top
-- Historique des commandes (flèche haut/bas)
-- Autocomplétion basique avec TAB
-- Meilleur rendu visuel
+- Pas de librairies
+- Ajoute ces commandes : pwd, whoami, ps, top, cat, mkdir
+- Historique avec flèche haut/bas (20 entrées)
+- Meilleur affichage
 
-Format :
+FORMAT :
 === FILE: apps/terminal.h ===
-[contenu]
+[contenu complet]
 === END FILE ===
 
 === FILE: apps/terminal.c ===
-[contenu]
+[contenu complet]
 === END FILE ===
 """
     },
     {
-        "name": "Nouvelle App - Calculatrice",
-        "prompt_suffix": """
-Crée une nouvelle application calculatrice pour MaxOS.
+        "name": "Amélioration Bloc-Notes",
+        "type": "code",
+        "files": ["apps/notepad.h", "apps/notepad.c"],
+        "prompt": """
+Améliore le bloc-notes de MaxOS.
+
+CONTRAINTES :
+- C pur bare metal x86 32-bit
+- Curseur visible et clignotant
+- Navigation fluide avec flèches
+- Home/End fonctionnels
+- Compteur de mots dans la statusbar
+- Meilleur rendu visuel
+
+FORMAT :
+=== FILE: apps/notepad.h ===
+[contenu complet]
+=== END FILE ===
+
+=== FILE: apps/notepad.c ===
+[contenu complet]
+=== END FILE ===
+"""
+    },
+    {
+        "name": "Nouvelle App Calculatrice",
+        "type": "code",
+        "files": ["apps/calculator.h", "apps/calculator.c"],
+        "prompt": """
+Crée une calculatrice pour MaxOS accessible avec F5.
 
 CONTRAINTES :
 - C pur bare metal x86 32-bit
 - Opérations : + - * /
-- Interface style calculatrice Windows
-- Intègre dans le système d'apps existant
+- Affichage style calculatrice Windows
+- Touches : chiffres, opérateurs, Entrée=calculer, Echap=effacer
 
-Crée ces fichiers :
+CRÉE CES FICHIERS :
 === FILE: apps/calculator.h ===
-[contenu]
+[contenu complet]
 === END FILE ===
 
 === FILE: apps/calculator.c ===
-[contenu]
-=== END FILE ===
-
-Et modifie kernel/kernel.c pour ajouter l'app (F5).
-"""
-    },
-    {
-        "name": "Optimisation Clavier",
-        "prompt_suffix": """
-Améliore UNIQUEMENT drivers/keyboard.c et drivers/keyboard.h.
-
-CONTRAINTES :
-- AZERTY parfait
-- Tous les caractères spéciaux français
-- F1-F12 tous fonctionnels
-- Ctrl+C, Ctrl+V, Ctrl+Z gérés
-- Alt Gr pour @, #, { } [ ] etc.
-
-Format :
-=== FILE: drivers/keyboard.h ===
-[contenu]
-=== END FILE ===
-
-=== FILE: drivers/keyboard.c ===
-[contenu]
-=== END FILE ===
-"""
-    },
-    {
-        "name": "Nouvelle App - Horloge",
-        "prompt_suffix": """
-Crée une app horloge/calendrier pour MaxOS.
-
-CONTRAINTES :
-- C pur bare metal
-- Affiche l'heure en grand (ASCII art)
-- Calendrier du mois
-- Minuteur simple
-
-Fichiers :
-=== FILE: apps/clock.h ===
-[contenu]
-=== END FILE ===
-
-=== FILE: apps/clock.c ===
-[contenu]
+[contenu complet]
 === END FILE ===
 """
     },
 ]
 
 # ══════════════════════════════════════════
-# BOUCLE PRINCIPALE
+# EXÉCUTION TÂCHE
 # ══════════════════════════════════════════
-def run_task(task, context, task_num, total):
-    """Exécute une tâche d'amélioration."""
+def run_task(task, context, num, total):
     name = task["name"]
-    print(f"\n{'='*50}")
-    print(f"[{task_num}/{total}] Tâche : {name}")
-    print(f"{'='*50}")
+    ttype = task["type"]
 
-    discord_progress(
-        f"Tâche {task_num}/{total}",
-        f"**{name}**\nGemini analyse et génère des améliorations..."
-    )
+    print(f"\n{'='*55}")
+    print(f" [{num}/{total}] {name}")
+    print(f"{'='*55}")
 
-    # Construire le prompt
-    prompt = f"""Tu es un expert en développement d'OS bare metal x86.
-Tu travailles sur MaxOS, un système d'exploitation éducatif.
+    progress(f"[{num}/{total}] {name}", "Gemini travaille...")
+
+    # Construire prompt
+    prompt = f"""Tu es un expert OS bare metal x86.
+Voici le code source actuel de MaxOS :
 
 {context}
 
-{task['prompt_suffix']}
-
-RÈGLES IMPORTANTES :
-1. Code C pur, AUCUNE librairie externe
-2. Compatible x86 32-bit Protected Mode
-3. VGA texte 80x25
-4. Pas de malloc/free/printf
-5. Code complet et fonctionnel
-6. Commentaires en français
+{task['prompt']}
 """
 
-    # Appel Gemini
     t0 = time.time()
     response = gemini_ask(prompt)
     elapsed = time.time() - t0
 
     if not response:
-        discord_error(name, "Gemini n'a pas répondu.")
+        err(name, "Gemini n'a pas répondu.")
         return False
 
-    print(f"[Gemini] Réponse reçue en {elapsed:.1f}s ({len(response)} chars)")
+    print(f"[Gemini] Réponse: {len(response)} chars en {elapsed:.1f}s")
 
-    # Cas spécial : analyse JSON
-    if "Analyse" in name:
+    # Analyse JSON
+    if ttype == "analyse":
         try:
-            # Extraire le JSON de la réponse
             start = response.find("{")
             end   = response.rfind("}") + 1
             if start >= 0 and end > start:
                 data = json.loads(response[start:end])
-                fields = [
-                    {"name": "Score", "value": str(data.get("score_global", "?")), "inline": True},
-                    {"name": "Bugs détectés", "value": str(len(data.get("bugs_detectes", []))), "inline": True},
-                    {"name": "Priorités", "value": "\n".join(data.get("priorites", [])[:3]), "inline": False},
-                ]
-                discord_info("📊 Rapport d'analyse MaxOS",
-                            f"Score global : **{data.get('score_global', '?')}/100**",
-                            fields)
+                info(
+                    f"📊 Rapport MaxOS",
+                    f"Score: **{data.get('score', '?')}/100**\n"
+                    f"{data.get('commentaire', '')}",
+                    [
+                        {
+                            "name": "Bugs",
+                            "value": "\n".join(data.get("bugs", [])[:3]) or "Aucun",
+                            "inline": True
+                        },
+                        {
+                            "name": "Améliorations",
+                            "value": "\n".join(data.get("ameliorations", [])[:3]),
+                            "inline": True
+                        }
+                    ]
+                )
+            else:
+                info("Analyse", response[:800])
         except Exception as e:
-            discord_info("Analyse", response[:500])
+            print(f"[Analyse] Erreur JSON: {e}")
+            info("Analyse", response[:500])
         return True
 
-    # Parser les fichiers
+    # Code
     files = parse_files(response)
     if not files:
-        discord_error(name, f"Aucun fichier généré.\nRéponse : {response[:300]}")
+        err(name, f"Aucun fichier parsé.\nDébut réponse:\n{response[:400]}")
         return False
 
-    print(f"[Parser] {len(files)} fichier(s) trouvé(s) : {list(files.keys())}")
+    print(f"[Parser] {len(files)} fichier(s): {list(files.keys())}")
 
-    # Écrire les fichiers
+    # Backup
+    backups = {}
+    for path in files:
+        full = os.path.join(REPO_PATH, path)
+        if os.path.exists(full):
+            with open(full, "r") as f:
+                backups[path] = f.read()
+
+    # Écrire
     written = write_files(files)
+    if not written:
+        err(name, "Aucun fichier écrit.")
+        return False
 
-    # Compiler pour vérifier
-    print("[Build] Compilation en cours...")
+    # Compiler
+    print("[Build] Compilation...")
     build_ok, build_log = make_build()
 
     if build_ok:
-        # Commit et push
-        msg = f"feat(ai): {name} [Gemini auto-improvement]"
-        push_ok = git_commit_push(msg)
-
-        if push_ok:
-            discord_success(
+        pushed = commit_push(
+            f"feat(ai): {name} - auto-improvement by Gemini"
+        )
+        if pushed:
+            ok(
                 name,
-                f"Amélioration appliquée et poussée sur GitHub !",
+                "Amélioration compilée et poussée !",
                 [
-                    {"name": "Fichiers modifiés", "value": "\n".join(written), "inline": False},
-                    {"name": "Temps Gemini", "value": f"{elapsed:.1f}s", "inline": True},
-                    {"name": "Build", "value": "✅ Succès", "inline": True},
+                    {"name": "Fichiers", "value": "\n".join(written), "inline": False},
+                    {"name": "Temps", "value": f"{elapsed:.1f}s", "inline": True},
+                    {"name": "Build", "value": "✅", "inline": True},
                 ]
             )
             return True
         else:
-            discord_error(name, "Push échoué mais build OK.")
+            err(name, "Push échoué.")
             return False
     else:
-        # La compilation a échoué, on annule les changements
-        git_run(["checkout", "--", "."])
-        discord_error(
+        # Restaurer les backups
+        print("[Build] Échec ! Restauration...")
+        for path, content in backups.items():
+            full = os.path.join(REPO_PATH, path)
+            with open(full, "w") as f:
+                f.write(content)
+        # Supprimer les nouveaux fichiers
+        for path in written:
+            if path not in backups:
+                full = os.path.join(REPO_PATH, path)
+                if os.path.exists(full):
+                    os.remove(full)
+
+        err(
             name,
-            f"Compilation échouée ! Modifications annulées.\n```\n{build_log[-500:]}\n```"
+            f"Compilation échouée. Restauré.\n```\n{build_log[-600:]}\n```"
         )
         return False
 
+# ══════════════════════════════════════════
+# MAIN
+# ══════════════════════════════════════════
 def main():
-    print("╔══════════════════════════════════════╗")
-    print("║     MaxOS AI Developer v1.0          ║")
-    print("║     Powered by Gemini 2.0 Flash      ║")
-    print("╚══════════════════════════════════════╝")
+    print("╔══════════════════════════════════════════╗")
+    print("║   MaxOS AI Developer v2.0                ║")
+    print("║   Gemini 1.5 Flash - Gratuit             ║")
+    print("╚══════════════════════════════════════════╝")
+    print(f"Repo   : {REPO_PATH}")
+    print(f"Modèle : {GEMINI_MODEL}")
+    print(f"Tâches : {len(TASKS)}")
 
-    discord_info(
-        "MaxOS AI Developer démarré",
-        f"Démarrage du cycle d'amélioration automatique.\n"
-        f"**{len(TASKS)} tâches** planifiées.\n"
-        f"Repo : {REPO_PATH}",
+    info(
+        "MaxOS AI Developer v2.0 démarré",
+        f"**{len(TASKS)} tâches** planifiées\nModèle: `{GEMINI_MODEL}`",
         [{"name": "Heure", "value": datetime.now().strftime("%H:%M:%S"), "inline": True}]
     )
 
-    # Lire le code source
-    print("\n[Sources] Lecture du code...")
-    sources = read_sources()
-    context = build_context(sources)
-    print(f"[Sources] {len(sources)} fichiers, {len(context)} caractères de contexte")
+    # Lire sources
+    sources  = read_sources()
+    context  = build_context(sources)
+    print(f"[Sources] {len(sources)} fichiers, {len(context)} chars")
 
-    # Exécuter toutes les tâches
-    success_count = 0
-    total = len(TASKS)
+    success = 0
 
     for i, task in enumerate(TASKS, 1):
         try:
-            ok = run_task(task, context, i, total)
-            if ok:
-                success_count += 1
-                # Relire les sources après modification
+            if run_task(task, context, i, len(TASKS)):
+                success += 1
+                # Relire après modification
                 sources = read_sources()
                 context = build_context(sources)
-            # Pause entre requêtes pour respecter les rate limits
-            if i < total:
-                print(f"[Rate Limit] Pause 5s...")
-                time.sleep(5)
+
+            # Pause entre tâches (rate limit)
+            if i < len(TASKS):
+                wait = 30
+                print(f"[Rate Limit] Pause {wait}s...")
+                time.sleep(wait)
+
         except KeyboardInterrupt:
-            print("\n[!] Interrompu par l'utilisateur")
-            discord_info("Arrêt", "Le développeur AI a été arrêté manuellement.")
+            print("\n[!] Arrêté")
+            info("Arrêt", "AI Developer arrêté manuellement.")
             sys.exit(0)
         except Exception as e:
-            print(f"[Erreur] Tâche {i} : {e}")
-            discord_error(f"Erreur tâche {i}", str(e))
+            print(f"[Erreur] {e}")
+            err(f"Erreur tâche {i}", str(e))
 
     # Rapport final
-    discord_success(
-        "Cycle terminé !",
-        f"**{success_count}/{total}** tâches réussies.",
+    color = 0x00FF00 if success == len(TASKS) else 0xFFAA00
+    discord_send(
+        f"🏁 Cycle terminé : {success}/{len(TASKS)}",
+        f"**{success} tâches réussies** sur {len(TASKS)}",
+        color,
         [
-            {"name": "Succès", "value": str(success_count), "inline": True},
-            {"name": "Échecs", "value": str(total - success_count), "inline": True},
-            {"name": "Prochain cycle", "value": "Dans 1 heure", "inline": True},
+            {"name": "Succès", "value": str(success), "inline": True},
+            {"name": "Échecs", "value": str(len(TASKS)-success), "inline": True},
         ]
     )
-
-    print(f"\n[Terminé] {success_count}/{total} tâches réussies.")
+    print(f"\n[Fin] {success}/{len(TASKS)} tâches réussies.")
 
 if __name__ == "__main__":
     main()
