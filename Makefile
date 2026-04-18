@@ -62,8 +62,13 @@ build/kernel.bin: \
 	$(LD) $(LFLAGS) $^ -o $@
 
 build/os.img: build/boot.bin build/kernel.bin
+	@echo "Construction de l'image disque..."
+	@echo "Taille du bootloader: $(shell stat -f%z build/boot.bin) octets"
+	@echo "Taille du kernel: $(shell stat -f%z build/kernel.bin) octets"
+	@echo "Taille totale du kernel (bootloader + kernel): $(shell expr $(shell stat -f%z build/boot.bin) + $(shell stat -f%z build/kernel.bin)) octets"
 	cat $^ > $@
 	truncate -s 1474560 $@
+	@echo "Image disque 'build/os.img' créée."
 
 # QEMU avec -no-fd-bootchk et keyboard layout
 run: build/os.img
@@ -76,4 +81,4 @@ run: build/os.img
 
 clean:
 	@rm -rf build/
-	@echo "Nettoye !"
+	@echo "Nettoyage terminé !"
