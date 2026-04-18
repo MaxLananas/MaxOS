@@ -5,7 +5,8 @@
 #include "../apps/terminal.h"
 #include "../apps/sysinfo.h"
 #include "../apps/about.h"
-#include "idt.h" /* Ajout de l'include pour l'IDT */
+#include "idt.h"
+#include "memory.h" /* NOUVEAU: Ajout de l'include pour le gestionnaire de mémoire */
 
 unsigned int CLK_H = 14;
 unsigned int CLK_M = 30;
@@ -100,6 +101,7 @@ void kernel_main(void) {
     v_init();
     kb_init();
     idt_init(); /* Initialisation de l'IDT et du PIC */
+    mem_init(); /* NOUVEAU: Initialisation du gestionnaire de mémoire */
 
     np_init();
     tm_init();
