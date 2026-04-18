@@ -1,0 +1,19 @@
+name: Health Check Endpoint
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Source du declenchement'
+        required: false
+        default: 'manual'
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Status
+        run: |
+          echo "MaxOS AI Bot - OK"
+          echo "Source: ${{ github.event.inputs.source }}"
+          echo "Heure: $(date -u)"
