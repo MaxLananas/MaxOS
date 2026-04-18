@@ -2234,7 +2234,7 @@ def create_release(tasks_done, tasks_failed, analyse, stats):
         f"| Lignes | {stats.get('lines',0)} |\n"
         f"| Milestone | {ms} |\n\n"
         f"## ✅ Changements\n\n{changes or '- Maintenance\n'}"
-        + (f"\n## ⏭️ Reporté\n\n{failed_txt}" if failed_txt else "") +
+        + ("\n## ⏭️ Reporté\n\n" + failed_txt if failed_txt else "") +
         f"\n## 🧩 Fonctionnalités\n\n{feat_txt}\n\n"
         f"{changelog}\n"
         "---\n\n## 🚀 Tester MaxOS\n\n"
