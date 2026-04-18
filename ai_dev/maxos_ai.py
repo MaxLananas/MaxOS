@@ -2233,7 +2233,8 @@ def create_release(tasks_done, tasks_failed, analyse, stats):
         f"| Fichiers | {stats.get('files',0)} |\n"
         f"| Lignes | {stats.get('lines',0)} |\n"
         f"| Milestone | {ms} |\n\n"
-        f"## ✅ Changements\n\n{changes or '- Maintenance\n'}"
+        changes_txt = changes or "- Maintenance\n"
+        f"## ✅ Changements\n\n{changes_txt}"
         + ("\n## ⏭️ Reporté\n\n" + failed_txt if failed_txt else "") +
         f"\n## 🧩 Fonctionnalités\n\n{feat_txt}\n\n"
         f"{changelog}\n"
