@@ -38,6 +38,9 @@ $(BUILD_DIR)/kernel_entry.o: kernel/kernel_entry.asm
 $(BUILD_DIR)/kernel.o: kernel/kernel.c
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/idt.o: kernel/idt.c
+	$(CC) $(CFLAGS) $< -o $@
+
 $(BUILD_DIR)/screen.o: drivers/screen.c
 	$(CC) $(CFLAGS) $< -o $@
 
@@ -62,6 +65,7 @@ $(BUILD_DIR)/about.o: apps/about.c
 $(BUILD_DIR)/kernel.bin: \
     $(BUILD_DIR)/kernel_entry.o \
     $(BUILD_DIR)/kernel.o \
+    $(BUILD_DIR)/idt.o \
     $(BUILD_DIR)/screen.o \
     $(BUILD_DIR)/keyboard.o \
     $(BUILD_DIR)/ui.o \

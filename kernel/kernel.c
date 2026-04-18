@@ -5,6 +5,7 @@
 #include "../apps/terminal.h"
 #include "../apps/sysinfo.h"
 #include "../apps/about.h"
+#include "idt.h" /* Ajout de l'include pour l'IDT */
 
 unsigned int CLK_H = 14;
 unsigned int CLK_M = 30;
@@ -69,6 +70,8 @@ void ab_key(char k) {
 void kernel_main(void) {
     v_init();
     kb_init();
+    idt_init(); /* Initialisation de l'IDT et du PIC */
+
     np_init();
     tm_init();
 
@@ -79,10 +82,10 @@ void kernel_main(void) {
     unsigned int t = 0;
 
     while (1) {
-        delay(1);
+        delay(1); /* Un petit délai pour éviter une boucle trop serrée */
         t++;
 
-        if (t % 4000000 == 0) {
+        if (t % 4000000 == 0) { /* Fréquence de rafraîchissement de l'horloge */
             clock_tick();
             clock_draw();
         }

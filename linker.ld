@@ -4,4 +4,10 @@ SECTIONS {
     .text : { *(.text) }
     .data : { *(.data) }
     .bss  : { *(.bss)  }
+    .stack : {
+        . = ALIGN(4);
+        _stack_bottom = .;
+        . += 4K; /* 4KB de pile */
+        _stack_top = .;
+    }
 }
