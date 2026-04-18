@@ -581,16 +581,14 @@ RETOURNE UNIQUEMENT LE JSON SUIVANT (pas de texte avant ou après) :
   ]
 }}"""
 
-    # Appel avec moins de tokens pour l'analyse
-    response = gemini_call(prompt, max_tokens=4096)
+    # ── Réduire max_tokens pour éviter MAX_TOKENS sur l'analyse ──
+    response = gemini_call(prompt, max_tokens=2048)
     if not response:
         return None
 
     print(f"[Phase 1] Réponse: {len(response)} chars")
     print(f"[Phase 1] Début: {response[:200]}")
 
-    # Extraire JSON de manière robuste
-    # Chercher { ... } même si entouré de texte
     response_clean = response.strip()
 
     # Cas 1 : Réponse est directement du JSON
@@ -600,14 +598,18 @@ RETOURNE UNIQUEMENT LE JSON SUIVANT (pas de texte avant ou après) :
         except Exception:
             pass
 
-    # Cas 2 : JSON dans un bloc ```json
+    # Cas 2 : JSON dans un bloc ```json (potentiellement non fermé → MAX_TOKENS)
     if "```json" in response_clean:
         start = response_clean.index("```json") + 7
-        end   = response_clean.index("```", start)
+        try:
+            end = response_clean.index("```", start)
+        except ValueError:
+            # Réponse tronquée : pas de ``` de fermeture, on prend jusqu'à la fin
+            end = len(response_clean)
         try:
             return json.loads(response_clean[start:end].strip())
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[Phase 1] JSON (bloc markdown) parse error: {e}")
 
     # Cas 3 : Chercher le premier { et dernier }
     i = response_clean.find("{")
@@ -619,7 +621,7 @@ RETOURNE UNIQUEMENT LE JSON SUIVANT (pas de texte avant ou après) :
             print(f"[Phase 1] JSON parse error: {e}")
             print(f"[Phase 1] Tentative sur: {response_clean[i:i+500]}")
 
-    # Cas 4 : Construire un plan par défaut si Gemini ne retourne pas de JSON
+    # Cas 4 : Plan par défaut si tout échoue
     print("[Phase 1] JSON introuvable, plan par défaut...")
     return {
         "score_actuel": 40,
