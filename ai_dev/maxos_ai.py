@@ -2169,7 +2169,6 @@ def create_release(tasks_done, tasks_failed, analyse, stats):
     """Crée une release GitHub enrichie avec changelog et métriques."""
     releases = gh_list_releases(5)
 
-    # Calculer le prochain tag
     last_tag = "v0.0.0"
     for r in releases:
         tag = r.get("tag_name", "")
@@ -2222,51 +2221,50 @@ def create_release(tasks_done, tasks_failed, analyse, stats):
     # Changelog depuis la release précédente
     changelog = generate_changelog(last_tag, new_tag, tasks_done)
 
-    now  = datetime.utcnow()
+    # ── Assemblage propre des sections ──────────────────────────────────────
+    changes_txt = changes or "- Maintenance\n"
+
+    report_section = ""
+    if failed_txt:
+        report_section = f"\n## ⏭️ Reporté\n\n{failed_txt}\n"
+
+    now = datetime.utcnow()
+
     body = (
         f"# MaxOS {new_tag}\n\n"
-        "> 🤖 MaxOS AI Developer v{VERSION} - Objectif: Windows 11\n\n"
-        "---\n\n## 📊 État\n\n"
-        "| | |\n|---|---|\n"
+        f"> 🤖 MaxOS AI Developer v{VERSION} - Objectif: Windows 11\n\n"
+        f"---\n\n## 📊 État\n\n"
+        f"| | |\n|---|---|\n"
         f"| Score | **{score}/100** |\n"
         f"| Niveau | {niveau} |\n"
-        f"| Fichiers | {stats.get('files',0)} |\n"
-        f"| Lignes | {stats.get('lines',0)} |\n"
+        f"| Fichiers | {stats.get('files', 0)} |\n"
+        f"| Lignes | {stats.get('lines', 0)} |\n"
         f"| Milestone | {ms} |\n\n"
-        changes_txt = changes or "- Maintenance\n"
-
-        report_section = ""
-        if failed_txt:
-          report_section = "\n## ⏭️ Reporté\n\n" + failed_txt
-
-        body = (
-           f"# MaxOS {new_tag}\n\n"
-           f"## ✅ Changements\n\n{changes_txt}"
-           + report_section +
-           f"\n## 🧩 Fonctionnalités\n\n{feat_txt}\n\n"
-        )
+        f"## ✅ Changements\n\n{changes_txt}"
+        f"{report_section}"
+        f"\n## 🧩 Fonctionnalités\n\n{feat_txt}\n\n"
         f"{changelog}\n"
-        "---\n\n## 🚀 Tester MaxOS\n\n"
-        "### Linux/WSL\n```bash\n"
-        "sudo apt install qemu-system-x86\n"
-        "qemu-system-i386 -drive format=raw,file=os.img,if=floppy "
-        "-boot a -vga std -k fr -m 32 -no-reboot\n```\n\n"
-        "### Windows (QEMU)\n```\n"
-        "qemu-system-i386.exe -drive format=raw,file=os.img,if=floppy "
-        "-boot a -vga std -k fr -m 32\n```\n\n"
-        "### Compiler\n```bash\n"
-        "sudo apt install nasm gcc make gcc-multilib\n"
+        f"---\n\n## 🚀 Tester MaxOS\n\n"
+        f"### Linux/WSL\n```bash\n"
+        f"sudo apt install qemu-system-x86\n"
+        f"qemu-system-i386 -drive format=raw,file=os.img,if=floppy "
+        f"-boot a -vga std -k fr -m 32 -no-reboot\n```\n\n"
+        f"### Windows (QEMU)\n```\n"
+        f"qemu-system-i386.exe -drive format=raw,file=os.img,if=floppy "
+        f"-boot a -vga std -k fr -m 32\n```\n\n"
+        f"### Compiler\n```bash\n"
+        f"sudo apt install nasm gcc make gcc-multilib\n"
         f"git clone https://github.com/{REPO_OWNER}/{REPO_NAME}\n"
         f"cd {REPO_NAME} && make\n```\n\n"
-        "## ⌨️ Contrôles\n\n"
-        "| Touche | Action |\n|---|---|\n"
-        "| TAB | Changer d'app |\n| F1 | Bloc-Notes |\n"
-        "| F2 | Terminal |\n| F3 | Sysinfo |\n| F4 | À propos |\n\n"
-        "## ⚙️ Technique\n\n"
-        "| | |\n|---|---|\n"
-        "| Arch | x86 32-bit Protected Mode |\n"
-        "| CC | GCC -m32 -ffreestanding -nostdlib |\n"
-        "| ASM | NASM ELF32 |\n"
+        f"## ⌨️ Contrôles\n\n"
+        f"| Touche | Action |\n|---|---|\n"
+        f"| TAB | Changer d'app |\n| F1 | Bloc-Notes |\n"
+        f"| F2 | Terminal |\n| F3 | Sysinfo |\n| F4 | À propos |\n\n"
+        f"## ⚙️ Technique\n\n"
+        f"| | |\n|---|---|\n"
+        f"| Arch | x86 32-bit Protected Mode |\n"
+        f"| CC | GCC -m32 -ffreestanding -nostdlib |\n"
+        f"| ASM | NASM ELF32 |\n"
         f"| IA | {models_used} |\n"
         f"| Durée | {int(total_elapsed)}s |\n"
         f"| ~Tokens | {total_tokens} |\n\n"
@@ -2289,7 +2287,6 @@ def create_release(tasks_done, tasks_failed, analyse, stats):
         log(f"[Release] {new_tag} -> {url}")
 
     return url
-
 # ══════════════════════════════════════════════════════════════════════════════
 # RAPPORT FINAL DISCORD
 # ══════════════════════════════════════════════════════════════════════════════
