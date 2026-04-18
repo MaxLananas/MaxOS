@@ -17,8 +17,8 @@ from datetime import datetime
 # ══════════════════════════════════════════
 # CONFIG - Mets tes vraies valeurs ici
 # ══════════════════════════════════════════
-GEMINI_API_KEY  = "TA_CLE_GEMINI_ICI"
-DISCORD_WEBHOOK = "TON_NOUVEAU_WEBHOOK_ICI"  # Après avoir recréé !
+GEMINI_API_KEY  = "AIzaSyCwJrs7K9ccjW2oxieRkNQ8zfViqyCf3q0"
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1494861509615161364/UYmuRYBGBDAxAUSCUoTjjx8AG0sgaGjYAqpFVqhcWhXkOh9zPrYm9rZ6FRCQOeHxywlx"  # Après avoir recréé !
 REPO_PATH       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GEMINI_URL      = (
     "https://generativelanguage.googleapis.com/v1beta/"
