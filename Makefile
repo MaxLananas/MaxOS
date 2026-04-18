@@ -12,22 +12,14 @@ LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
 .PHONY: all clean run run-nographic
 
-# ======================
-# Build principal
-# ======================
-
 all: prepare $(BUILD_DIR)/os.img
 	@echo ""
-	@echo "  MaxOS compilé !"
+	@echo "  MaxOS compile !"
 	@echo "  make run pour lancer"
 	@echo ""
 
 prepare:
 	@mkdir -p $(BUILD_DIR)
-
-# ======================
-# Compilation
-# ======================
 
 $(BUILD_DIR)/boot.bin: boot/boot.asm
 	$(ASM) -f bin $< -o $@
@@ -36,9 +28,6 @@ $(BUILD_DIR)/kernel_entry.o: kernel/kernel_entry.asm
 	$(ASM) -f elf $< -o $@
 
 $(BUILD_DIR)/kernel.o: kernel/kernel.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/idt.o: kernel/idt.c
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/screen.o: drivers/screen.c
@@ -62,28 +51,66 @@ $(BUILD_DIR)/sysinfo.o: apps/sysinfo.c
 $(BUILD_DIR)/about.o: apps/about.c
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/kernel.bin: \
-    $(BUILD_DIR)/kernel_entry.o \
-    $(BUILD_DIR)/kernel.o \
-    $(BUILD_DIR)/idt.o \
-    $(BUILD_DIR)/screen.o \
-    $(BUILD_DIR)/keyboard.o \
-    $(BUILD_DIR)/ui.o \
-    $(BUILD_DIR)/notepad.o \
-    $(BUILD_DIR)/terminal.o \
-    $(BUILD_DIR)/sysinfo.o \
-    $(BUILD_DIR)/about.o
+# Nouveaux modules kernel (crees par l'IA)
+$(BUILD_DIR)/idt.o: kernel/idt.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/timer.o: kernel/timer.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/memory.o: kernel/memory.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/vga.o: drivers/vga.c
+	$(CC) $(CFLAGS) $< -o $@
+
+# Detecter quels fichiers .o existent pour le link
+KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
+               $(BUILD_DIR)/kernel.o \
+               $(BUILD_DIR)/screen.o \
+               $(BUILD_DIR)/keyboard.o \
+               $(BUILD_DIR)/ui.o \
+               $(BUILD_DIR)/notepad.o \
+               $(BUILD_DIR)/terminal.o \
+               $(BUILD_DIR)/sysinfo.o \
+               $(BUILD_DIR)/about.o
+
+# Ajouter les modules optionnels s'ils existent
+IDT_SRC    := $(wildcard kernel/idt.c)
+TIMER_SRC  := $(wildcard kernel/timer.c)
+MEMORY_SRC := $(wildcard kernel/memory.c)
+VGA_SRC    := $(wildcard drivers/vga.c)
+
+ifneq ($(IDT_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/idt.o
+endif
+ifneq ($(TIMER_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/timer.o
+endif
+ifneq ($(MEMORY_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/memory.o
+endif
+ifneq ($(VGA_SRC),)
+KERNEL_OBJS += $(BUILD_DIR)/vga.o
+endif
+
+$(BUILD_DIR)/kernel.bin: $(KERNEL_OBJS)
 	$(LD) $(LFLAGS) $^ -o $@
 
 $(BUILD_DIR)/os.img: $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin
-	@echo "Construction de l'image disque..."
-	@cat $^ > $@
-	@truncate -s 1474560 $@
-	@echo "Image disque créée : $(BUILD_DIR)/os.img"
-
-# ======================
-# QEMU
-# ======================
+	@echo "Construction image disque..."
+	@# Calculer le nombre de secteurs du kernel (512 bytes par secteur)
+	@KERNEL_SIZE=$$(wc -c < $(BUILD_DIR)/kernel.bin); \
+	 SECTORS=$$(( (KERNEL_SIZE + 511) / 512 )); \
+	 echo "  Kernel: $$KERNEL_SIZE bytes = $$SECTORS secteurs"; \
+	 if [ $$SECTORS -gt 2879 ]; then \
+	   echo "ERREUR: Kernel trop grand ($$SECTORS secteurs > 2879)"; \
+	   exit 1; \
+	 fi; \
+	 echo "  Secteurs OK: $$SECTORS"
+	@cat $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin > $(BUILD_DIR)/os.img
+	@truncate -s 1474560 $(BUILD_DIR)/os.img
+	@echo "Image creee: $(BUILD_DIR)/os.img"
 
 run: $(BUILD_DIR)/os.img
 	$(QEMU) \
@@ -102,10 +129,6 @@ run-nographic: $(BUILD_DIR)/os.img
 		-nographic \
 		-no-reboot
 
-# ======================
-# Clean
-# ======================
-
 clean:
 	@rm -rf $(BUILD_DIR)
-	@echo "Nettoyage terminé !"
+	@echo "Nettoyage termine"
