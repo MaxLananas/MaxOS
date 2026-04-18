@@ -2,7 +2,7 @@
 
 > Système d'exploitation minimaliste en C et Assembly x86
 
-![Build](https://github.com/TON_USERNAME/MaxOS/actions/workflows/build.yml/badge.svg)
+![Build](https://github.com/MaxLananas/MaxOS/actions/workflows/build.yml/badge.svg)
 
 ## Aperçu
 
