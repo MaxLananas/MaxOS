@@ -8,8 +8,8 @@ from datetime import datetime
 # ══════════════════════════════
 # CONFIG
 # ══════════════════════════════
-GEMINI_API_KEY  = "AIzaSyCwJrs7K9ccjW2oxieRkNQ8zfViqyCf3q0"
-DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1494873787596800080/sPhaZzBYUtPC_vhUgI94fPGXMMCyMc10-PbUGN62lZWDnurOot8ghD4Mm0Fki9EfZAoo"
+GEMINI_API_KEY  = "TA_CLE_GEMINI_ICI"
+DISCORD_WEBHOOK = "TON_WEBHOOK_ICI"
 REPO_PATH       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Modèles gratuits 2025 (par ordre de préférence)
