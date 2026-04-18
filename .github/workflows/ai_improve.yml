@@ -1,19 +1,19 @@
-name: 🤖 AI Auto-Improvement
+name: AI Auto-Improvement
 
 on:
   schedule:
-    - cron: '0 */2 * * *'   # Toutes les 2h (au lieu de 6h)
-  workflow_dispatch:          # Lancement manuel possible
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
     inputs:
       force_task:
-        description: 'Tâche spécifique à exécuter (optionnel)'
+        description: 'Tache specifique (optionnel)'
         required: false
         default: ''
 
 jobs:
   ai_improve:
     runs-on: ubuntu-latest
-    timeout-minutes: 90       # Timeout 90min max
+    timeout-minutes: 90
     permissions:
       contents: write
       pull-requests: write
@@ -29,18 +29,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 🛠️ Install tools
+      - name: Install tools
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y nasm gcc make gcc-multilib -qq
 
-      - name: ⚙️ Configure git
+      - name: Configure git
         run: |
           git config user.name "MaxOS AI Bot"
           git config user.email "ai@maxos.dev"
           git config pull.rebase true
 
-      - name: 🤖 Run AI Developer
+      - name: Run AI Developer
         env:
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
@@ -54,7 +54,7 @@ jobs:
           FORCE_TASK:       ${{ github.event.inputs.force_task }}
         run: python3 ai_dev/maxos_ai.py
 
-      - name: 📦 Upload artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -63,22 +63,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: 🔔 Notify failure
+      - name: Notify failure
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d '{
-              "username": "MaxOS AI Bot",
-              "embeds": [{
-                "title": "⚠️ Cycle AI échoué",
-                "description": "Le workflow GitHub Actions a échoué. Vérifier les logs.",
-                "color": 16711680,
-                "fields": [
-                  {"name": "Run", "value": "${{ github.run_number }}", "inline": true},
-                  {"name": "Lien", "value": "[Voir les logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false}
-                ]
-              }]
-            }' || true
+            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"Cycle AI echoue\",\"description\":\"Workflow GitHub Actions echoue. Run ${{ github.run_number }}\",\"color\":16711680}]}" \
+            || true
