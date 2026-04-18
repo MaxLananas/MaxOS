@@ -1,0 +1,51 @@
+name: 🤖 AI Auto-Improvement
+
+on:
+  schedule:
+    # Toutes les heures
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    # Déclenchement manuel possible
+
+jobs:
+  ai_improve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🛠️ Installer outils OS
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y nasm gcc make
+
+      - name: ⚙️ Configurer Git
+        run: |
+          git config user.name "MaxOS AI Bot"
+          git config user.email "ai-bot@maxos.dev"
+
+      - name: 🔑 Injecter les secrets
+        run: |
+          sed -i 's|TA_CLE_GEMINI_ICI|${{ secrets.GEMINI_API_KEY }}|g' ai_dev/maxos_ai.py
+          sed -i 's|TON_NOUVEAU_WEBHOOK_ICI|${{ secrets.DISCORD_WEBHOOK }}|g' ai_dev/maxos_ai.py
+
+      - name: 🤖 Lancer AI Developer
+        run: python3 ai_dev/maxos_ai.py
+
+      - name: 📦 Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maxos-ai-${{ github.run_number }}
+          path: build/os.img
+          retention-days: 7
