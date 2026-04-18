@@ -156,9 +156,13 @@ def keys_info():
     return "\n".join(lines) if lines else "Aucune cle"
 
 # ══════════════════════════════════════════════════════
-# INIT MODELE POUR UNE CLE
+# INIT MODELE - LAZY, SANS APPEL TEST
 # ══════════════════════════════════════════════════════
 def init_key(idx):
+    """
+    N'envoie PLUS de requete test.
+    Configure juste l'URL avec le premier modele non-interdit.
+    """
     if idx >= len(API_KEYS) or not API_KEYS[idx]:
         return False
     key = API_KEYS[idx]
@@ -169,38 +173,23 @@ def init_key(idx):
             continue
         url = ("https://generativelanguage.googleapis.com/v1beta/models/" +
                model + ":generateContent?key=" + key)
-        payload = json.dumps({
-            "contents": [{"parts": [{"text": "Say OK"}]}],
-            "generationConfig": {"maxOutputTokens": 5}
-        }).encode()
-        req = urllib.request.Request(
-            url, data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=20) as r:
-                data = json.loads(r.read())
-                parts = (data.get("candidates",[{}])[0]
-                             .get("content",{}).get("parts",[]))
-                if parts and any(p.get("text") for p in parts
-                                 if not p.get("thought")):
-                    print("[Gemini] Cle " + str(idx+1) + " -> " + model + " OK")
-                    ACTIVE[idx] = {"model": model, "url": url}
-                    return True
-        except urllib.error.HTTPError as e:
-            if e.code == 403:
-                if idx not in KEY_STATE["forbidden"]:
-                    KEY_STATE["forbidden"][idx] = set()
-                KEY_STATE["forbidden"][idx].add(model)
-                print("[Gemini] Cle " + str(idx+1) + " " + model + " interdit (403)")
-            elif e.code == 429:
-                print("[Gemini] Cle " + str(idx+1) + " " + model + " 429")
-                time.sleep(2)
-        except Exception as e:
-            print("[Gemini] Cle " + str(idx+1) + " " + model + ": " + str(e))
-        time.sleep(0.3)
+        print("[Gemini] Cle " + str(idx+1) + " -> " + model + " (lazy)")
+        ACTIVE[idx] = {"model": model, "url": url}
+        return True
+
+    print("[Gemini] Cle " + str(idx+1) + " : tous modeles interdits")
     return False
+
+def init_all():
+    """Init sans test = zero quota consomme."""
+    print("[Gemini] Initialisation lazy...")
+    ok = 0
+    for i in range(len(API_KEYS)):
+        if API_KEYS[i]:
+            if init_key(i):
+                ok += 1
+    print("[Gemini] " + str(ok) + "/" + str(len(API_KEYS)) + " cle(s) configurees")
+    return ok > 0
 
 def init_all():
     print("[Gemini] Initialisation...")
@@ -217,15 +206,10 @@ def init_all():
 # APPEL GEMINI - ROBUSTE ET ANTI-429
 # ══════════════════════════════════════════════════════
 def gemini(prompt, max_tokens=32768):
-    """
-    Appelle Gemini avec gestion complète des erreurs.
-    Rotation automatique des clés sur 429.
-    """
     if not ACTIVE:
         if not init_all():
             return None
 
-    # Limiter la taille
     if len(prompt) > 48000:
         prompt = prompt[:48000] + "\n[TRONQUE]"
 
@@ -237,17 +221,19 @@ def gemini(prompt, max_tokens=32768):
         }
     }).encode("utf-8")
 
-    # Max 8 tentatives au total
     for attempt in range(1, 9):
         idx = next_key()
 
+        # Init lazy si pas encore configure
         if idx not in ACTIVE:
             if not init_key(idx):
-                put_cooldown(idx, 120)
+                put_cooldown(idx, 300)
                 continue
 
         info = ACTIVE[idx]
-        url = info["url"].split("?")[0] + "?key=" + API_KEYS[idx]
+        key = API_KEYS[idx]
+        url = info["url"].split("?")[0] + "?key=" + key
+
         req = urllib.request.Request(
             url, data=payload,
             headers={"Content-Type": "application/json"},
@@ -257,11 +243,11 @@ def gemini(prompt, max_tokens=32768):
         try:
             with urllib.request.urlopen(req, timeout=180) as r:
                 data = json.loads(r.read().decode())
-
-                # Extraire le texte (gere les thinking models)
                 cands = data.get("candidates", [])
                 if not cands:
-                    print("[Gemini] Pas de candidates")
+                    # Verifier finishReason au niveau root
+                    reason = data.get("promptFeedback",{}).get("blockReason","")
+                    print("[Gemini] Pas de candidates, blockReason=" + reason)
                     continue
 
                 c = cands[0]
@@ -269,9 +255,8 @@ def gemini(prompt, max_tokens=32768):
 
                 if finish in ("SAFETY", "RECITATION"):
                     print("[Gemini] Reponse bloquee: " + finish)
-                    # RECITATION: reformuler et reessayer
                     if finish == "RECITATION" and attempt <= 3:
-                        prompt = ("Ecris une implementation originale et unique:\n\n" +
+                        prompt = ("Ecris une implementation originale:\n\n" +
                                   prompt[-2000:])
                         time.sleep(3)
                         continue
@@ -279,55 +264,88 @@ def gemini(prompt, max_tokens=32768):
 
                 parts = c.get("content", {}).get("parts", [])
                 texts = [p.get("text","") for p in parts
-                         if isinstance(p,dict)
+                         if isinstance(p, dict)
                          and not p.get("thought")
                          and p.get("text")]
                 text = "".join(texts)
 
                 if not text:
-                    print("[Gemini] Reponse vide (finish=" + finish + ")")
+                    print("[Gemini] Vide (finish=" + finish + ")")
                     if "MAX_TOKENS" in finish and max_tokens > 8192:
                         max_tokens = max_tokens // 2
                         continue
-                    del ACTIVE[idx]
+                    # Essayer modele suivant
+                    cur = info.get("model","")
+                    if idx not in KEY_STATE["forbidden"]:
+                        KEY_STATE["forbidden"][idx] = set()
+                    KEY_STATE["forbidden"][idx].add(cur)
+                    if idx in ACTIVE:
+                        del ACTIVE[idx]
                     init_key(idx)
                     continue
 
-                print("[Gemini] Cle " + str(idx+1) + " -> " +
+                print("[Gemini] Cle " + str(idx+1) + " OK -> " +
                       str(len(text)) + " chars (" + finish + ")")
                 return text
 
         except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode()[:200]
+            except:
+                pass
             print("[Gemini] Cle " + str(idx+1) +
                   " HTTP " + str(e.code) +
-                  " (tentative " + str(attempt) + ")")
+                  " attempt=" + str(attempt) +
+                  " body=" + body[:80])
 
             if e.code == 429:
-                # Cooldown progressif
                 errs = KEY_STATE["errors"].get(idx, 0)
-                wait = min(30 * (errs + 1), 120)
+                # Cooldown progressif: 60s, 120s, 180s...
+                wait = min(60 * (errs + 1), 300)
                 put_cooldown(idx, wait)
-                # Si on a une autre cle, on rotation immediate
-                if len(API_KEYS) > 1:
-                    continue
-                # Sinon on attend un peu
-                time.sleep(min(wait, 45))
+
+                # Verifier si une autre cle est dispo
+                now = time.time()
+                autres_dispo = any(
+                    API_KEYS[i] and now >= KEY_STATE["cooldowns"].get(i, 0)
+                    for i in range(len(API_KEYS)) if i != idx
+                )
+                if not autres_dispo:
+                    # Attendre le minimum
+                    min_wait = min(
+                        KEY_STATE["cooldowns"].get(i, 0) - now
+                        for i in range(len(API_KEYS)) if API_KEYS[i]
+                    )
+                    actual_wait = max(min(min_wait + 1, 60), 5)
+                    print("[Gemini] Toutes cles en CD, attente " +
+                          str(int(actual_wait)) + "s")
+                    time.sleep(actual_wait)
 
             elif e.code == 403:
+                # Ce modele est interdit pour cette cle
                 cur_model = ACTIVE.get(idx, {}).get("model", "")
                 if cur_model:
                     if idx not in KEY_STATE["forbidden"]:
                         KEY_STATE["forbidden"][idx] = set()
                     KEY_STATE["forbidden"][idx].add(cur_model)
+                    print("[Gemini] Cle " + str(idx+1) +
+                          " modele " + cur_model + " interdit -> suivant")
                 if idx in ACTIVE:
                     del ACTIVE[idx]
+                # Essayer modele suivant sur meme cle
                 if not init_key(idx):
-                    put_cooldown(idx, 300)
+                    put_cooldown(idx, 3600)  # Toute la cle inutilisable
 
             elif e.code in (400, 404):
+                print("[Gemini] Erreur config " + str(e.code))
                 if idx in ACTIVE:
                     del ACTIVE[idx]
                 init_key(idx)
+
+            elif e.code == 503:
+                print("[Gemini] Service indisponible, attente 30s")
+                time.sleep(30)
 
             else:
                 time.sleep(20)
