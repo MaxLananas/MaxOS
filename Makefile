@@ -51,7 +51,6 @@ $(BUILD_DIR)/sysinfo.o: apps/sysinfo.c
 $(BUILD_DIR)/about.o: apps/about.c
 	$(CC) $(CFLAGS) $< -o $@
 
-# Nouveaux modules kernel (crees par l'IA)
 $(BUILD_DIR)/idt.o: kernel/idt.c
 	$(CC) $(CFLAGS) $< -o $@
 
@@ -64,7 +63,6 @@ $(BUILD_DIR)/memory.o: kernel/memory.c
 $(BUILD_DIR)/vga.o: drivers/vga.c
 	$(CC) $(CFLAGS) $< -o $@
 
-# Detecter quels fichiers .o existent pour le link
 KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/kernel.o \
                $(BUILD_DIR)/screen.o \
@@ -75,7 +73,6 @@ KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/sysinfo.o \
                $(BUILD_DIR)/about.o
 
-# Ajouter les modules optionnels s'ils existent
 IDT_SRC    := $(wildcard kernel/idt.c)
 TIMER_SRC  := $(wildcard kernel/timer.c)
 MEMORY_SRC := $(wildcard kernel/memory.c)
@@ -99,7 +96,6 @@ $(BUILD_DIR)/kernel.bin: $(KERNEL_OBJS)
 
 $(BUILD_DIR)/os.img: $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin
 	@echo "Construction image disque..."
-	@# Calculer le nombre de secteurs du kernel (512 bytes par secteur)
 	@KERNEL_SIZE=$$(wc -c < $(BUILD_DIR)/kernel.bin); \
 	 SECTORS=$$(( (KERNEL_SIZE + 511) / 512 )); \
 	 echo "  Kernel: $$KERNEL_SIZE bytes = $$SECTORS secteurs"; \

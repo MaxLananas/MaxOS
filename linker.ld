@@ -7,7 +7,7 @@ SECTIONS {
     .stack : {
         . = ALIGN(4);
         _stack_bottom = .;
-        . += 4K; /* 4KB de pile */
+        . += 16K;
         _stack_top = .;
     }
 }
