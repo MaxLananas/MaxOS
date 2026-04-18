@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""MaxOS AI Developer v8.1 - Corrections cles + modeles"""
+"""MaxOS AI Developer v8.2 - Stable, anti-ratelimit, anti-recitation"""
 
 import os, sys, json, time, subprocess, re
 import urllib.request, urllib.error
 from datetime import datetime
 
 # ══════════════════════════════════════════════════════
-# CONFIGURATION MULTI-CLES
+# CONFIGURATION
 # ══════════════════════════════════════════════════════
 def load_api_keys():
     keys = []
@@ -19,240 +19,414 @@ def load_api_keys():
             keys.append(k)
     return keys
 
-API_KEYS = load_api_keys()
-
-# GITHUB_TOKEN est fourni automatiquement par GitHub Actions.
-# C'est ${{ secrets.GITHUB_TOKEN }} dans le workflow.
-# Tu n'as PAS besoin de creer ce secret manuellement.
-GITHUB_TOKEN    = os.environ.get("GH_PAT", "") or os.environ.get("GITHUB_TOKEN", "")
+API_KEYS        = load_api_keys()
+GITHUB_TOKEN    = os.environ.get("GITHUB_TOKEN", "")
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK", "")
 REPO_OWNER      = os.environ.get("REPO_OWNER", "MaxLananas")
 REPO_NAME       = os.environ.get("REPO_NAME", "MaxOS")
 REPO_PATH       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Etat global des cles
 KEY_STATE = {
-    "current_index": 0,
-    "cooldowns":     {},
-    "usage_count":   {},
-    "errors":        {},
-    "working_models": {},  # key_idx -> liste de modeles qui marchent
+    "current_index":  0,
+    "cooldowns":      {},   # idx -> timestamp fin cooldown
+    "usage_count":    {},   # idx -> nb appels
+    "errors":         {},   # idx -> nb erreurs
+    "forbidden_models": {}, # idx -> set de modeles interdits (403)
 }
 
-def mask_key(k):
-    if len(k) > 8:
-        return k[:4] + "*" * max(0, len(k) - 8) + k[-4:]
-    return "***"
+ACTIVE_MODELS = {}  # idx -> {"model": str, "url": str}
 
-print("[Config] Cles Gemini : " + str(len(API_KEYS)) + " cle(s) chargee(s)")
+def mask(k):
+    return k[:4] + "*" * max(0, len(k)-8) + k[-4:] if len(k) > 8 else "***"
+
+print("[v8.2] Cles: " + str(len(API_KEYS)))
 for i, k in enumerate(API_KEYS):
-    print("         Cle " + str(i+1) + " : " + mask_key(k))
-print("[Config] Discord : " + ("OK" if DISCORD_WEBHOOK else "ABSENT"))
-print("[Config] GitHub  : " + ("OK" if GITHUB_TOKEN else "ABSENT"))
-print("[Config] Repo    : " + REPO_OWNER + "/" + REPO_NAME)
-print("[Config] Path    : " + REPO_PATH)
+    print("  Cle " + str(i+1) + ": " + mask(k))
+print("[v8.2] Discord: " + ("OK" if DISCORD_WEBHOOK else "NON"))
+print("[v8.2] GitHub:  " + ("OK" if GITHUB_TOKEN else "NON"))
+print("[v8.2] Repo:    " + REPO_OWNER + "/" + REPO_NAME)
 
 if not API_KEYS:
-    print("FATAL: Aucune GEMINI_API_KEY trouvee")
+    print("FATAL: GEMINI_API_KEY manquante")
     sys.exit(1)
 
 # ══════════════════════════════════════════════════════
-# MODELES - lite en premier pour eviter 429
+# MODELES - ordre optimal
+# gemini-2.5-flash-lite = moins de quota = moins de 429
 # ══════════════════════════════════════════════════════
-# On met lite en premier : moins de quota consomme,
-# moins de 429, disponible sur plan gratuit
-MODELS_PRIORITY = [
+ALL_MODELS = [
     "gemini-2.5-flash-lite",
     "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-2.5-pro",
-    "gemini-1.5-flash-latest",
-]
-
-ACTIVE_MODELS = {}  # key_idx -> {"model": str, "url": str}
-
-# ══════════════════════════════════════════════════════
-# FICHIERS DU PROJET
-# ══════════════════════════════════════════════════════
-ALL_FILES = [
-    "boot/boot.asm",
-    "kernel/kernel_entry.asm",
-    "kernel/kernel.c",
-    "drivers/screen.h",
-    "drivers/screen.c",
-    "drivers/keyboard.h",
-    "drivers/keyboard.c",
-    "ui/ui.h",
-    "ui/ui.c",
-    "apps/notepad.h",
-    "apps/notepad.c",
-    "apps/terminal.h",
-    "apps/terminal.c",
-    "apps/sysinfo.h",
-    "apps/sysinfo.c",
-    "apps/about.h",
-    "apps/about.c",
-    "Makefile",
-    "linker.ld",
 ]
 
 # ══════════════════════════════════════════════════════
-# MISSION
+# FICHIERS CONNUS
 # ══════════════════════════════════════════════════════
-OS_MISSION = """
-MISSION MAXOS - OBJECTIF OS COMPLET TYPE WINDOWS 11
+KNOWN_FILES = [
+    "boot/boot.asm", "kernel/kernel_entry.asm", "kernel/kernel.c",
+    "drivers/screen.h", "drivers/screen.c",
+    "drivers/keyboard.h", "drivers/keyboard.c",
+    "ui/ui.h", "ui/ui.c",
+    "apps/notepad.h", "apps/notepad.c",
+    "apps/terminal.h", "apps/terminal.c",
+    "apps/sysinfo.h", "apps/sysinfo.c",
+    "apps/about.h", "apps/about.c",
+    "Makefile", "linker.ld",
+]
 
-L'IA est le developpeur principal, autonome 24h/24 7j/7.
-L'IA peut creer, supprimer et modifier n'importe quel fichier du projet.
+# ══════════════════════════════════════════════════════
+# REGLES BARE METAL (version courte pour les prompts)
+# ══════════════════════════════════════════════════════
+RULES_SHORT = """REGLES BARE METAL x86 OBLIGATOIRES:
+- ZERO include standard (<stddef.h> <string.h> <stdlib.h> etc)
+- ZERO types: size_t->uint, NULL->0, bool->int, true->1, false->0
+- ZERO fonctions: malloc, memset, strlen, printf
+- gcc -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc
+- nasm -f elf / ld -m elf_i386 -T linker.ld --oformat binary
+- Si nouveau .c -> mettre a jour Makefile
+- L'IA peut creer, modifier, supprimer des fichiers"""
 
-PRIORITES D'IMPLEMENTATION :
+RULES_FULL = RULES_SHORT + """
 
-COUCHE 1 - KERNEL :
-  - IDT complete 256 entrees + handlers exceptions x86 (0-31)
-  - PIC 8259 initialise (IRQ 0-15 remappes)
-  - Timer PIT 8253 a 100Hz + sleep() + uptime
-  - Gestionnaire memoire physique bitmap 4KB
-  - Appels systeme basiques
+SIGNATURES EXISTANTES (ne pas changer):
+  nb_init(), nb_draw(), nb_key(char k)
+  tm_init(), tm_draw(), tm_key(char k)
+  si_draw(), ab_draw()
+  kb_init(), kb_haskey(), kb_getchar()
+  v_init(), v_put(), v_str(), v_fill()"""
 
-COUCHE 2 - DRIVERS :
-  - Clavier PS/2 complet (Shift, Ctrl, Alt, fleches, F1-F12)
-  - VGA texte 80x25 couleurs ameliore
-  - VGA graphique mode 13h (320x200, 256 couleurs)
-  - Son PC speaker (beeps, notes musicales)
-  - Souris PS/2
-
-COUCHE 3 - SYSTEME FICHIERS :
-  - FAT12 lecture/ecriture sur disquette
-  - VFS abstrait
-
-COUCHE 4 - GUI :
-  - Fenetres avec titre, bordures, boutons fermer/min/max
-  - Z-order, fenetres empilees
-  - Curseur souris avec rendu
-  - Desktop avec fond d'ecran degrade
-  - Taskbar style Windows 11
-  - Menu demarrer avec icones
-
-COUCHE 5 - APPLICATIONS :
-  - Terminal 20+ commandes (help,ver,mem,uptime,cls,echo,
-    reboot,halt,color,ls,cat,mkdir,rm,edit,calc,beep,ps,date)
-  - Editeur texte avec curseur clignotant + sauvegarde
-  - Gestionnaire taches (liste processus, memoire)
-  - Calculatrice avec interface
-  - Horloge/calendrier
-  - Jeux: Snake, Tetris, Pong
-  - Editeur hexadecimal
-
-COUCHE 6 - RESEAU :
-  - Driver NE2000 (QEMU)
-  - Stack TCP/IP minimale
-  - DHCP client, Ping
-
-REGLES ABSOLUES :
-- Chaque modification doit compiler dans QEMU
-- Code C bare metal pur, zero librairie standard
-- Mettre a jour Makefile si nouveaux fichiers .c crees
-- Stabilite avant complexite
-"""
-
-BARE_METAL_RULES = """
-REGLES BARE METAL x86 ABSOLUES :
-
-1. ZERO include standard :
-   PAS <stddef.h> <string.h> <stdlib.h> <stdio.h> <stdint.h> <stdbool.h>
-
-2. ZERO types standard :
-   size_t -> unsigned int
-   NULL -> 0
-   bool -> int, true/false -> 1/0
-   uint32_t -> unsigned int
-
-3. ZERO fonctions standard :
-   malloc/free, memset/memcpy, strlen/strcmp, printf/sprintf
-
-4. SIGNATURES EXISTANTES (ne pas changer) :
-   nb_init(), nb_draw(), nb_key(char k)
-   tm_init(), tm_draw(), tm_key(char k)
-   si_draw()
-   ab_draw()
-   kb_init(), kb_haskey(), kb_getchar()
-   v_init(), v_put(), v_str(), v_fill()
-
-5. COMPILATION :
-   gcc -m32 -ffreestanding -fno-stack-protector -fno-builtin
-       -fno-pic -fno-pie -nostdlib -nostdinc -w -c
-   nasm -f elf / nasm -f bin
-   ld -m elf_i386 -T linker.ld --oformat binary
-
-6. L'IA PEUT :
-   - Creer nouveaux fichiers .c/.h/.asm
-   - Supprimer fichiers obsoletes
-   - Modifier Makefile
-   - Restructurer le projet
-"""
+# ══════════════════════════════════════════════════════
+# MISSION (version courte)
+# ══════════════════════════════════════════════════════
+MISSION = """MISSION: MaxOS doit devenir un OS complet (objectif Windows 11).
+Priorites: IDT+PIC > Timer PIT > Memoire > GUI graphique > Apps > Reseau.
+Chaque commit doit ameliorer l'OS de facon visible dans QEMU."""
 
 # ══════════════════════════════════════════════════════
 # ROTATION DES CLES
 # ══════════════════════════════════════════════════════
-def get_best_key():
+def get_available_key():
+    """Retourne l'index de la meilleure cle disponible."""
     now = time.time()
     n = len(API_KEYS)
-    # Chercher une cle sans cooldown
-    for attempt in range(n):
-        idx = (KEY_STATE["current_index"] + attempt) % n
-        if API_KEYS[idx] and now >= KEY_STATE["cooldowns"].get(idx, 0):
+
+    # Chercher cle sans cooldown
+    for delta in range(n):
+        idx = (KEY_STATE["current_index"] + delta) % n
+        if not API_KEYS[idx]:
+            continue
+        if now >= KEY_STATE["cooldowns"].get(idx, 0):
             KEY_STATE["current_index"] = idx
             KEY_STATE["usage_count"][idx] = (
                 KEY_STATE["usage_count"].get(idx, 0) + 1
             )
             return idx
+
     # Toutes en cooldown -> attendre la moins longue
     valid = [i for i in range(n) if API_KEYS[i]]
     if not valid:
-        print("FATAL: Aucune cle valide")
+        print("[Keys] FATAL: aucune cle valide")
         sys.exit(1)
+
     min_idx = min(valid, key=lambda i: KEY_STATE["cooldowns"].get(i, 0))
-    wait = KEY_STATE["cooldowns"].get(min_idx, 0) - now + 1
-    print("[Keys] Attente " + str(int(wait)) + "s (cle " + str(min_idx+1) + ")")
+    wait = KEY_STATE["cooldowns"].get(min_idx, 0) - now + 2
+    print("[Keys] Toutes en cooldown. Attente " +
+          str(int(wait)) + "s...")
     time.sleep(max(wait, 1))
+    KEY_STATE["current_index"] = min_idx
     return min_idx
 
-def set_key_cooldown(key_idx, seconds):
-    KEY_STATE["cooldowns"][key_idx] = time.time() + seconds
-    KEY_STATE["errors"][key_idx] = KEY_STATE["errors"].get(key_idx, 0) + 1
+def cooldown_key(idx, seconds):
+    """Met une cle en cooldown et bascule."""
+    KEY_STATE["cooldowns"][idx] = time.time() + seconds
+    KEY_STATE["errors"][idx] = KEY_STATE["errors"].get(idx, 0) + 1
     n = len(API_KEYS)
     if n > 1:
-        next_idx = (key_idx + 1) % n
-        # Sauter les cles vides
+        nxt = (idx + 1) % n
         for _ in range(n):
-            if API_KEYS[next_idx]:
+            if API_KEYS[nxt]:
                 break
-            next_idx = (next_idx + 1) % n
-        KEY_STATE["current_index"] = next_idx
-        print("[Keys] Cle " + str(key_idx+1) + " cooldown " +
-              str(seconds) + "s -> cle " + str(next_idx+1))
+            nxt = (nxt + 1) % n
+        KEY_STATE["current_index"] = nxt
+        print("[Keys] Cle " + str(idx+1) +
+              " cooldown " + str(seconds) + "s -> cle " + str(nxt+1))
     else:
-        print("[Keys] Cle unique cooldown " + str(seconds) + "s")
+        print("[Keys] Cle " + str(idx+1) +
+              " cooldown " + str(seconds) + "s")
 
-def key_status_str():
+def keys_status():
     now = time.time()
     lines = []
     for i in range(len(API_KEYS)):
         if not API_KEYS[i]:
             continue
         cd = KEY_STATE["cooldowns"].get(i, 0)
-        usage = KEY_STATE["usage_count"].get(i, 0)
-        err = KEY_STATE["errors"].get(i, 0)
-        status = "OK" if now >= cd else "CD " + str(int(cd - now)) + "s"
-        model = ACTIVE_MODELS.get(i, {}).get("model", "?")
-        lines.append("Cle " + str(i+1) + ": " + status +
-                     " | " + str(usage) + " req | " +
-                     str(err) + " err | " + model)
-    return "\n".join(lines) if lines else "Aucune cle"
+        st = "OK" if now >= cd else "CD " + str(int(cd-now)) + "s"
+        m = ACTIVE_MODELS.get(i, {}).get("model", "?")
+        u = KEY_STATE["usage_count"].get(i, 0)
+        lines.append("Cle " + str(i+1) + ": " + st +
+                     " | " + str(u) + " req | " + m)
+    return "\n".join(lines)
+
+# ══════════════════════════════════════════════════════
+# INITIALISATION MODELES
+# ══════════════════════════════════════════════════════
+def init_key(idx):
+    """Trouve le meilleur modele pour une cle."""
+    if idx >= len(API_KEYS) or not API_KEYS[idx]:
+        return False
+
+    key = API_KEYS[idx]
+    forbidden = KEY_STATE["forbidden_models"].get(idx, set())
+
+    for model in ALL_MODELS:
+        if model in forbidden:
+            continue
+
+        url = ("https://generativelanguage.googleapis.com/v1beta/models/" +
+               model + ":generateContent?key=" + key)
+        payload = json.dumps({
+            "contents": [{"parts": [{"text": "Say: OK"}]}],
+            "generationConfig": {"maxOutputTokens": 5, "temperature": 0}
+        }).encode()
+
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.loads(r.read())
+                # Verifier qu'on a bien du texte
+                parts = (data.get("candidates", [{}])[0]
+                             .get("content", {})
+                             .get("parts", []))
+                if parts and parts[0].get("text"):
+                    print("[Gemini] Cle " + str(idx+1) +
+                          " -> " + model + " OK")
+                    ACTIVE_MODELS[idx] = {"model": model, "url": url}
+                    return True
+
+        except urllib.error.HTTPError as e:
+            print("[Gemini] Cle " + str(idx+1) +
+                  " " + model + " HTTP " + str(e.code))
+            if e.code == 403:
+                # Ce modele est interdit pour cette cle
+                if idx not in KEY_STATE["forbidden_models"]:
+                    KEY_STATE["forbidden_models"][idx] = set()
+                KEY_STATE["forbidden_models"][idx].add(model)
+            elif e.code == 429:
+                time.sleep(3)
+            time.sleep(0.5)
+        except Exception as e:
+            print("[Gemini] Cle " + str(idx+1) + " " + model +
+                  " err: " + str(e))
+            time.sleep(0.5)
+
+    print("[Gemini] Cle " + str(idx+1) + ": aucun modele dispo")
+    return False
+
+def init_all_keys():
+    print("[Gemini] Init " + str(len(API_KEYS)) + " cle(s)...")
+    ok = 0
+    for i in range(len(API_KEYS)):
+        if API_KEYS[i]:
+            if init_key(i):
+                ok += 1
+            time.sleep(1)
+    print("[Gemini] " + str(ok) + "/" + str(len(API_KEYS)) + " OK")
+    return ok > 0
+
+# ══════════════════════════════════════════════════════
+# EXTRACTION TEXTE GEMINI
+# ══════════════════════════════════════════════════════
+def extract_text(data):
+    """Extrait le texte d'une reponse Gemini (gere les thinking models)."""
+    try:
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return None, "no_candidates"
+
+        c = candidates[0]
+        finish = c.get("finishReason", "STOP")
+
+        if finish == "SAFETY":
+            return None, "safety"
+        if finish == "RECITATION":
+            return None, "recitation"
+
+        parts = c.get("content", {}).get("parts", [])
+        if not parts:
+            return None, "no_parts_" + finish
+
+        # Concatener les parts texte (ignorer les "thought")
+        texts = []
+        for p in parts:
+            if isinstance(p, dict) and not p.get("thought") and p.get("text"):
+                texts.append(p["text"])
+
+        result = "".join(texts)
+        if not result:
+            return None, "empty_text_" + finish
+
+        return result, finish
+
+    except Exception as e:
+        return None, "parse_error_" + str(e)
+
+# ══════════════════════════════════════════════════════
+# APPEL GEMINI AVEC GESTION COMPLETE
+# ══════════════════════════════════════════════════════
+def call_gemini(prompt, max_tokens=32768, allow_recitation_retry=True):
+    """
+    Appelle Gemini avec rotation des cles.
+    Gere: 429, 403, RECITATION, MAX_TOKENS, no_parts.
+    """
+    if not ACTIVE_MODELS:
+        if not init_all_keys():
+            return None
+
+    # Limiter la taille du prompt
+    if len(prompt) > 50000:
+        prompt = prompt[:50000] + "\n...[TRONQUE]"
+
+    payload_base = {
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": 0.1,
+        }
+    }
+
+    recitation_count = 0
+    max_total = 4 * max(len(API_KEYS), 1)
+
+    for attempt in range(1, max_total + 1):
+        idx = get_available_key()
+
+        if idx not in ACTIVE_MODELS:
+            if not init_key(idx):
+                cooldown_key(idx, 120)
+                continue
+
+        info = ACTIVE_MODELS[idx]
+        url = info["url"].split("?")[0] + "?key=" + API_KEYS[idx]
+
+        # Construire le payload
+        payload = dict(payload_base)
+        payload["contents"] = [{"parts": [{"text": prompt}]}]
+        payload_bytes = json.dumps(payload).encode("utf-8")
+
+        req = urllib.request.Request(
+            url, data=payload_bytes,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=180) as r:
+                data = json.loads(r.read().decode())
+                text, reason = extract_text(data)
+
+                if text:
+                    print("[Gemini] Cle " + str(idx+1) +
+                          " " + info["model"] + " -> " +
+                          str(len(text)) + " chars (" + reason + ")")
+                    return text
+
+                # Pas de texte
+                print("[Gemini] Cle " + str(idx+1) +
+                      " reponse vide: " + reason)
+
+                if reason == "recitation" and allow_recitation_retry:
+                    recitation_count += 1
+                    if recitation_count <= 2:
+                        # Reformuler le prompt pour eviter RECITATION
+                        print("[Gemini] RECITATION -> reformulation")
+                        prompt = (
+                            "Implementons du code OS bare metal original.\n"
+                            "NE PAS copier de code existant.\n"
+                            "Ecrire une implementation unique et originale.\n\n"
+                            + prompt[-3000:]  # Garder seulement la fin
+                        )
+                        time.sleep(5)
+                        continue
+
+                elif "MAX_TOKENS" in reason or "no_parts" in reason:
+                    # Reessayer avec moins de tokens
+                    if max_tokens > 8192:
+                        max_tokens = max_tokens // 2
+                        print("[Gemini] MAX_TOKENS -> reduit a " +
+                              str(max_tokens))
+                        payload_base["generationConfig"]["maxOutputTokens"] = max_tokens
+                        continue
+
+                # Essayer un autre modele
+                if idx in ACTIVE_MODELS:
+                    del ACTIVE_MODELS[idx]
+                init_key(idx)
+
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode()
+            except Exception:
+                pass
+
+            print("[Gemini] Cle " + str(idx+1) +
+                  " HTTP " + str(e.code) +
+                  " (tentative " + str(attempt) + ")")
+
+            if e.code == 429:
+                # Rate limit -> cooldown progressif
+                err_count = KEY_STATE["errors"].get(idx, 0)
+                wait = min(30 + (30 * err_count), 180)
+                cooldown_key(idx, wait)
+                if len(API_KEYS) > 1:
+                    # Rotation immediate sur autre cle
+                    continue
+                # Une seule cle -> attendre un peu
+                time.sleep(min(wait, 60))
+
+            elif e.code == 403:
+                # Modele interdit sur cette cle
+                current_model = ACTIVE_MODELS.get(idx, {}).get("model", "")
+                if current_model:
+                    if idx not in KEY_STATE["forbidden_models"]:
+                        KEY_STATE["forbidden_models"][idx] = set()
+                    KEY_STATE["forbidden_models"][idx].add(current_model)
+                if idx in ACTIVE_MODELS:
+                    del ACTIVE_MODELS[idx]
+                # Chercher un autre modele pour cette cle
+                if not init_key(idx):
+                    cooldown_key(idx, 300)
+
+            elif e.code in (400, 404):
+                if idx in ACTIVE_MODELS:
+                    del ACTIVE_MODELS[idx]
+                init_key(idx)
+
+            elif e.code >= 500:
+                print("[Gemini] Erreur serveur " + str(e.code))
+                time.sleep(30)
+
+            else:
+                time.sleep(20)
+
+        except Exception as e:
+            print("[Gemini] Exception: " + str(e))
+            time.sleep(15)
+
+    print("[Gemini] ECHEC apres " + str(max_total) + " tentatives")
+    return None
 
 # ══════════════════════════════════════════════════════
 # GITHUB API
 # ══════════════════════════════════════════════════════
-def github_api(method, endpoint, data=None):
+def gh(method, endpoint, data=None):
     if not GITHUB_TOKEN:
         return None
     url = ("https://api.github.com/repos/" +
@@ -264,7 +438,7 @@ def github_api(method, endpoint, data=None):
             "Authorization": "Bearer " + GITHUB_TOKEN,
             "Accept": "application/vnd.github+json",
             "Content-Type": "application/json",
-            "User-Agent": "MaxOS-AI-Bot",
+            "User-Agent": "MaxOS-AI/8.2",
             "X-GitHub-Api-Version": "2022-11-28",
         },
         method=method
@@ -274,51 +448,43 @@ def github_api(method, endpoint, data=None):
             body = r.read().decode()
             return json.loads(body) if body else {}
     except urllib.error.HTTPError as e:
-        body = e.read().decode()
         print("[GitHub] " + method + " " + endpoint +
-              " HTTP " + str(e.code) + ": " + body[:150])
+              " -> " + str(e.code))
         return None
     except Exception as e:
         print("[GitHub] " + str(e))
         return None
 
-def github_create_release(tag, name, body, prerelease=False):
-    data = {
-        "tag_name": tag,
-        "name": name,
-        "body": body,
-        "draft": False,
-        "prerelease": prerelease,
-    }
-    r = github_api("POST", "releases", data)
+def gh_create_release(tag, name, body, prerelease=False):
+    r = gh("POST", "releases", {
+        "tag_name": tag, "name": name, "body": body,
+        "draft": False, "prerelease": prerelease
+    })
     if r and "html_url" in r:
-        print("[GitHub] Release: " + r["html_url"])
         return r["html_url"]
     return None
 
-def github_get_open_prs():
-    r = github_api("GET", "pulls?state=open&per_page=10")
+def gh_get_prs():
+    r = gh("GET", "pulls?state=open&per_page=10")
     return r if isinstance(r, list) else []
 
-def github_merge_pr(pr_number, title):
-    data = {
+def gh_merge_pr(number, title):
+    r = gh("PUT", "pulls/" + str(number) + "/merge", {
         "commit_title": "merge: " + title + " [AI]",
         "merge_method": "squash"
-    }
-    r = github_api("PUT", "pulls/" + str(pr_number) + "/merge", data)
+    })
     return bool(r and r.get("merged"))
 
-def github_comment_pr(pr_number, body):
-    github_api("POST", "issues/" + str(pr_number) + "/comments",
-               {"body": body})
+def gh_comment(number, body):
+    gh("POST", "issues/" + str(number) + "/comments", {"body": body})
 
-def github_close_pr(pr_number):
-    github_api("PATCH", "pulls/" + str(pr_number), {"state": "closed"})
+def gh_close_pr(number):
+    gh("PATCH", "pulls/" + str(number), {"state": "closed"})
 
 # ══════════════════════════════════════════════════════
 # DISCORD
 # ══════════════════════════════════════════════════════
-def discord_send(embeds):
+def discord(embeds):
     if not DISCORD_WEBHOOK:
         return
     payload = json.dumps({
@@ -327,319 +493,67 @@ def discord_send(embeds):
     }).encode("utf-8")
     req = urllib.request.Request(
         DISCORD_WEBHOOK, data=payload,
-        headers={"Content-Type": "application/json",
-                 "User-Agent": "DiscordBot"},
+        headers={"Content-Type": "application/json"},
         method="POST"
     )
     try:
         with urllib.request.urlopen(req, timeout=15):
-            return True
+            pass
     except Exception as e:
         print("[Discord] " + str(e))
-    return False
 
-def make_embed(title, desc, color, fields=None):
+def embed(title, desc, color=0x5865F2, fields=None):
     now = time.time()
     active = sum(1 for i in range(len(API_KEYS))
                  if API_KEYS[i] and now >= KEY_STATE["cooldowns"].get(i, 0))
-    cur_model = ACTIVE_MODELS.get(
-        KEY_STATE["current_index"], {}
-    ).get("model", "init")
+    cur = ACTIVE_MODELS.get(KEY_STATE["current_index"], {}).get("model", "?")
     e = {
         "title": str(title)[:256],
         "description": str(desc)[:4096],
         "color": color,
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "footer": {
-            "text": ("MaxOS AI v8.1 | " + cur_model +
-                     " | " + str(active) + "/" + str(len(API_KEYS)) +
-                     " cles | " + REPO_OWNER + "/" + REPO_NAME)
-        },
+        "footer": {"text": (
+            "MaxOS AI v8.2 | " + cur +
+            " | " + str(active) + "/" + str(len(API_KEYS)) + " cles"
+        )},
     }
     if fields:
         e["fields"] = fields[:25]
     return e
 
 def d(title, desc, color=0x5865F2, fields=None):
-    discord_send([make_embed(title, desc, color, fields)])
+    discord([embed(title, desc, color, fields)])
 
-def progress_bar(pct, w=28):
+def pbar(pct, w=24):
     f = int(w * pct / 100)
-    return "[" + ("X" * f) + ("-" * (w - f)) + "] " + str(pct) + "%"
-
-# ══════════════════════════════════════════════════════
-# GEMINI - AVEC GESTION DU BUG 'parts'
-# ══════════════════════════════════════════════════════
-def extract_text_from_response(data):
-    """
-    Extrait le texte d'une reponse Gemini.
-    Gere les cas:
-    - Reponse normale avec parts
-    - Modeles "thinking" qui ont des parts multiples
-    - finishReason OTHER ou RECITATION
-    """
-    try:
-        candidates = data.get("candidates", [])
-        if not candidates:
-            print("[Gemini] Pas de candidates dans la reponse")
-            return None
-
-        candidate = candidates[0]
-        finish = candidate.get("finishReason", "STOP")
-
-        if finish in ("SAFETY", "RECITATION"):
-            print("[Gemini] Reponse bloquee: " + finish)
-            return None
-
-        content = candidate.get("content", {})
-        parts = content.get("parts", [])
-
-        if not parts:
-            print("[Gemini] Pas de parts (finishReason=" + finish + ")")
-            # Parfois le modele retourne quand meme du texte dans content
-            text = content.get("text", "")
-            if text:
-                return text
-            return None
-
-        # Concatener tous les parts de type text
-        # (les modeles thinking ont des parts "thought" + "text")
-        texts = []
-        for part in parts:
-            if isinstance(part, dict):
-                # Ignorer les parts "thought" (thinking models)
-                if part.get("thought"):
-                    continue
-                t = part.get("text", "")
-                if t:
-                    texts.append(t)
-
-        result = "".join(texts)
-        if not result:
-            print("[Gemini] Parts presents mais aucun texte extrait")
-            return None
-
-        return result
-
-    except Exception as e:
-        print("[Gemini] Erreur extraction: " + str(e))
-        return None
-
-def find_model_for_key(key_idx):
-    """Trouve le meilleur modele pour une cle donnee."""
-    if key_idx >= len(API_KEYS) or not API_KEYS[key_idx]:
-        return False
-
-    key = API_KEYS[key_idx]
-    errors_count = KEY_STATE["errors"].get(key_idx, 0)
-
-    # Si la cle a beaucoup d'erreurs 403, on utilise
-    # seulement les modeles lite
-    if errors_count > 3:
-        models_to_try = ["gemini-2.5-flash-lite", "gemini-1.5-flash-latest"]
-    else:
-        models_to_try = MODELS_PRIORITY
-
-    for model in models_to_try:
-        url = ("https://generativelanguage.googleapis.com/v1beta/models/" +
-               model + ":generateContent?key=" + key)
-
-        # Payload simple sans options avancees pour le test
-        payload = json.dumps({
-            "contents": [{"parts": [{"text": "Reply with one word: READY"}]}],
-            "generationConfig": {
-                "maxOutputTokens": 20,
-                "temperature": 0.0
-            }
-        }).encode()
-
-        req = urllib.request.Request(
-            url, data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=25) as r:
-                data = json.loads(r.read())
-                text = extract_text_from_response(data)
-                if text is not None:
-                    print("[Gemini] Cle " + str(key_idx+1) +
-                          " -> " + model + " OK")
-                    ACTIVE_MODELS[key_idx] = {"model": model, "url": url}
-                    return True
-                else:
-                    print("[Gemini] Cle " + str(key_idx+1) +
-                          " " + model + ": reponse vide")
-                    continue
-
-        except urllib.error.HTTPError as e:
-            body = e.read().decode()
-            print("[Gemini] Cle " + str(key_idx+1) +
-                  " " + model + ": HTTP " + str(e.code))
-            if e.code == 403:
-                # Ce modele n'est pas dispo pour cette cle
-                # Essayer le suivant
-                time.sleep(0.5)
-                continue
-            elif e.code == 429:
-                # Rate limit sur ce modele -> essayer le suivant
-                time.sleep(2)
-                continue
-            elif e.code == 404:
-                # Modele n'existe pas
-                continue
-            else:
-                time.sleep(1)
-                continue
-
-        except Exception as e:
-            print("[Gemini] Cle " + str(key_idx+1) +
-                  " " + model + ": " + str(e))
-            time.sleep(0.5)
-            continue
-
-    print("[Gemini] Cle " + str(key_idx+1) + ": aucun modele disponible")
-    return False
-
-def find_all_models():
-    print("\n[Gemini] Initialisation " + str(len(API_KEYS)) + " cle(s)...")
-    success = 0
-    for i in range(len(API_KEYS)):
-        if API_KEYS[i]:
-            if find_model_for_key(i):
-                success += 1
-            else:
-                time.sleep(2)
-    print("[Gemini] " + str(success) + "/" + str(len(API_KEYS)) +
-          " cle(s) OK")
-    return success > 0
-
-def gemini(prompt, max_tokens=65536, retries=3):
-    if not ACTIVE_MODELS:
-        if not find_all_models():
-            return None
-
-    if len(prompt) > 60000:
-        prompt = prompt[:60000] + "\n...[TRONQUE]"
-
-    payload_data = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "maxOutputTokens": max_tokens,
-            "temperature": 0.05,
-        }
-    }
-    payload = json.dumps(payload_data).encode("utf-8")
-
-    total_attempts = retries * max(len(API_KEYS), 1)
-
-    for attempt in range(1, total_attempts + 1):
-        key_idx = get_best_key()
-
-        if key_idx not in ACTIVE_MODELS:
-            if not find_model_for_key(key_idx):
-                time.sleep(5)
-                continue
-
-        model_info = ACTIVE_MODELS[key_idx]
-        key = API_KEYS[key_idx]
-        url = model_info["url"].split("?")[0] + "?key=" + key
-
-        req = urllib.request.Request(
-            url, data=payload,
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=180) as r:
-                data = json.loads(r.read().decode())
-                text = extract_text_from_response(data)
-
-                if text is None:
-                    print("[Gemini] Cle " + str(key_idx+1) +
-                          " reponse invalide, tentative " +
-                          str(attempt) + "/" + str(total_attempts))
-                    # Essayer un autre modele pour cette cle
-                    if key_idx in ACTIVE_MODELS:
-                        del ACTIVE_MODELS[key_idx]
-                    find_model_for_key(key_idx)
-                    continue
-
-                finish = ""
-                try:
-                    finish = data["candidates"][0].get("finishReason", "STOP")
-                except Exception:
-                    pass
-
-                print("[Gemini] Cle " + str(key_idx+1) + " -> " +
-                      str(len(text)) + " chars (finish=" + finish + ")")
-                return text
-
-        except urllib.error.HTTPError as e:
-            body = e.read().decode()
-            print("[Gemini] Cle " + str(key_idx+1) +
-                  " HTTP " + str(e.code) +
-                  " tentative " + str(attempt) + "/" + str(total_attempts))
-
-            if e.code == 429:
-                wait = min(60 + (30 * KEY_STATE["errors"].get(key_idx, 0)), 300)
-                set_key_cooldown(key_idx, wait)
-                if len(API_KEYS) > 1:
-                    continue  # Rotation immediate
-                time.sleep(min(wait, 60))
-
-            elif e.code == 403:
-                # Modele pas autorise sur cette cle
-                # Essayer le modele suivant pour cette cle
-                if key_idx in ACTIVE_MODELS:
-                    del ACTIVE_MODELS[key_idx]
-                if not find_model_for_key(key_idx):
-                    set_key_cooldown(key_idx, 300)
-
-            elif e.code in (400, 404):
-                if key_idx in ACTIVE_MODELS:
-                    del ACTIVE_MODELS[key_idx]
-                find_model_for_key(key_idx)
-
-            elif e.code == 500:
-                time.sleep(30)
-
-            else:
-                time.sleep(20)
-
-        except Exception as e:
-            print("[Gemini] Cle " + str(key_idx+1) +
-                  " Exception: " + str(e))
-            time.sleep(15)
-
-    print("[Gemini] ECHEC apres " + str(total_attempts) + " tentatives")
-    return None
+    return "[" + "X"*f + "-"*(w-f) + "] " + str(pct) + "%"
 
 # ══════════════════════════════════════════════════════
 # SOURCES
 # ══════════════════════════════════════════════════════
-def discover_files():
+def find_files():
+    """Decouvre tous les fichiers du projet."""
     found = []
-    extensions = {".c", ".h", ".asm", ".ld", ".py"}
-    exclude_dirs = {".git", "build", "__pycache__", ".github"}
-    exclude_files = {"screen.h.save"}
+    exts = {".c", ".h", ".asm", ".ld", ".py"}
+    skip_dirs = {".git", "build", "__pycache__", ".github"}
+    skip_files = {"screen.h.save"}
     for root, dirs, files in os.walk(REPO_PATH):
-        dirs[:] = [dd for dd in dirs if dd not in exclude_dirs]
+        dirs[:] = [d for d in dirs if d not in skip_dirs]
         for f in files:
-            if f in exclude_files:
+            if f in skip_files:
                 continue
             ext = os.path.splitext(f)[1]
-            if ext in extensions or f == "Makefile":
+            if ext in exts or f == "Makefile":
                 rel = os.path.relpath(
                     os.path.join(root, f), REPO_PATH
                 ).replace("\\", "/")
                 found.append(rel)
     return sorted(found)
 
-def read_all():
+def read_sources():
     sources = {}
-    all_files = list(set(ALL_FILES + discover_files()))
-    for f in sorted(all_files):
+    all_f = list(set(KNOWN_FILES + find_files()))
+    for f in sorted(all_f):
         p = os.path.join(REPO_PATH, f)
         if os.path.exists(p):
             with open(p, "r", encoding="utf-8", errors="ignore") as fh:
@@ -648,115 +562,120 @@ def read_all():
             sources[f] = None
     return sources
 
-def build_context(sources, max_chars=45000):
-    ctx = "=== CODE SOURCE MAXOS ===\n\nFICHIERS:\n"
+def build_context(sources, max_chars=35000):
+    """Construit un contexte compact."""
+    # Index
+    ctx = "FICHIERS MAXOS:\n"
     for f, c in sources.items():
-        ctx += "  " + ("[OK]" if c else "[MANQUANT]") + " " + f + "\n"
+        ctx += ("  [OK] " if c else "  [--] ") + f + "\n"
     ctx += "\n"
-    chars_used = len(ctx)
-    for f, c in sources.items():
-        if c is None:
+
+    # Contenu par priorite
+    priority = [
+        "Makefile", "linker.ld",
+        "kernel/kernel.c", "kernel/kernel_entry.asm",
+        "boot/boot.asm",
+        "drivers/screen.h", "drivers/keyboard.h",
+        "ui/ui.h",
+    ]
+
+    chars = len(ctx)
+    added = set()
+
+    # D'abord les prioritaires
+    for f in priority:
+        c = sources.get(f, "")
+        if not c:
             continue
-        block = ("=" * 60 + "\nFICHIER: " + f + "\n" +
-                 "=" * 60 + "\n" + c + "\n\n")
-        if chars_used + len(block) > max_chars:
-            ctx += "[" + f + " tronque - trop grand]\n"
+        block = "=== " + f + " ===\n" + c + "\n\n"
+        if chars + len(block) > max_chars:
             continue
         ctx += block
-        chars_used += len(block)
+        chars += len(block)
+        added.add(f)
+
+    # Puis le reste
+    for f, c in sources.items():
+        if f in added or not c:
+            continue
+        block = "=== " + f + " ===\n" + c + "\n\n"
+        if chars + len(block) > max_chars:
+            ctx += "[" + f + " tronque]\n"
+            continue
+        ctx += block
+        chars += len(block)
+
     return ctx
 
-def get_project_stats(sources):
-    total_lines = 0
-    total_files = 0
-    languages = {}
-    for f, c in sources.items():
-        if c:
-            total_files += 1
-            lines = c.count("\n")
-            total_lines += lines
-            ext = os.path.splitext(f)[1] or "Makefile"
-            languages[ext] = languages.get(ext, 0) + lines
-    return {"files": total_files, "lines": total_lines,
-            "languages": languages}
+def stats(sources):
+    files = sum(1 for c in sources.values() if c)
+    lines = sum(c.count("\n") for c in sources.values() if c)
+    return files, lines
 
 # ══════════════════════════════════════════════════════
 # GIT ET BUILD
 # ══════════════════════════════════════════════════════
-def git_cmd(args):
+def git(args, cwd=None):
     r = subprocess.run(
-        ["git"] + args, cwd=REPO_PATH,
+        ["git"] + args,
+        cwd=cwd or REPO_PATH,
         capture_output=True, text=True
     )
     return r.returncode == 0, r.stdout, r.stderr
 
-def generate_commit_message(task_name, files_written, description, model_used):
-    now = datetime.utcnow()
-    dirs_touched = set()
-    for f in files_written:
+def commit_msg(nom, files, desc, model):
+    dirs = set()
+    for f in files:
         if "/" in f:
-            dirs_touched.add(f.split("/")[0])
+            dirs.add(f.split("/")[0])
 
-    if "kernel" in dirs_touched:
-        prefix = "kernel"
-    elif "drivers" in dirs_touched:
-        prefix = "driver"
-    elif "boot" in dirs_touched:
-        prefix = "boot"
-    elif "ui" in dirs_touched:
-        prefix = "ui"
-    elif "apps" in dirs_touched:
-        prefix = "feat(apps)"
-    else:
-        prefix = "feat"
+    prefix_map = {
+        "kernel": "kernel", "drivers": "driver",
+        "boot": "boot", "ui": "ui", "apps": "feat(apps)"
+    }
+    prefix = "feat"
+    for d_name, p in prefix_map.items():
+        if d_name in dirs:
+            prefix = p
+            break
 
-    files_short = ", ".join([os.path.basename(f) for f in files_written[:4]])
-    if len(files_written) > 4:
-        files_short += " +" + str(len(files_written) - 4)
+    fshort = ", ".join(os.path.basename(f) for f in files[:3])
+    if len(files) > 3:
+        fshort += " +" + str(len(files)-3)
 
-    short = prefix + ": " + task_name + " [" + files_short + "]"
+    short = prefix + ": " + nom + " [" + fshort + "]"
     body = (
-        "\n"
-        "Component : " + ", ".join(sorted(dirs_touched)) + "\n"
-        "Files     : " + ", ".join(files_written) + "\n"
-        "Model     : " + model_used + "\n"
-        "Timestamp : " + now.strftime("%Y-%m-%dT%H:%M:%SZ") + "\n"
-        "\n"
-        "Changes:\n"
-        "  " + description[:200] + "\n"
-        "\n"
-        "Build: gcc -m32 -ffreestanding -nostdlib | nasm ELF32\n"
-        "Target: x86 32-bit Protected Mode | QEMU i386\n"
+        "\n\nComponent : " + ", ".join(sorted(dirs)) + "\n"
+        "Files     : " + ", ".join(files) + "\n"
+        "Model     : " + model + "\n"
+        "Timestamp : " + datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ") + "\n"
+        "\nDescription:\n  " + desc[:200] + "\n"
+        "\nBuild: gcc -m32 -ffreestanding -nostdlib | nasm ELF32\n"
+        "Target: x86 32-bit Protected Mode | QEMU i386"
     )
     return short, short + body
 
-def git_push(task_name, files_written, description, model_used):
-    if not files_written:
+def do_push(nom, files, desc, model):
+    if not files:
         return True, None, None
-    short_msg, full_msg = generate_commit_message(
-        task_name, files_written, description, model_used
-    )
-    git_cmd(["add", "-A"])
-    ok, out, e = git_cmd(["commit", "-m", full_msg])
+    short, full = commit_msg(nom, files, desc, model)
+    git(["add", "-A"])
+    ok, out, err = git(["commit", "-m", full])
     if not ok:
-        if "nothing to commit" in (out + e):
-            print("[Git] Rien a committer")
+        if "nothing to commit" in (out + err):
             return True, None, None
-        print("[Git] Commit KO: " + e[:200])
+        print("[Git] Commit KO: " + err[:150])
         return False, None, None
-
-    _, sha, _ = git_cmd(["rev-parse", "HEAD"])
+    _, sha, _ = git(["rev-parse", "HEAD"])
     sha = sha.strip()[:7]
-
-    ok2, _, e2 = git_cmd(["push"])
+    ok2, _, e2 = git(["push"])
     if not ok2:
-        print("[Git] Push KO: " + e2[:200])
+        print("[Git] Push KO: " + e2[:150])
         return False, None, None
+    print("[Git] OK " + sha + ": " + short)
+    return True, sha, short
 
-    print("[Git] OK " + sha + ": " + short_msg)
-    return True, sha, short_msg
-
-def make_build():
+def do_build():
     subprocess.run(["make", "clean"], cwd=REPO_PATH, capture_output=True)
     r = subprocess.run(
         ["make"], cwd=REPO_PATH,
@@ -764,26 +683,120 @@ def make_build():
     )
     ok = r.returncode == 0
     log = r.stdout + r.stderr
-    errors = []
-    for line in log.split("\n"):
-        if "error:" in line.lower():
-            errors.append(line.strip())
+    errors = [l.strip() for l in log.split("\n") if "error:" in l.lower()]
     print("[Build] " + ("OK" if ok else "ECHEC") +
-          " (" + str(len(errors)) + " erreurs)")
+          " (" + str(len(errors)) + " err)")
     if not ok:
-        for e in errors[:6]:
-            print("  -> " + e)
-    return ok, log, errors[:15]
+        for e in errors[:5]:
+            print("  " + e)
+    return ok, log, errors[:12]
 
 # ══════════════════════════════════════════════════════
-# PARSER
+# PATCH BOOTLOADER (fix "kernel trop grand")
 # ══════════════════════════════════════════════════════
-def parse_files(response):
+def fix_boot_sectors():
+    """
+    Recalcule et met a jour le nombre de secteurs dans boot.asm
+    si le kernel a grossi.
+    """
+    kernel_path = os.path.join(REPO_PATH, "build", "kernel.bin")
+    boot_path = os.path.join(REPO_PATH, "boot", "boot.asm")
+
+    if not os.path.exists(kernel_path) or not os.path.exists(boot_path):
+        return False
+
+    kernel_size = os.path.getsize(kernel_path)
+    sectors_needed = (kernel_size + 511) // 512
+    # Ajouter marge de 10%
+    sectors_with_margin = int(sectors_needed * 1.15) + 5
+
+    print("[Boot] Kernel: " + str(kernel_size) +
+          " bytes = " + str(sectors_needed) + " secteurs")
+    print("[Boot] Secteurs avec marge: " + str(sectors_with_margin))
+
+    with open(boot_path, "r") as f:
+        content = f.read()
+
+    # Chercher la ligne qui definit le nombre de secteurs
+    # Patterns communs: "sectors_count equ X", "mov cx, X", "SECTORS equ X"
+    patterns = [
+        (r'(SECTORS\s+equ\s+)(\d+)', True),
+        (r'(sectors_count\s+equ\s+)(\d+)', True),
+        (r'(mov\s+cx,\s*)(\d+)', False),  # attention, peut etre autre chose
+        (r'(times\s+\d+\s*-\s*\$\s+db\s+)', False),
+    ]
+
+    modified = False
+    new_content = content
+
+    # Chercher et remplacer le nombre de secteurs a charger
+    # Pattern le plus commun dans les bootloaders simples
+    match = re.search(r'(mov\s+cl\s*,\s*)(\d+)', content)
+    if match:
+        old_val = int(match.group(2))
+        if sectors_with_margin > old_val:
+            new_content = content[:match.start()] + \
+                          match.group(1) + str(sectors_with_margin) + \
+                          content[match.end():]
+            modified = True
+            print("[Boot] Mis a jour: mov cl, " +
+                  str(old_val) + " -> " + str(sectors_with_margin))
+
+    if not modified:
+        # Chercher "SECTORS equ"
+        match2 = re.search(r'(SECTORS\s+equ\s+)(\d+)', content, re.IGNORECASE)
+        if match2:
+            old_val = int(match2.group(2))
+            if sectors_with_margin > old_val:
+                new_content = content[:match2.start()] + \
+                              match2.group(1) + str(sectors_with_margin) + \
+                              content[match2.end():]
+                modified = True
+                print("[Boot] Mis a jour: SECTORS " +
+                      str(old_val) + " -> " + str(sectors_with_margin))
+
+    if modified:
+        with open(boot_path, "w") as f:
+            f.write(new_content)
+        print("[Boot] boot.asm mis a jour")
+        return True
+
+    print("[Boot] Pattern non trouve dans boot.asm - demande a l'IA")
+    return False
+
+def check_kernel_size_and_fix():
+    """
+    Verifie si le kernel est trop grand pour le bootloader
+    et corrige automatiquement.
+    """
+    boot_path = os.path.join(REPO_PATH, "build", "boot.bin")
+    kernel_path = os.path.join(REPO_PATH, "build", "kernel.bin")
+
+    if not os.path.exists(boot_path) or not os.path.exists(kernel_path):
+        return True  # Pas encore compile
+
+    kernel_size = os.path.getsize(kernel_path)
+    sectors = (kernel_size + 511) // 512
+
+    # Une disquette = 2880 secteurs, le boot prend 1
+    if sectors > 2878:
+        print("[Boot] ERREUR: Kernel trop grand (" +
+              str(sectors) + " secteurs > 2878)")
+        return False
+
+    print("[Boot] Taille OK: " + str(sectors) + " secteurs")
+    return True
+
+# ══════════════════════════════════════════════════════
+# PARSER DE FICHIERS
+# ══════════════════════════════════════════════════════
+def parse_response(response):
+    """Parse les fichiers dans la reponse de l'IA."""
     files = {}
+    to_delete = []
     cur_file = None
     cur_lines = []
     in_file = False
-    to_delete = []
 
     for line in response.split("\n"):
         s = line.strip()
@@ -793,7 +806,7 @@ def parse_files(response):
                 start = s.index("=== FILE:") + 9
                 end = s.rindex("===")
                 fname = s[start:end].strip().strip("`").strip()
-                if fname:
+                if fname and "/" in fname or fname == "Makefile":
                     cur_file = fname
                     cur_lines = []
                     in_file = True
@@ -811,9 +824,9 @@ def parse_files(response):
                         break
                 if content.endswith("```"):
                     content = content[:-3].rstrip("\n")
-                if content:
+                if content.strip():
                     files[cur_file] = content
-                    print("[Parse] OK " + cur_file +
+                    print("[Parse] " + cur_file +
                           " (" + str(len(content)) + " chars)")
             cur_file = None
             cur_lines = []
@@ -822,9 +835,7 @@ def parse_files(response):
 
         if "=== DELETE:" in s and s.endswith("==="):
             try:
-                start = s.index("=== DELETE:") + 11
-                end = s.rindex("===")
-                fname = s[start:end].strip()
+                fname = s[s.index("=== DELETE:")+11:s.rindex("===")].strip()
                 if fname:
                     to_delete.append(fname)
                     print("[Parse] DELETE: " + fname)
@@ -849,7 +860,7 @@ def write_files(files):
         with open(full, "w", encoding="utf-8") as f:
             f.write(content)
         written.append(path)
-        print("[Write] " + path + " (" + str(len(content)) + " chars)")
+        print("[Write] " + path + " (" + str(len(content)) + " c)")
     return written
 
 def delete_files(paths):
@@ -861,10 +872,10 @@ def delete_files(paths):
         if os.path.exists(full):
             os.remove(full)
             deleted.append(path)
-            print("[Delete] " + path)
+            print("[Del] " + path)
     return deleted
 
-def backup_files(paths):
+def backup(paths):
     b = {}
     for p in paths:
         full = os.path.join(REPO_PATH, p)
@@ -873,7 +884,7 @@ def backup_files(paths):
                 b[p] = f.read()
     return b
 
-def restore_files(backups):
+def restore(backups):
     for p, c in backups.items():
         full = os.path.join(REPO_PATH, p)
         parent = os.path.dirname(full)
@@ -884,53 +895,45 @@ def restore_files(backups):
     print("[Restore] " + str(len(backups)) + " fichier(s)")
 
 # ══════════════════════════════════════════════════════
-# PHASE 1 : ANALYSE
+# PHASE 1 : ANALYSE (prompt compact)
 # ══════════════════════════════════════════════════════
-def phase_analyse(context, stats):
-    print("\n[Phase 1] Analyse...")
+def phase_analyse(sources):
+    print("\n[Analyse] Debut...")
+    nf, nl = stats(sources)
+
+    # Contexte minimal pour l'analyse
+    ctx = "FICHIERS: " + ", ".join(f for f, c in sources.items() if c) + "\n\n"
+
+    # Ajouter kernel.c et Makefile seulement
+    for key_file in ["kernel/kernel.c", "Makefile", "ui/ui.c",
+                     "apps/terminal.c"]:
+        c = sources.get(key_file, "")
+        if c:
+            ctx += "=== " + key_file + " ===\n" + c[:2000] + "\n\n"
 
     prompt = (
-        "Tu es un expert OS bare metal x86.\n\n" +
-        BARE_METAL_RULES + "\n\n" +
-        OS_MISSION + "\n\n" +
-        context + "\n\n"
-        "STATS: " + str(stats["files"]) + " fichiers, " +
-        str(stats["lines"]) + " lignes\n\n"
-        "Retourne UNIQUEMENT ce JSON valide, sans texte avant ni apres.\n"
-        "Commence directement par { :\n\n"
-        "{\n"
-        '  "score_actuel": 35,\n'
-        '  "niveau_os": "Prototype bare metal",\n'
-        '  "commentaire_global": "Description courte",\n'
-        '  "fonctionnalites_presentes": ["Boot x86", "VGA texte"],\n'
-        '  "fonctionnalites_manquantes_critiques": ["IDT", "Timer PIT"],\n'
-        '  "problemes_critiques": [\n'
-        '    {"fichier": "kernel/kernel.c", "description": "probleme", "impact": "CRITIQUE"}\n'
-        '  ],\n'
-        '  "fichiers_obsoletes": [],\n'
-        '  "plan_ameliorations": [\n'
-        '    {\n'
-        '      "nom": "IDT complete + PIC 8259",\n'
-        '      "priorite": "CRITIQUE",\n'
-        '      "categorie": "kernel",\n'
-        '      "fichiers_a_modifier": ["kernel/kernel.c"],\n'
-        '      "fichiers_a_creer": ["kernel/idt.h", "kernel/idt.c"],\n'
-        '      "fichiers_a_supprimer": [],\n'
-        '      "description": "Description technique preciseavec details implementati on",\n'
-        '      "impact_attendu": "Ce que l utilisateur verra",\n'
-        '      "complexite": "HAUTE"\n'
-        '    }\n'
-        '  ],\n'
-        '  "prochaine_milestone": "Kernel stable"\n'
-        "}"
+        RULES_SHORT + "\n\n" +
+        MISSION + "\n\n" +
+        ctx +
+        "Stats: " + str(nf) + " fichiers, " + str(nl) + " lignes\n\n"
+        "Analyse MaxOS. Reponds UNIQUEMENT en JSON valide.\n"
+        "Commence par { directement:\n\n"
+        '{"score":35,"niveau":"Prototype","features":["Boot x86","VGA"],'
+        '"missing":["IDT","Timer"],'
+        '"tasks":[{"nom":"Nom court","prio":"CRITIQUE","cat":"kernel",'
+        '"modify":["kernel/kernel.c"],"create":["kernel/idt.h","kernel/idt.c"],'
+        '"delete":[],"desc":"Description technique","impact":"Impact visible",'
+        '"complexity":"HAUTE"}],'
+        '"milestone":"Kernel stable"}'
     )
 
-    response = gemini(prompt, max_tokens=4000)
+    response = call_gemini(prompt, max_tokens=3000)
     if not response:
         return None
 
-    print("[Phase 1] " + str(len(response)) + " chars")
+    print("[Analyse] " + str(len(response)) + " chars")
 
+    # Nettoyer
     clean = response.strip()
     if clean.startswith("```"):
         lines = clean.split("\n")[1:]
@@ -938,89 +941,80 @@ def phase_analyse(context, stats):
             lines = lines[:-1]
         clean = "\n".join(lines).strip()
 
-    # Nettoyer les backslashes invalides
+    # Nettoyer backslashes invalides
     clean = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', clean)
 
-    for attempt in range(3):
+    for _ in range(3):
         i = clean.find("{")
         j = clean.rfind("}") + 1
         if i >= 0 and j > i:
             try:
-                return json.loads(clean[i:j])
+                data = json.loads(clean[i:j])
+                # Normaliser le format
+                if "tasks" in data and "plan_ameliorations" not in data:
+                    data["plan_ameliorations"] = []
+                    for t in data["tasks"]:
+                        data["plan_ameliorations"].append({
+                            "nom": t.get("nom", "?"),
+                            "priorite": t.get("prio", "NORMALE"),
+                            "categorie": t.get("cat", "general"),
+                            "fichiers_a_modifier": t.get("modify", []),
+                            "fichiers_a_creer": t.get("create", []),
+                            "fichiers_a_supprimer": t.get("delete", []),
+                            "description": t.get("desc", ""),
+                            "impact_attendu": t.get("impact", ""),
+                            "complexite": t.get("complexity", "MOYENNE"),
+                        })
+                return data
             except json.JSONDecodeError as e:
-                print("[Phase 1] JSON err " + str(attempt+1) + ": " + str(e))
+                print("[Analyse] JSON err: " + str(e))
+                clean = clean[clean.find("{"):]
 
-    # Plan par defaut
-    print("[Phase 1] Plan par defaut")
+    # Plan par defaut robuste
+    print("[Analyse] Plan par defaut")
     return {
-        "score_actuel": 30,
-        "niveau_os": "Prototype bare metal",
-        "commentaire_global": "OS basique fonctionnel, base solide pour ameliorations",
-        "fonctionnalites_presentes": [
-            "Boot x86", "Mode texte VGA", "Clavier PS/2", "4 applications"
-        ],
-        "fonctionnalites_manquantes_critiques": [
-            "IDT complete", "Timer PIT", "Gestionnaire memoire",
-            "Mode graphique", "Systeme de fichiers"
-        ],
-        "problemes_critiques": [],
-        "fichiers_obsoletes": [],
+        "score": 30,
+        "niveau": "Prototype bare metal",
+        "features": ["Boot x86", "VGA texte", "Clavier", "4 apps"],
+        "missing": ["IDT", "Timer PIT", "Memoire", "GUI", "FAT12"],
+        "milestone": "Kernel stable",
         "plan_ameliorations": [
             {
-                "nom": "IDT 256 entrees + PIC 8259 + handlers exceptions x86",
+                "nom": "IDT + PIC 8259 + exceptions x86",
                 "priorite": "CRITIQUE",
                 "categorie": "kernel",
                 "fichiers_a_modifier": [
-                    "kernel/kernel.c", "kernel/kernel_entry.asm"
+                    "kernel/kernel.c", "kernel/kernel_entry.asm", "Makefile"
                 ],
                 "fichiers_a_creer": ["kernel/idt.h", "kernel/idt.c"],
                 "fichiers_a_supprimer": [],
                 "description": (
-                    "Implémenter IDT 256 entrées. Handlers pour exceptions "
-                    "0-31 (div0, NMI, breakpoint, overflow, GPF, page fault). "
-                    "Remapper PIC 8259 (IRQ0-7 -> INT 32-39, "
-                    "IRQ8-15 -> INT 40-47). Stubs NASM pour chaque vecteur "
-                    "avec save/restore registres. Handler generique affiche "
-                    "nom exception + registres. Panic screen rouge."
+                    "IDT 256 entrees. PIC 8259 remappage "
+                    "(IRQ0-7 -> INT32, IRQ8-15 -> INT40). "
+                    "Handlers NASM pour exceptions 0-31. "
+                    "Panic screen rouge sur exception."
                 ),
-                "impact_attendu": "OS stable, exceptions catchees, pas de triple fault",
+                "impact_attendu": "OS stable, pas de triple fault",
                 "complexite": "HAUTE"
             },
             {
-                "nom": "Timer PIT 8253 100Hz + sleep_ms() + uptime",
+                "nom": "Timer PIT 8253 + sleep_ms + uptime",
                 "priorite": "CRITIQUE",
                 "categorie": "kernel",
-                "fichiers_a_modifier": ["kernel/kernel.c"],
+                "fichiers_a_modifier": ["kernel/kernel.c", "Makefile"],
                 "fichiers_a_creer": ["kernel/timer.h", "kernel/timer.c"],
                 "fichiers_a_supprimer": [],
                 "description": (
-                    "Configurer PIT canal 0 a 100Hz (diviseur 11931). "
-                    "Variable globale tick_count atomique. "
-                    "timer_init(), timer_ticks(), sleep_ms(unsigned int ms). "
-                    "Afficher uptime HH:MM:SS dans sysinfo. "
-                    "Necessite IDT fonctionnelle pour IRQ0."
+                    "PIT canal 0 a 100Hz (diviseur 11931). "
+                    "Compteur global ticks. timer_init(), "
+                    "timer_ticks(), sleep_ms(ms). "
+                    "uptime dans sysinfo."
                 ),
-                "impact_attendu": "Horloge systeme, animations fluides, uptime dans sysinfo",
+                "impact_attendu": "Horloge, animations, uptime",
                 "complexite": "MOYENNE"
             },
             {
-                "nom": "Allocateur memoire physique bitmap pages 4KB",
-                "priorite": "HAUTE",
-                "categorie": "kernel",
-                "fichiers_a_modifier": ["kernel/kernel.c"],
-                "fichiers_a_creer": ["kernel/memory.h", "kernel/memory.c"],
-                "fichiers_a_supprimer": [],
-                "description": (
-                    "Bitmap 1 bit par page 4KB. Zone utilisable 1MB-16MB "
-                    "(3840 pages max). mem_init(), mem_alloc_page() -> addr, "
-                    "mem_free_page(addr), mem_used_pages(), mem_free_pages(). "
-                    "Afficher stats dans sysinfo: X MB libres / Y MB totaux."
-                ),
-                "impact_attendu": "Base pour allocation dynamique, stats memoire dans sysinfo",
-                "complexite": "HAUTE"
-            },
-            {
-                "nom": "Terminal 20 commandes + historique 20 entrees",
+                "nom": "Terminal 20 commandes + historique fleches",
                 "priorite": "HAUTE",
                 "categorie": "app",
                 "fichiers_a_modifier": [
@@ -1029,177 +1023,205 @@ def phase_analyse(context, stats):
                 "fichiers_a_creer": [],
                 "fichiers_a_supprimer": [],
                 "description": (
-                    "Commandes: help, ver, mem, uptime, cls, echo [texte], "
-                    "date, reboot, halt, color [fg] [bg], beep [freq] [dur], "
-                    "calc [expr], snake, pong, about, credits, clear, ps, "
-                    "sysinfo, license. "
+                    "Commandes: help ver mem uptime cls echo "
+                    "date reboot halt color beep calc snake "
+                    "about credits sysinfo ps license clear. "
                     "Historique circulaire 20 entrees (fleche haut/bas). "
-                    "Prompt colore avec curseur clignotant. "
-                    "Erreur si commande inconnue."
+                    "Prompt color avec heure."
                 ),
-                "impact_attendu": "Terminal type cmd.exe, experience utilisateur amelioree",
+                "impact_attendu": "Terminal type cmd.exe complet",
                 "complexite": "MOYENNE"
             },
             {
-                "nom": "Desktop graphique VGA mode 13h 320x200",
+                "nom": "Allocateur memoire bitmap 4KB",
+                "priorite": "HAUTE",
+                "categorie": "kernel",
+                "fichiers_a_modifier": ["kernel/kernel.c", "Makefile"],
+                "fichiers_a_creer": ["kernel/memory.h", "kernel/memory.c"],
+                "fichiers_a_supprimer": [],
+                "description": (
+                    "Bitmap 1bit/page 4KB. Zone 1MB-16MB. "
+                    "mem_init() mem_alloc() mem_free() "
+                    "mem_used() mem_total(). "
+                    "Stats dans sysinfo."
+                ),
+                "impact_attendu": "Stats memoire dans sysinfo",
+                "complexite": "HAUTE"
+            },
+            {
+                "nom": "Mode graphique VGA 320x200 + desktop",
                 "priorite": "NORMALE",
                 "categorie": "driver",
                 "fichiers_a_modifier": [
-                    "drivers/screen.h", "drivers/screen.c"
+                    "drivers/screen.h", "drivers/screen.c",
+                    "kernel/kernel.c", "Makefile"
                 ],
                 "fichiers_a_creer": ["drivers/vga.h", "drivers/vga.c"],
                 "fichiers_a_supprimer": [],
                 "description": (
-                    "Mode VGA 13h (320x200, 256 couleurs, framebuffer 0xA0000). "
-                    "vga_init(), vga_pixel(x,y,col), vga_rect(x,y,w,h,col), "
-                    "vga_hline(), vga_vline(), vga_clear(col), "
-                    "vga_text(x,y,str,col). "
-                    "Palette 256 couleurs standard VGA. "
-                    "Desktop: fond degrade bleu-noir, barre taches bas, "
-                    "icones applications. Fallback mode texte si echec init."
+                    "VGA mode 13h 320x200 256 couleurs. "
+                    "vga_init() vga_pixel() vga_rect() vga_text(). "
+                    "Desktop degrade bleu, taskbar, icones."
                 ),
-                "impact_attendu": "Interface graphique coloree type Windows 3.1",
+                "impact_attendu": "Interface graphique coloree",
                 "complexite": "HAUTE"
             },
-        ],
-        "prochaine_milestone": "Kernel stable avec IDT + Timer + Memory"
+        ]
     }
 
 # ══════════════════════════════════════════════════════
-# PHASE 2 : IMPLEMENTATION
+# PHASE 2 : IMPLEMENTATION (prompt optimise)
 # ══════════════════════════════════════════════════════
-def phase_implement(task, all_sources):
-    nom = task.get("nom", "Amelioration")
-    categorie = task.get("categorie", "general")
-    fichiers_m = task.get("fichiers_a_modifier", [])
-    fichiers_c = task.get("fichiers_a_creer", [])
-    fichiers_s = task.get("fichiers_a_supprimer", [])
-    desc = task.get("description", "")
-    impact = task.get("impact_attendu", "")
-    complexite = task.get("complexite", "MOYENNE")
-    tous = list(set(fichiers_m + fichiers_c))
+def implement_task(task, sources):
+    nom         = task.get("nom", "Amelioration")
+    cat         = task.get("categorie", "general")
+    f_modify    = task.get("fichiers_a_modifier", [])
+    f_create    = task.get("fichiers_a_creer", [])
+    f_delete    = task.get("fichiers_a_supprimer", [])
+    desc        = task.get("description", "")
+    impact      = task.get("impact_attendu", "")
+    complexity  = task.get("complexite", "MOYENNE")
+    all_targets = list(set(f_modify + f_create))
 
-    current_model = ACTIVE_MODELS.get(
+    cur_model = ACTIVE_MODELS.get(
         KEY_STATE["current_index"], {}
-    ).get("model", "gemini")
+    ).get("model", "?")
 
     print("\n[Impl] " + nom)
-    print("  Cat: " + categorie + " | Complexite: " + complexite)
-    print("  Modifier:  " + str(fichiers_m))
-    print("  Creer:     " + str(fichiers_c))
-    print("  Supprimer: " + str(fichiers_s))
+    print("  " + cat + " | " + complexity)
+    print("  Modifier: " + str(f_modify))
+    print("  Creer:    " + str(f_create))
 
-    # Construire le contexte cible
-    lies = set(tous)
-    for f in tous:
-        base = f.replace(".c", "").replace(".h", "")
-        for ext in [".c", ".h"]:
-            if (base + ext) in all_sources:
-                lies.add(base + ext)
+    # Contexte cible uniquement (pas tout le projet)
+    targets_ctx = ""
+    already = set()
 
-    # Toujours inclure les fichiers cles
-    for key in ["kernel/kernel.c", "drivers/screen.h",
-                "drivers/keyboard.h", "ui/ui.h", "ui/ui.c",
-                "Makefile", "linker.ld", "kernel/kernel_entry.asm"]:
-        lies.add(key)
+    # Fichiers directement concernes
+    for f in all_targets:
+        c = sources.get(f, "")
+        targets_ctx += "=== " + f + " ===\n"
+        targets_ctx += (c if c else "[CREER CE FICHIER]") + "\n\n"
+        already.add(f)
 
-    ctx = "=== FICHIERS CONCERNES ===\n\n"
-    for f in sorted(lies):
-        c = all_sources.get(f, "")
-        ctx += "--- " + f + " ---\n"
-        ctx += (c if c else "[MANQUANT - A CREER]") + "\n\n"
+        # Fichier .h correspondant si .c
+        partner = f.replace(".c", ".h") if f.endswith(".c") else ""
+        if partner and partner not in already:
+            pc = sources.get(partner, "")
+            if pc:
+                targets_ctx += "=== " + partner + " ===\n" + pc + "\n\n"
+                already.add(partner)
+
+    # Toujours inclure kernel.c, Makefile, screen.h, keyboard.h
+    for essential in ["kernel/kernel.c", "Makefile",
+                      "drivers/screen.h", "drivers/keyboard.h",
+                      "ui/ui.h", "linker.ld"]:
+        if essential not in already:
+            c = sources.get(essential, "")
+            if c:
+                targets_ctx += "=== " + essential + " ===\n" + c + "\n\n"
+                already.add(essential)
+
+    # Limiter la taille du contexte
+    if len(targets_ctx) > 25000:
+        targets_ctx = targets_ctx[:25000] + "\n...[TRONQUE]\n"
+
+    max_tok = 49152 if complexity == "HAUTE" else 32768
 
     prompt = (
-        "Tu es un expert OS bare metal x86.\n"
-        "Tu developpes MaxOS avec l'ambition d'un OS complet.\n\n" +
-        BARE_METAL_RULES + "\n\n" +
-        OS_MISSION + "\n\n" +
-        ctx + "\n"
-        "TACHE : " + nom + "\n"
-        "CATEGORIE : " + categorie + "\n"
-        "COMPLEXITE : " + complexite + "\n"
-        "DESCRIPTION : " + desc + "\n"
-        "IMPACT ATTENDU : " + impact + "\n"
-        "FICHIERS A MODIFIER : " + str(fichiers_m) + "\n"
-        "FICHIERS A CREER : " + str(fichiers_c) + "\n"
-        "FICHIERS A SUPPRIMER : " + str(fichiers_s) + "\n\n"
-        "INSTRUCTIONS :\n"
-        "1. Code COMPLET dans chaque fichier\n"
-        "2. JAMAIS de '// reste inchange' ou '...'\n"
-        "3. Nouveaux .c -> mettre a jour Makefile\n"
-        "4. Pour supprimer un fichier: === DELETE: chemin ===\n"
-        "5. Commenter avec /* */ les sections importantes\n"
-        "6. Tester mentalement que le code compile\n\n"
-        "FORMAT OBLIGATOIRE:\n"
+        RULES_FULL + "\n\n" +
+        MISSION + "\n\n"
+        "CONTEXTE:\n" + targets_ctx + "\n"
+        "TACHE: " + nom + "\n"
+        "CATEGORIE: " + cat + "\n"
+        "DESCRIPTION: " + desc + "\n"
+        "IMPACT: " + impact + "\n"
+        "MODIFIER: " + str(f_modify) + "\n"
+        "CREER: " + str(f_create) + "\n"
+        "SUPPRIMER: " + str(f_delete) + "\n\n"
+        "INSTRUCTIONS:\n"
+        "1. Code COMPLET - jamais '// reste inchange'\n"
+        "2. Nouveaux .c -> ajouter dans Makefile\n"
+        "3. Pour supprimer: === DELETE: chemin ===\n"
+        "4. Code original et unique\n"
+        "5. Commenter avec /* */ les sections cles\n\n"
+        "FORMAT:\n"
         "=== FILE: chemin/fichier.c ===\n"
         "[code complet]\n"
         "=== END FILE ===\n\n"
-        "COMMENCE DIRECTEMENT PAR LE PREMIER FICHIER :"
+        "COMMENCE:"
     )
 
     t0 = time.time()
-    max_tok = 65536 if complexite == "HAUTE" else 32768
-    response = gemini(prompt, max_tokens=max_tok)
-    elapsed = time.time() - t0
+    response = call_gemini(prompt, max_tokens=max_tok)
+    elapsed = round(time.time() - t0, 1)
 
     if not response:
-        d("Echec: " + nom, "Gemini n'a pas repondu.", 0xFF0000)
+        d("Echec: " + nom, "Gemini n'a pas repondu.", 0xFF4444)
         return False, [], []
 
-    print("[Impl] " + str(len(response)) +
-          " chars en " + str(round(elapsed, 1)) + "s")
+    print("[Impl] " + str(len(response)) + " chars en " + str(elapsed) + "s")
 
-    files, to_delete = parse_files(response)
+    files, to_del = parse_response(response)
 
-    if not files and not to_delete:
-        print("[Debug] Debut reponse:\n" + response[:500])
-        d("Echec parse: " + nom,
-          "Aucun fichier parse.\n```\n" + response[:400] + "\n```",
-          0xFF0000)
+    if not files and not to_del:
+        print("[Debug] " + response[:400])
+        d("Echec parse: " + nom, response[:300], 0xFF4444)
         return False, [], []
 
-    backs = backup_files(list(files.keys()))
+    # Backup et ecriture
+    bak = backup(list(files.keys()))
     written = write_files(files)
-    deleted = delete_files(to_delete)
+    deleted = delete_files(to_del)
 
     if not written and not deleted:
-        d("Echec: " + nom, "Aucun fichier ecrit", 0xFF0000)
         return False, [], []
 
-    build_ok, log, errors = make_build()
+    # Build
+    build_ok, log, errors = do_build()
 
     if build_ok:
-        pushed, sha, short_msg = git_push(
-            nom, written + deleted, desc, current_model
-        )
+        # Verifier taille kernel
+        if not check_kernel_size_and_fix():
+            # Kernel trop grand -> tenter fix boot
+            if fix_boot_sectors():
+                build_ok2, log2, errors2 = do_build()
+                if not build_ok2:
+                    restore(bak)
+                    return False, [], []
+            else:
+                restore(bak)
+                return False, [], []
+
+        pushed, sha, _ = do_push(nom, written + deleted, desc, cur_model)
         if pushed:
             return True, written, deleted
-        restore_files(backs)
+        restore(bak)
         return False, [], []
-    else:
-        fixed = auto_fix(log, errors, files, backs, current_model)
-        if fixed:
-            return True, written, deleted
-        restore_files(backs)
-        for p in written:
-            if p not in backs:
-                fp = os.path.join(REPO_PATH, p)
-                if os.path.exists(fp):
-                    os.remove(fp)
-        return False, [], []
+
+    # Auto-fix
+    fixed = auto_fix_errors(log, errors, files, bak, cur_model)
+    if fixed:
+        return True, written, deleted
+
+    restore(bak)
+    for p in written:
+        if p not in bak:
+            fp = os.path.join(REPO_PATH, p)
+            if os.path.exists(fp):
+                os.remove(fp)
+    return False, [], []
 
 # ══════════════════════════════════════════════════════
 # AUTO-FIX
 # ══════════════════════════════════════════════════════
-def auto_fix(build_log, errors, generated_files, backups,
-             model_used, max_attempts=2):
-    print("[Fix] Correction automatique...")
+def auto_fix_errors(build_log, errors, gen_files, backups,
+                    model_used, max_tries=2):
+    print("[Fix] Auto-correction " + str(len(errors)) + " erreurs...")
 
-    for attempt in range(1, max_attempts + 1):
-        print("[Fix] Tentative " + str(attempt) + "/" + str(max_attempts))
-
+    for attempt in range(1, max_tries + 1):
+        # Lire les fichiers actuels
         current = {}
-        for p in generated_files:
+        for p in gen_files:
             fp = os.path.join(REPO_PATH, p)
             if os.path.exists(fp):
                 with open(fp, "r") as f:
@@ -1207,412 +1229,335 @@ def auto_fix(build_log, errors, generated_files, backups,
 
         ctx = ""
         for p, c in current.items():
-            ctx += "--- " + p + " ---\n" + c[:3000] + "\n\n"
+            ctx += "=== " + p + " ===\n" + c[:2500] + "\n\n"
 
-        error_txt = "\n".join(errors[:12])
+        err_txt = "\n".join(errors[:10])
 
         prompt = (
-            "Corrige ces erreurs de compilation bare metal x86.\n\n" +
-            BARE_METAL_RULES + "\n\n"
-            "ERREURS:\n```\n" + error_txt + "\n```\n\n"
-            "LOG FIN:\n```\n" + build_log[-1500:] + "\n```\n\n"
-            "FICHIERS ACTUELS:\n" + ctx + "\n"
-            "REGLES: Code complet, pas de librairies standard.\n\n"
-            "=== FILE: fichier.c ===\n"
-            "[code corrige complet]\n"
-            "=== END FILE ==="
+            RULES_SHORT + "\n\n"
+            "ERREURS DE COMPILATION:\n```\n" + err_txt + "\n```\n\n"
+            "LOG (fin):\n```\n" + build_log[-1200:] + "\n```\n\n"
+            "FICHIERS:\n" + ctx +
+            "CORRIGE uniquement les erreurs. Code complet.\n\n"
+            "=== FILE: fichier.c ===\n[code corrige]\n=== END FILE ==="
         )
 
-        response = gemini(prompt, max_tokens=32768)
+        response = call_gemini(prompt, max_tokens=24576)
         if not response:
             continue
 
-        files, _ = parse_files(response)
+        files, _ = parse_response(response)
         if not files:
             continue
 
         write_files(files)
-        ok, log, new_errors = make_build()
+        ok, log, new_errors = do_build()
 
         if ok:
-            git_push(
-                "fix: correction erreurs compilation",
+            do_push(
+                "fix: correction compilation",
                 list(files.keys()),
                 "Auto-fix: " + str(len(errors)) + " erreurs -> 0",
                 model_used
             )
-            d("Auto-correction reussie",
-              "Tentative " + str(attempt) + ": " +
-              str(len(errors)) + " erreurs corrigees.",
-              0x00AAFF)
+            d("Auto-fix reussi",
+              str(len(errors)) + " erreurs corrigees.", 0x00AAFF)
             return True
 
         errors = new_errors
-        time.sleep(10)
+        time.sleep(15)
 
-    restore_files(backups)
+    restore(backups)
     return False
 
 # ══════════════════════════════════════════════════════
-# GESTION PULL REQUESTS
+# PULL REQUESTS
 # ══════════════════════════════════════════════════════
-def handle_pull_requests():
-    prs = github_get_open_prs()
+def handle_prs():
+    prs = gh_get_prs()
     if not prs:
-        print("[PR] Aucune PR ouverte")
         return
 
     print("[PR] " + str(len(prs)) + " PR(s)")
 
     for pr in prs:
-        pr_number = pr.get("number")
-        pr_title = pr.get("title", "")
-        pr_author = pr.get("user", {}).get("login", "unknown")
-        pr_body = pr.get("body", "") or ""
+        num = pr.get("number")
+        title = pr.get("title", "")
+        author = pr.get("user", {}).get("login", "")
 
-        # Ne pas auto-merger les PRs faites par l'IA elle-meme
-        if "AI" in pr_author or pr_author == "github-actions":
-            print("[PR] Skip PR bot: #" + str(pr_number))
+        # Skip les PRs du bot
+        if author in ("github-actions", "MaxOS-AI-Bot"):
             continue
 
-        print("[PR] Analyse #" + str(pr_number) + ": " + pr_title)
-
-        files_data = github_api(
-            "GET", "pulls/" + str(pr_number) + "/files"
-        )
+        files_data = gh("GET", "pulls/" + str(num) + "/files")
         if not files_data:
             continue
 
         file_list = "\n".join([
-            "- " + f.get("filename", "?") +
-            " (+" + str(f.get("additions", 0)) +
-            " -" + str(f.get("deletions", 0)) + ")"
-            for f in files_data[:15]
+            "- " + f.get("filename", "") +
+            " (+" + str(f.get("additions", 0)) + ")"
+            for f in files_data[:10]
         ])
 
-        patches = ""
-        for f in files_data[:3]:
-            patch = f.get("patch", "")[:600]
-            if patch:
-                patches += "--- " + f.get("filename", "?") + " ---\n"
-                patches += patch + "\n\n"
-
         prompt = (
-            "Tu es le mainteneur de MaxOS (OS bare metal x86).\n\n" +
-            BARE_METAL_RULES + "\n\n"
-            "PR #" + str(pr_number) + ": " + pr_title + "\n"
-            "Auteur: " + pr_author + "\n"
-            "Description: " + pr_body[:300] + "\n\n"
+            RULES_SHORT + "\n\n"
+            "PR #" + str(num) + ": " + title + "\n"
+            "Auteur: " + author + "\n"
             "Fichiers:\n" + file_list + "\n\n"
-            "Changements:\n" + patches + "\n\n"
-            "Reponds en JSON simple:\n"
-            "{\n"
-            '  "action": "MERGE" ou "REJECT",\n'
-            '  "raison": "courte",\n'
-            '  "commentaire": "pour le dev"\n'
-            "}\n\n"
-            "MERGER si: compile, bare metal, ameliore l OS.\n"
-            "REJETER si: librairies standard, casse le build.\n"
+            "Decision en JSON:\n"
+            '{"action":"MERGE","raison":"ok","comment":"bien"}\n'
+            "MERGE si bare metal correct. REJECT si librairies standard.\n"
             "Commence par { :"
         )
 
-        response = gemini(prompt, max_tokens=500)
+        response = call_gemini(prompt, max_tokens=300)
         if not response:
             continue
 
         action = "REJECT"
         raison = "Analyse impossible"
-        commentaire = "Review automatique echouee"
 
         try:
             clean = response.strip()
             if clean.startswith("```"):
-                lines = clean.split("\n")[1:]
-                if lines and lines[-1].strip() == "```":
-                    lines = lines[:-1]
-                clean = "\n".join(lines)
+                clean = "\n".join(clean.split("\n")[1:])
+                if clean.endswith("```"):
+                    clean = clean[:-3]
             i = clean.find("{")
             j = clean.rfind("}") + 1
             if i >= 0 and j > i:
                 dec = json.loads(clean[i:j])
                 action = dec.get("action", "REJECT")
                 raison = dec.get("raison", "")
-                commentaire = dec.get("commentaire", "")
         except Exception:
             pass
 
-        comment_body = (
-            "## Review automatique MaxOS AI v8.1\n\n"
-            "**Decision:** " + action + "\n"
-            "**Raison:** " + raison + "\n\n"
-            + commentaire + "\n\n"
-            "---\n*Review par MaxOS AI Developer v8.1*"
-        )
-
-        github_comment_pr(pr_number, comment_body)
+        body = ("## Review MaxOS AI v8.2\n\n"
+                "**" + action + "** - " + raison + "\n\n"
+                "*Review automatique*")
+        gh_comment(num, body)
 
         if action == "MERGE":
-            if github_merge_pr(pr_number, pr_title):
-                d("PR #" + str(pr_number) + " mergee",
-                  pr_title + "\n" + raison, 0x00FF88)
-            else:
-                print("[PR] Merge echec #" + str(pr_number))
+            if gh_merge_pr(num, title):
+                d("PR #" + str(num) + " mergee",
+                  title + "\n" + raison, 0x00FF88)
         else:
-            github_close_pr(pr_number)
-            d("PR #" + str(pr_number) + " rejetee",
-              pr_title + "\n" + raison, 0xFF4444)
+            gh_close_pr(num)
+            d("PR #" + str(num) + " rejetee",
+              title + "\n" + raison, 0xFF4444)
 
 # ══════════════════════════════════════════════════════
 # RELEASE
 # ══════════════════════════════════════════════════════
-def create_release(tasks_done, tasks_failed, analyse_data, stats):
+def make_release(tasks_done, tasks_failed, analyse, nfiles, nlines):
     if not GITHUB_TOKEN:
         return None
 
-    result = github_api("GET", "tags?per_page=1")
-    last_tag = "v0.0.0"
-    if result and len(result) > 0:
-        last_tag = result[0].get("name", "v0.0.0")
-
+    # Version
+    r = gh("GET", "tags?per_page=1")
+    last = "v0.0.0"
+    if r and len(r) > 0:
+        last = r[0].get("name", "v0.0.0")
     try:
-        parts = [int(x) for x in last_tag.lstrip("v").split(".")]
+        parts = [int(x) for x in last.lstrip("v").split(".")]
         if len(tasks_done) >= 3:
             parts[1] += 1
             parts[2] = 0
         else:
             parts[2] += 1
-        new_tag = ("v" + str(parts[0]) + "." +
-                   str(parts[1]) + "." + str(parts[2]))
+        new_tag = "v" + ".".join(str(x) for x in parts)
     except Exception:
         new_tag = "v1.0.0"
 
     now = datetime.utcnow()
-    score = analyse_data.get("score_actuel", 0)
-    niveau = analyse_data.get("niveau_os", "Prototype")
-    milestone = analyse_data.get("prochaine_milestone", "")
-    features = analyse_data.get("fonctionnalites_presentes", [])
+    score = analyse.get("score", 30)
+    niveau = analyse.get("niveau", "Prototype")
+    milestone = analyse.get("milestone", "")
+    features = analyse.get("features", [])
 
-    changes_md = ""
+    changes = ""
     for t in tasks_done:
-        nom = t.get("nom", "?")
-        files = t.get("files", [])
         sha = t.get("sha", "")
-        model = t.get("model", "")
         sha_link = ""
         if sha:
             sha_link = (" [`" + sha + "`](https://github.com/" +
                        REPO_OWNER + "/" + REPO_NAME + "/commit/" + sha + ")")
-        changes_md += "- **" + nom + "**" + sha_link + "\n"
-        if files:
-            changes_md += "  - `" + "`, `".join(files[:5]) + "`\n"
-        if model:
-            changes_md += "  - Modele: `" + model + "`\n"
+        changes += "- **" + t.get("nom", "") + "**" + sha_link + "\n"
+        if t.get("files"):
+            changes += "  - `" + "`, `".join(t["files"][:4]) + "`\n"
 
-    failed_md = "".join(["- ~~" + t + "~~\n" for t in tasks_failed])
+    failed = "".join(["- ~~" + t + "~~\n" for t in tasks_failed])
 
-    features_md = "\n".join(["  - " + f for f in features])
-
-    models_used = ", ".join([
-        ACTIVE_MODELS.get(i, {}).get("model", "?")
+    models_used = ", ".join(set(
+        ACTIVE_MODELS.get(i, {}).get("model", "")
         for i in range(len(API_KEYS)) if i in ACTIVE_MODELS
-    ])
+    ))
 
     body = (
         "# MaxOS " + new_tag + "\n\n"
-        "> Release generee automatiquement par MaxOS AI Developer v8.1\n"
-        "> Objectif: OS complet a l'echelle de Windows 11\n\n"
+        "> **MaxOS AI Developer v8.2** - Objectif: OS Windows 11 scale\n\n"
         "---\n\n"
-        "## Etat du projet\n\n"
-        "| Metrique | Valeur |\n|---|---|\n"
-        "| Score | " + str(score) + "/100 |\n"
+        "## Etat\n\n"
+        "| | |\n|---|---|\n"
+        "| Score | **" + str(score) + "/100** |\n"
         "| Niveau | " + niveau + " |\n"
-        "| Fichiers | " + str(stats.get("files", 0)) + " |\n"
-        "| Lignes | " + str(stats.get("lines", 0)) + " |\n"
+        "| Fichiers | " + str(nfiles) + " |\n"
+        "| Lignes | " + str(nlines) + " |\n"
         "| Milestone | " + milestone + " |\n\n"
-        "---\n\n"
-        "## Changements\n\n" +
-        (changes_md or "- Maintenance\n") +
-        ("\n## Reporte\n\n" + failed_md if failed_md else "") +
-        "\n---\n\n"
-        "## Fonctionnalites\n\n" + features_md + "\n\n"
+        "## Changements\n\n" + (changes or "- Maintenance\n") +
+        ("\n## Reporte\n\n" + failed if failed else "") +
+        "\n## Fonctionnalites\n\n" +
+        "\n".join("- " + f for f in features) + "\n\n"
         "---\n\n"
         "## Tester MaxOS\n\n"
-        "### Telecharger os.img\n\n"
+        "### 1. Telecharger os.img\n\n"
         "```\n"
-        "GitHub -> Actions -> Dernier run reussi\n"
-        "-> Artifacts -> maxos-build-XXX -> Telecharger\n"
+        "GitHub -> Actions -> Dernier run -> Artifacts -> maxos-build-XXX\n"
         "```\n\n"
-        "### Lancer avec QEMU\n\n"
-        "**Linux / WSL Ubuntu:**\n"
+        "### 2. Lancer\n\n"
+        "**WSL Ubuntu / Linux:**\n"
         "```bash\n"
         "sudo apt install qemu-system-x86\n"
-        "qemu-system-i386 -drive format=raw,file=os.img,"
-        "if=floppy -boot a -vga std -k fr -m 32 -no-reboot\n"
+        "qemu-system-i386 -drive format=raw,file=os.img,if=floppy "
+        "-boot a -vga std -k fr -m 32 -no-reboot\n"
         "```\n\n"
-        "**Windows (QEMU installe):**\n"
+        "**Windows (QEMU installe depuis qemu.org):**\n"
         "```\n"
-        "# Installer QEMU: https://www.qemu.org/windows/\n"
-        "# Dans PowerShell (adapter le chemin QEMU):\n"
-        'C:\\Program Files\\qemu\\qemu-system-i386.exe '
-        '-drive format=raw,file=os.img,if=floppy '
-        '-boot a -vga std -k fr -m 32\n'
+        "qemu-system-i386.exe -drive format=raw,file=os.img,if=floppy "
+        "-boot a -vga std -k fr -m 32\n"
         "```\n\n"
-        "**Compiler depuis les sources (WSL):**\n"
+        "**Compiler depuis sources (WSL):**\n"
         "```bash\n"
         "sudo apt install nasm gcc make gcc-multilib qemu-system-x86\n"
         "git clone https://github.com/" + REPO_OWNER + "/" + REPO_NAME + "\n"
         "cd MaxOS && make && make run\n"
         "```\n\n"
-        "---\n\n"
         "## Controles\n\n"
         "| Touche | Action |\n|---|---|\n"
-        "| TAB | Changer d'application |\n"
+        "| TAB | Changer d'app |\n"
         "| F1 | Bloc-Notes |\n"
         "| F2 | Terminal |\n"
-        "| F3 | Informations systeme |\n"
+        "| F3 | Sysinfo |\n"
         "| F4 | A propos |\n\n"
-        "---\n\n"
         "## Technique\n\n"
-        "| Composant | Detail |\n|---|---|\n"
-        "| Architecture | x86 32-bit Protected Mode |\n"
-        "| Compilateur | GCC -m32 -ffreestanding -nostdlib |\n"
-        "| Assembleur | NASM ELF32 |\n"
-        "| Linker | GNU LD script custom |\n"
-        "| Emulateur | QEMU i386 |\n"
+        "| | |\n|---|---|\n"
+        "| Arch | x86 32-bit Protected Mode |\n"
+        "| CC | GCC -m32 -ffreestanding -nostdlib |\n"
+        "| ASM | NASM ELF32 |\n"
+        "| LD | GNU LD linker.ld |\n"
+        "| QEMU | i386 |\n"
         "| IA | " + models_used + " |\n\n"
         "## Roadmap\n\n"
         "| Phase | Statut | Objectif |\n|---|---|---|\n"
         "| 1 | En cours | IDT + Timer + Memoire |\n"
         "| 2 | Planifie | Mode graphique VESA |\n"
-        "| 3 | Planifie | Systeme fichiers FAT12 |\n"
-        "| 4 | Planifie | GUI fenetres + souris |\n"
-        "| 5 | Planifie | Applications avancees |\n"
-        "| 6 | Futur | Reseau TCP/IP |\n\n"
-        "---\n"
-        "*MaxOS AI v8.1 | " + now.strftime("%Y-%m-%d %H:%M") + " UTC*\n"
+        "| 3 | Planifie | FAT12 |\n"
+        "| 4 | Planifie | GUI fenetres |\n"
+        "| 5 | Planifie | Applications |\n"
+        "| 6 | Futur | TCP/IP |\n\n"
+        "*MaxOS AI v8.2 | " + now.strftime("%Y-%m-%d %H:%M") + " UTC*\n"
     )
 
-    url = github_create_release(
-        tag=new_tag,
-        name="MaxOS " + new_tag + " - " + niveau + " | " +
-             now.strftime("%Y-%m-%d"),
-        body=body,
+    url = gh_create_release(
+        new_tag,
+        "MaxOS " + new_tag + " - " + niveau + " | " + now.strftime("%Y-%m-%d"),
+        body,
         prerelease=(score < 50)
     )
 
     if url:
-        d(
-            "Release " + new_tag + " publiee",
-            "Niveau: " + niveau + "\nScore: " + str(score) + "/100",
-            0x00FF88,
-            [
-                {"name": "Version",   "value": new_tag,
-                 "inline": True},
-                {"name": "Score",     "value": str(score) + "/100",
-                 "inline": True},
-                {"name": "Succes",    "value": str(len(tasks_done)),
-                 "inline": True},
-                {"name": "Lien",
-                 "value": "[Release](" + url + ")",
-                 "inline": False},
-            ]
-        )
+        d("Release " + new_tag,
+          "Score: " + str(score) + "/100 | " + niveau,
+          0x00FF88,
+          [
+              {"name": "Version", "value": new_tag, "inline": True},
+              {"name": "Score",   "value": str(score) + "/100", "inline": True},
+              {"name": "Succes",  "value": str(len(tasks_done)), "inline": True},
+              {"name": "Lien",
+               "value": "[Release](" + url + ")", "inline": False},
+          ])
     return url
 
 # ══════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════
 def main():
-    print("=" * 60)
-    print("  MaxOS AI Developer v8.1")
-    print("  Objectif: OS echelle Windows 11")
-    print("  Mode: Autonome 24/7 | Multi-cles | Auto PR+Release")
-    print("=" * 60 + "\n")
+    print("=" * 55)
+    print("  MaxOS AI Developer v8.2")
+    print("  OS echelle Windows 11 | Autonome 24/7")
+    print("=" * 55 + "\n")
 
-    if not find_all_models():
-        print("FATAL: Aucune cle Gemini operationnelle")
+    # Init cles
+    if not init_all_keys():
+        print("FATAL: Aucune cle operationnelle")
         sys.exit(1)
 
-    d(
-        "MaxOS AI Developer v8.1 demarre",
-        ("Objectif: OS echelle Windows 11\n"
-         "Cles actives: " + str(len(ACTIVE_MODELS)) +
-         "/" + str(len(API_KEYS))),
-        0x5865F2,
-        [
-            {"name": "Modeles actifs",
-             "value": "\n".join([
-                 "Cle " + str(i+1) + ": " + ACTIVE_MODELS[i]["model"]
-                 for i in sorted(ACTIVE_MODELS.keys())
-             ]) or "Aucun",
-             "inline": False},
-            {"name": "Repo",
-             "value": REPO_OWNER + "/" + REPO_NAME,
-             "inline": True},
-            {"name": "Heure UTC",
-             "value": datetime.utcnow().strftime("%H:%M:%S"),
-             "inline": True},
-        ]
-    )
+    cur_model = ACTIVE_MODELS.get(0, {}).get("model", "?")
 
-    # Gestion PRs
+    d("MaxOS AI v8.2 demarre",
+      "Cles: " + str(len(ACTIVE_MODELS)) + "/" + str(len(API_KEYS)) +
+      " | Objectif: Windows 11 scale",
+      0x5865F2,
+      [
+          {"name": "Cles actives",
+           "value": "\n".join([
+               "Cle " + str(i+1) + ": " + ACTIVE_MODELS[i]["model"]
+               for i in sorted(ACTIVE_MODELS.keys())
+           ]) or "?",
+           "inline": False},
+          {"name": "Repo",
+           "value": REPO_OWNER + "/" + REPO_NAME, "inline": True},
+      ])
+
+    # PRs
     print("\n[PRs] Verification...")
-    handle_pull_requests()
+    handle_prs()
 
     # Sources
-    sources = read_all()
-    context = build_context(sources)
-    stats = get_project_stats(sources)
-    print("[Sources] " + str(stats["files"]) + " fichiers, " +
-          str(stats["lines"]) + " lignes")
+    sources = read_sources()
+    nf, nl = stats(sources)
+    print("[Sources] " + str(nf) + " fichiers, " + str(nl) + " lignes")
 
-    # Phase 1
-    print("\n" + "="*60)
-    print(" PHASE 1 : Analyse")
-    print("="*60)
-
-    analyse = phase_analyse(context, stats)
+    # Analyse
+    print("\n" + "="*55 + "\n PHASE 1: Analyse\n" + "="*55)
+    analyse = phase_analyse(sources)
     if not analyse:
         d("Analyse echouee", "Impossible d'analyser.", 0xFF0000)
         sys.exit(1)
 
-    score = analyse.get("score_actuel", 0)
-    niveau = analyse.get("niveau_os", "?")
+    score = analyse.get("score", 30)
+    niveau = analyse.get("niveau", "?")
     plan = analyse.get("plan_ameliorations", [])
-    milestone = analyse.get("prochaine_milestone", "?")
-    features = analyse.get("fonctionnalites_presentes", [])
-    manquantes = analyse.get("fonctionnalites_manquantes_critiques", [])
+    milestone = analyse.get("milestone", "?")
+    features = analyse.get("features", [])
+    missing = analyse.get("missing", [])
 
-    print("[Rapport] Score: " + str(score) + "/100")
-    print("[Rapport] Niveau: " + niveau)
-    print("[Rapport] " + str(len(plan)) + " taches")
+    print("[Analyse] Score: " + str(score) + "/100 | " + niveau)
+    print("[Analyse] " + str(len(plan)) + " taches | " + milestone)
 
-    features_txt = "\n".join(["+ " + f for f in features[:5]]) or "Aucune"
-    manquantes_txt = "\n".join(["- " + f for f in manquantes[:5]]) or "Aucune"
-    plan_txt = "\n".join([
-        "[" + str(i+1) + "] [" + t.get("priorite", "?") + "] " +
-        t.get("nom", "?")
-        for i, t in enumerate(plan[:6])
-    ])
+    d("Score " + str(score) + "/100 - " + niveau,
+      "```\n" + pbar(score) + "\n```",
+      0x00AAFF if score >= 60 else 0xFFA500 if score >= 30 else 0xFF4444,
+      [
+          {"name": "Presentes",
+           "value": "\n".join(["+ " + f for f in features[:4]]) or "?",
+           "inline": True},
+          {"name": "Manquantes",
+           "value": "\n".join(["- " + f for f in missing[:4]]) or "?",
+           "inline": True},
+          {"name": "Plan (" + str(len(plan)) + " taches)",
+           "value": "\n".join([
+               "[" + str(i+1) + "] [" + t.get("priorite","?") + "] " +
+               t.get("nom","?")[:40]
+               for i, t in enumerate(plan[:5])
+           ]),
+           "inline": False},
+          {"name": "Milestone", "value": milestone[:80], "inline": False},
+          {"name": "Cles", "value": keys_status(), "inline": False},
+      ])
 
-    d(
-        "Rapport - Score " + str(score) + "/100",
-        "```\n" + progress_bar(score) + "\n```\nNiveau: " + niveau,
-        0x00AAFF if score >= 60 else 0xFFA500 if score >= 30 else 0xFF4444,
-        [
-            {"name": "Presentes",   "value": features_txt[:400],  "inline": True},
-            {"name": "Manquantes",  "value": manquantes_txt[:400], "inline": True},
-            {"name": "Plan",
-             "value": "```\n" + plan_txt + "\n```", "inline": False},
-            {"name": "Milestone",   "value": milestone[:80], "inline": False},
-            {"name": "Cles",        "value": key_status_str(), "inline": False},
-        ]
-    )
-
-    # Phase 2
-    print("\n" + "="*60)
-    print(" PHASE 2 : Implementation")
-    print("="*60)
+    # Implementation
+    print("\n" + "="*55 + "\n PHASE 2: Implementation\n" + "="*55)
 
     order = {"CRITIQUE": 0, "HAUTE": 1, "NORMALE": 2, "BASSE": 3}
     plan_sorted = sorted(
@@ -1622,98 +1567,98 @@ def main():
 
     success = 0
     total = len(plan_sorted)
-    tasks_done = []
-    tasks_failed = []
+    done = []
+    failed = []
 
     for i, task in enumerate(plan_sorted, 1):
         nom = task.get("nom", "Tache " + str(i))
-        priorite = task.get("priorite", "NORMALE")
-        categorie = task.get("categorie", "?")
+        prio = task.get("priorite", "NORMALE")
+        cat = task.get("categorie", "?")
 
-        print("\n" + "="*60)
-        print(" [" + str(i) + "/" + str(total) + "] " +
-              "[" + priorite + "] " + nom)
-        print("="*60)
+        print("\n" + "="*55)
+        print("[" + str(i) + "/" + str(total) + "] [" + prio + "] " + nom)
+        print("="*55)
 
-        current_model = ACTIVE_MODELS.get(
+        cur = ACTIVE_MODELS.get(
             KEY_STATE["current_index"], {}
         ).get("model", "?")
 
-        d(
-            "[" + str(i) + "/" + str(total) + "] " + nom,
-            ("```\n" + progress_bar(int((i-1)/total*100)) + "\n```\n" +
-             task.get("description", "")[:200]),
-            0xFFA500,
-            [
-                {"name": "Priorite",  "value": priorite,      "inline": True},
-                {"name": "Categorie", "value": categorie,     "inline": True},
-                {"name": "Modele",    "value": current_model, "inline": True},
-            ]
-        )
+        d("[" + str(i) + "/" + str(total) + "] " + nom,
+          "```\n" + pbar(int((i-1)/total*100)) + "\n```\n" +
+          task.get("description", "")[:150],
+          0xFFA500,
+          [
+              {"name": "Priorite",  "value": prio, "inline": True},
+              {"name": "Categorie", "value": cat,  "inline": True},
+              {"name": "Modele",    "value": cur,  "inline": True},
+          ])
 
-        sources = read_all()
-        ok, written, deleted = phase_implement(task, sources)
+        sources = read_sources()
+        ok, written, deleted = implement_task(task, sources)
 
-        _, latest_sha, _ = git_cmd(["rev-parse", "HEAD"])
-        latest_sha = latest_sha.strip()[:7] if latest_sha.strip() else "?"
+        _, sha_raw, _ = git(["rev-parse", "HEAD"])
+        sha = sha_raw.strip()[:7] if sha_raw.strip() else "?"
 
         if ok:
             success += 1
-            tasks_done.append({
-                "nom": nom,
+            done.append({
+                "nom": nom, "sha": sha,
                 "files": written + deleted,
-                "sha": latest_sha,
-                "model": current_model,
+                "model": cur,
             })
-            d(
-                "Succes: " + nom,
-                "Commit: `" + latest_sha + "`",
-                0x00FF88,
-                [
-                    {"name": "Ecrits",
-                     "value": "\n".join(["`" + f + "`"
-                                        for f in written[:5]]) or "Aucun",
-                     "inline": True},
-                    {"name": "Supprimes",
-                     "value": "\n".join(["`" + f + "`"
-                                        for f in deleted]) or "Aucun",
-                     "inline": True},
-                ]
-            )
-            sources = read_all()
+            d("Succes: " + nom, "Commit `" + sha + "`", 0x00FF88,
+              [
+                  {"name": "Ecrits",
+                   "value": "\n".join(["`" + f + "`"
+                                      for f in written[:4]]) or "Aucun",
+                   "inline": True},
+                  {"name": "Supprimes",
+                   "value": "\n".join(["`" + f + "`"
+                                      for f in deleted]) or "Aucun",
+                   "inline": True},
+              ])
+            sources = read_sources()
         else:
-            tasks_failed.append(nom)
-            d("Echec: " + nom,
-              "Code restaure. Reporte.", 0xFF6600)
+            failed.append(nom)
+            d("Echec: " + nom, "Code restaure.", 0xFF6600)
 
         if i < total:
-            pause = 10 if len(API_KEYS) > 1 else 20
+            # Pause intelligente: plus courte si multi-cles
+            n_active = sum(
+                1 for i2 in range(len(API_KEYS))
+                if API_KEYS[i2] and
+                time.time() >= KEY_STATE["cooldowns"].get(i2, 0)
+            )
+            pause = 10 if n_active > 1 else 25
             print("[Pause] " + str(pause) + "s...")
             time.sleep(pause)
 
     # Release
     if success > 0:
         print("\n[Release] Creation...")
-        sources = read_all()
-        stats = get_project_stats(sources)
-        create_release(tasks_done, tasks_failed, analyse, stats)
+        sources = read_sources()
+        nf2, nl2 = stats(sources)
+        make_release(done, failed, analyse, nf2, nl2)
 
-    # Rapport final
+    # Final
     pct = int(success / total * 100) if total > 0 else 0
-    color = (0x00FF88 if pct >= 80 else
-             0xFFA500 if pct >= 50 else 0xFF4444)
+    color = 0x00FF88 if pct >= 80 else 0xFFA500 if pct >= 50 else 0xFF4444
 
-    d(
-        "Cycle termine - " + str(success) + "/" + str(total),
-        "```\n" + progress_bar(pct) + "\n```",
-        color,
-        [
-            {"name": "Succes",  "value": str(success),       "inline": True},
-            {"name": "Echecs",  "value": str(total-success), "inline": True},
-            {"name": "Taux",    "value": str(pct) + "%",     "inline": True},
-            {"name": "Cles",    "value": key_status_str(),   "inline": False},
-        ]
-    )
+    d("Cycle fini - " + str(success) + "/" + str(total),
+      "```\n" + pbar(pct) + "\n```",
+      color,
+      [
+          {"name": "Succes",  "value": str(success),       "inline": True},
+          {"name": "Echecs",  "value": str(total-success), "inline": True},
+          {"name": "Taux",    "value": str(pct) + "%",     "inline": True},
+          {"name": "Cles",    "value": keys_status(),      "inline": False},
+          {"name": "Taches",
+           "value": "\n".join(
+               ["OK: " + t["nom"][:40] for t in done] +
+               ["KO: " + t[:40] for t in failed]
+           )[:400] or "?",
+           "inline": False},
+      ])
 
     print("\n[FIN] " + str(success) + "/" + str(total))
 
