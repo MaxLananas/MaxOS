@@ -1,0 +1,36 @@
+name: 🔨 Build MaxOS
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Compiler MaxOS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Télécharger le code
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Installer les outils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y nasm gcc make
+
+      - name: 🔨 Compiler
+        run: make
+
+      - name: ✅ Vérifier l'image
+        run: |
+          ls -lh build/os.img
+          echo "Taille: $(du -h build/os.img | cut -f1)"
+
+      - name: 📦 Sauvegarder l'image
+        uses: actions/upload-artifact@v4
+        with:
+          name: maxos-v${{ github.run_number }}
+          path: build/os.img
+          retention-days: 30
