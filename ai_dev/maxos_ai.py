@@ -1,36 +1,33 @@
 #!/usr/bin/env python3
-"""MaxOS AI Developer v6.0"""
+"""MaxOS AI Developer v7.0"""
 
 import os, sys, json, time, subprocess
 import urllib.request, urllib.error
 from datetime import datetime
 
 # ══════════════════════════════════════════
-# SÉCURITÉ : Lecture UNIQUEMENT depuis env
-# JAMAIS de clé en dur dans le code !
+# CONFIGURATION
 # ══════════════════════════════════════════
 GEMINI_API_KEY  = os.environ.get("GEMINI_API_KEY", "")
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK", "")
+GITHUB_TOKEN    = os.environ.get("GITHUB_TOKEN", "")
+REPO_OWNER      = os.environ.get("REPO_OWNER", "MaxLananas")
+REPO_NAME       = os.environ.get("REPO_NAME", "MaxOS")
 REPO_PATH       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Validation
+KEY_MASKED = (GEMINI_API_KEY[:4] + "*" * max(0, len(GEMINI_API_KEY)-8) + GEMINI_API_KEY[-4:]) if len(GEMINI_API_KEY) > 8 else "***"
+
+print(f"[Config] Gemini  : {KEY_MASKED}")
+print(f"[Config] Discord : {'OK' if DISCORD_WEBHOOK else 'ABSENT'}")
+print(f"[Config] GitHub  : {'OK' if GITHUB_TOKEN else 'ABSENT'}")
+print(f"[Config] Repo    : {REPO_OWNER}/{REPO_NAME}")
+print(f"[Config] Path    : {REPO_PATH}")
+
 if not GEMINI_API_KEY:
-    print("FATAL: GEMINI_API_KEY manquante dans les variables d'environnement!")
-    print("GitHub: Settings → Secrets → GEMINI_API_KEY")
+    print("FATAL: GEMINI_API_KEY manquante")
     sys.exit(1)
 
-# Vérification de sécurité : la clé ne doit PAS apparaître dans les logs
-KEY_LEN    = len(GEMINI_API_KEY)
-KEY_MASKED = GEMINI_API_KEY[:4] + "*" * (KEY_LEN - 8) + GEMINI_API_KEY[-4:]
-
-print(f"[Security] Clé Gemini  : {KEY_MASKED} ({KEY_LEN} chars)")
-print(f"[Security] Discord     : {'OK (' + str(len(DISCORD_WEBHOOK)) + ' chars)' if DISCORD_WEBHOOK else 'ABSENT'}")
-print(f"[Config]   Repo        : {REPO_PATH}")
-print(f"[Config]   Heure       : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-# ══════════════════════════════════════════
-# MODÈLES GEMINI (ordre de préférence)
-# ══════════════════════════════════════════
+# Modèles à tester
 MODELS = [
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
@@ -41,6 +38,7 @@ MODELS = [
 WORKING_MODEL = None
 WORKING_URL   = None
 
+# Tous les fichiers du projet
 ALL_FILES = [
     "boot/boot.asm",
     "kernel/kernel_entry.asm",
@@ -63,11 +61,131 @@ ALL_FILES = [
     "linker.ld",
 ]
 
+# Règles bare metal inviolables
+BARE_METAL_RULES = """
+REGLES ABSOLUES BARE METAL x86 (VIOLATION = ECHEC DE COMPILATION) :
+
+1. ZERO include de librairie standard :
+   - PAS #include <stddef.h>
+   - PAS #include <string.h>
+   - PAS #include <stdlib.h>
+   - PAS #include <stdio.h>
+   - PAS #include <stdint.h>
+   - PAS #include <stdbool.h>
+
+2. ZERO types de librairie :
+   - PAS size_t  -> utilise unsigned int
+   - PAS NULL    -> utilise 0
+   - PAS bool    -> utilise int
+   - PAS true/false -> utilise 1/0
+   - PAS uint32_t -> utilise unsigned int
+   - PAS int32_t  -> utilise int
+
+3. ZERO fonctions de librairie :
+   - PAS malloc/free -> pas d'allocation dynamique
+   - PAS memset/memcpy -> boucle for manuelle
+   - PAS strlen/strcmp/strcpy -> fonctions manuelles
+   - PAS printf/sprintf -> utiliser v_str() de screen.h
+
+4. FONCTIONS EXISTANTES A RESPECTER :
+   - nb_init(), np_draw(), np_key(char k) -> notepad
+   - tm_init(), tm_draw(), tm_key(char k) -> terminal
+   - si_draw() -> sysinfo (PAS si_init, PAS si_key)
+   - ab_draw() -> about   (PAS ab_init, PAS ab_key)
+   - kb_init(), kb_haskey(), kb_getchar() -> keyboard
+   - v_init(), v_put(), v_str(), v_fill() -> screen
+
+5. ASSEMBLY NASM :
+   - PAS de directives C dans les fichiers .asm
+   - Utiliser [BITS 32] correctement
+   - Les macros IDT doivent utiliser dq, pas des instructions C
+
+6. COMPILATION :
+   gcc -m32 -ffreestanding -fno-stack-protector -fno-builtin -fno-pic -fno-pie -nostdlib -nostdinc -w -c
+   nasm -f elf (pour .o) / nasm -f bin (pour boot.bin)
+   ld -m elf_i386 -T linker.ld --oformat binary
+"""
+
 # ══════════════════════════════════════════
-# DISCORD - Webhooks riches
+# GITHUB API
+# ══════════════════════════════════════════
+def github_api(method, endpoint, data=None):
+    """Appelle l'API GitHub."""
+    if not GITHUB_TOKEN:
+        return None
+
+    url     = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/{endpoint}"
+    payload = json.dumps(data).encode() if data else None
+
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json",
+            "User-Agent": "MaxOS-AI-Bot",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        method=method
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            body = r.read().decode()
+            return json.loads(body) if body else {}
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"[GitHub API] {method} {endpoint} -> HTTP {e.code}: {body[:200]}")
+        return None
+    except Exception as e:
+        print(f"[GitHub API] Erreur: {e}")
+        return None
+
+def github_create_release(tag, name, body, prerelease=False):
+    """Crée une release GitHub."""
+    data = {
+        "tag_name": tag,
+        "name": name,
+        "body": body,
+        "draft": False,
+        "prerelease": prerelease,
+        "generate_release_notes": False,
+    }
+    result = github_api("POST", "releases", data)
+    if result and "html_url" in result:
+        print(f"[GitHub] Release creee: {result['html_url']}")
+        return result["html_url"]
+    return None
+
+def github_create_issue(title, body, labels=None):
+    """Crée une issue GitHub."""
+    data = {
+        "title": title,
+        "body": body,
+        "labels": labels or [],
+    }
+    result = github_api("POST", "issues", data)
+    if result and "html_url" in result:
+        print(f"[GitHub] Issue: {result['html_url']}")
+        return result["html_url"]
+    return None
+
+def github_get_latest_commits(n=10):
+    """Récupère les derniers commits."""
+    result = github_api("GET", f"commits?per_page={n}")
+    if not result:
+        return []
+    commits = []
+    for c in result:
+        msg = c.get("commit", {}).get("message", "")
+        sha = c.get("sha", "")[:7]
+        commits.append(f"{sha}: {msg.split(chr(10))[0]}")
+    return commits
+
+# ══════════════════════════════════════════
+# DISCORD
 # ══════════════════════════════════════════
 def discord_send(embeds):
-    """Envoie un ou plusieurs embeds Discord."""
     if not DISCORD_WEBHOOK:
         return
 
@@ -77,188 +195,57 @@ def discord_send(embeds):
     }).encode("utf-8")
 
     req = urllib.request.Request(
-        DISCORD_WEBHOOK,
-        data=payload,
+        DISCORD_WEBHOOK, data=payload,
         headers={
             "Content-Type": "application/json",
-            "User-Agent": "DiscordBot (MaxOS, 6.0)",
+            "User-Agent": "DiscordBot (MaxOS, 7.0)",
         },
         method="POST"
     )
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
-            status = r.status
-            if status not in (200, 204):
-                print(f"[Discord] Status inattendu: {status}")
+            print(f"[Discord] OK ({r.status})")
             return True
     except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        print(f"[Discord] HTTP {e.code}: {body[:300]}")
+        print(f"[Discord] HTTP {e.code}: {e.read().decode()[:200]}")
     except Exception as e:
-        print(f"[Discord] Erreur: {e}")
+        print(f"[Discord] Err: {e}")
     return False
 
-def make_embed(title, desc, color, fields=None, image=None, thumbnail=None):
-    """Crée un embed Discord riche."""
-    embed = {
+def make_embed(title, desc, color, fields=None):
+    e = {
         "title": str(title)[:256],
         "description": str(desc)[:4096],
         "color": color,
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "footer": {
-            "text": f"MaxOS AI v6.0  •  {WORKING_MODEL or 'init'}  •  github.com/MaxLananas/MaxOS",
-            "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+            "text": f"MaxOS AI v7.0  |  {WORKING_MODEL or 'init'}  |  {REPO_OWNER}/{REPO_NAME}",
         },
     }
     if fields:
-        embed["fields"] = fields[:25]
-    if thumbnail:
-        embed["thumbnail"] = {"url": thumbnail}
-    return embed
+        e["fields"] = fields[:25]
+    return e
 
-# Raccourcis
-def d_start(model, nb_tasks):
-    discord_send([make_embed(
-        "🚀 MaxOS AI Developer v6.0 démarré",
-        f"Gemini va analyser le code et décider lui-même des améliorations.",
-        0x5865F2,
-        [
-            {"name": "🤖 Modèle",   "value": f"`{model}`",                         "inline": True},
-            {"name": "📁 Fichiers", "value": str(len(ALL_FILES)),                   "inline": True},
-            {"name": "🕐 Heure",    "value": datetime.now().strftime("%H:%M:%S"),   "inline": True},
-            {"name": "🔗 Repo",     "value": "[MaxLananas/MaxOS](https://github.com/MaxLananas/MaxOS)", "inline": False},
-        ]
-    )])
+def d(title, desc, color=0x5865F2, fields=None):
+    discord_send([make_embed(title, desc, color, fields)])
 
-def d_analyse(score, comment, bugs, plan, manquants):
-    """Rapport d'analyse détaillé."""
-    # Score couleur
-    if score >= 70:   score_color = 0x00FF00
-    elif score >= 40: score_color = 0xFFA500
-    else:             score_color = 0xFF0000
-
-    score_bar = build_progress_bar(score)
-
-    bugs_txt = "\n".join([
-        f"🔴 `{b.get('fichier','?')}` — {b.get('description','')[:80]}"
-        for b in bugs[:5]
-    ]) or "✅ Aucun problème critique"
-
-    plan_txt = "\n".join([
-        f"{'🔴' if a.get('priorite')=='CRITIQUE' else '🟡' if a.get('priorite')=='HAUTE' else '🟢'} "
-        f"**{a.get('nom','?')}** — {a.get('description','')[:60]}"
-        for a in plan[:8]
-    ]) or "Aucun"
-
-    manq_txt = "\n".join([f"❌ `{f}`" for f in manquants[:5]]) or "✅ Tous présents"
-
-    discord_send([make_embed(
-        f"📊 Rapport d'analyse — Score {score}/100",
-        f"```\n{score_bar}\n```\n_{comment}_",
-        score_color,
-        [
-            {"name": "🐛 Problèmes détectés",  "value": bugs_txt,  "inline": False},
-            {"name": "📋 Plan d'action Gemini", "value": plan_txt,  "inline": False},
-            {"name": "📁 Fichiers manquants",   "value": manq_txt,  "inline": True},
-            {"name": "📈 Améliorations prévues","value": str(len(plan)), "inline": True},
-        ]
-    )])
-
-def d_task_start(num, total, name, priorite, desc):
-    priority_emoji = {"CRITIQUE": "🔴", "HAUTE": "🟡", "NORMALE": "🟢"}.get(priorite, "⚪")
-    discord_send([make_embed(
-        f"⚙️ [{num}/{total}] {name}",
-        f"{priority_emoji} **Priorité :** {priorite}\n\n{desc[:300]}",
-        0xFFA500,
-        [
-            {"name": "📍 Position", "value": f"{num}/{total}", "inline": True},
-            {"name": "⏱️ Démarré", "value": datetime.now().strftime("%H:%M:%S"), "inline": True},
-        ]
-    )])
-
-def d_task_ok(name, files_written, elapsed, model):
-    discord_send([make_embed(
-        f"✅ {name}",
-        "Amélioration compilée et poussée sur GitHub avec succès !",
-        0x00FF00,
-        [
-            {"name": "📁 Fichiers modifiés", "value": "\n".join([f"`{f}`" for f in files_written]) or "?", "inline": False},
-            {"name": "⏱️ Durée",   "value": f"{elapsed:.1f}s",  "inline": True},
-            {"name": "🤖 Modèle",  "value": f"`{model}`",        "inline": True},
-            {"name": "🔗 Commit",  "value": "[Voir sur GitHub](https://github.com/MaxLananas/MaxOS/commits/main)", "inline": False},
-        ]
-    )])
-
-def d_task_err(name, reason):
-    discord_send([make_embed(
-        f"❌ Échec : {name}",
-        f"```\n{str(reason)[:1500]}\n```",
-        0xFF0000,
-    )])
-
-def d_build_err(name, log):
-    """Erreur de build avec les lignes importantes."""
-    error_lines = [l for l in log.split("\n") if "error:" in l.lower()][:10]
-    error_txt   = "\n".join(error_lines) or log[-500:]
-    discord_send([make_embed(
-        f"🔨 Build échoué : {name}",
-        f"Code restauré automatiquement.\n```\n{error_txt[:1500]}\n```",
-        0xFF6600,
-    )])
-
-def d_final(success, total, score_before, model):
-    pct   = int(success / total * 100) if total > 0 else 0
-    color = 0x00FF00 if pct >= 80 else 0xFFA500 if pct >= 50 else 0xFF0000
-    bar   = build_progress_bar(pct)
-    discord_send([make_embed(
-        f"🏁 Cycle terminé — {success}/{total} réussies",
-        f"```\n{bar}\n```",
-        color,
-        [
-            {"name": "✅ Succès",      "value": str(success),         "inline": True},
-            {"name": "❌ Échecs",      "value": str(total-success),   "inline": True},
-            {"name": "📊 Taux",        "value": f"{pct}%",            "inline": True},
-            {"name": "🤖 Modèle",      "value": f"`{model}`",         "inline": True},
-            {"name": "📈 Score avant", "value": f"{score_before}/100","inline": True},
-            {"name": "🔗 GitHub",      "value": "[Voir les commits](https://github.com/MaxLananas/MaxOS/commits/main)", "inline": False},
-        ]
-    )])
-
-def d_autofix(success):
-    if success:
-        discord_send([make_embed(
-            "🔧 Auto-correction réussie !",
-            "Gemini a corrigé les erreurs de compilation automatiquement.",
-            0x00AAFF
-        )])
-    else:
-        discord_send([make_embed(
-            "🔧 Auto-correction échouée",
-            "Impossible de corriger automatiquement. Code restauré.",
-            0xFF6600
-        )])
-
-def build_progress_bar(pct, width=30):
-    """Barre de progression ASCII."""
-    filled = int(width * pct / 100)
-    bar    = "█" * filled + "░" * (width - filled)
-    return f"[{bar}] {pct}%"
+def progress_bar(pct, w=28):
+    f = int(w * pct / 100)
+    return f"[{'█'*f}{'░'*(w-f)}] {pct}%"
 
 # ══════════════════════════════════════════
 # GEMINI
 # ══════════════════════════════════════════
 def find_model():
     global WORKING_MODEL, WORKING_URL
-    print("\n[Gemini] Recherche du modèle disponible...")
+    print("\n[Gemini] Recherche modele...")
     for model in MODELS:
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            + model
-            + ":generateContent?key="
-            + GEMINI_API_KEY
+            + model + ":generateContent?key=" + GEMINI_API_KEY
         )
         payload = json.dumps({
-            "contents": [{"parts": [{"text": "Réponds: READY"}]}],
+            "contents": [{"parts": [{"text": "Reponds: READY"}]}],
             "generationConfig": {"maxOutputTokens": 10}
         }).encode()
         req = urllib.request.Request(
@@ -270,67 +257,47 @@ def find_model():
             with urllib.request.urlopen(req, timeout=20) as r:
                 data = json.loads(r.read())
                 txt  = data["candidates"][0]["content"]["parts"][0]["text"]
-                print(f"[Gemini] ✅ {model}: {txt.strip()}")
+                print(f"[Gemini] OK: {model} -> {txt.strip()}")
                 WORKING_MODEL = model
                 WORKING_URL   = url
                 return True
         except urllib.error.HTTPError as e:
             body = e.read().decode()
-            print(f"[Gemini] ❌ {model}: HTTP {e.code}")
-            # Détecter clé compromise
+            print(f"[Gemini] {model}: HTTP {e.code}")
             if e.code == 403:
                 try:
-                    err_data = json.loads(body)
-                    err_msg  = err_data.get("error", {}).get("message", "")
-                    if "leaked" in err_msg.lower() or "reported" in err_msg.lower():
-                        print("=" * 60)
-                        print("ALERTE SÉCURITÉ : Clé API compromise !")
-                        print("Action requise :")
-                        print("1. Aller sur aistudio.google.com")
-                        print("2. Supprimer la clé actuelle")
-                        print("3. Créer une nouvelle clé")
-                        print("4. Mettre à jour le secret GitHub")
-                        print("=" * 60)
-                        discord_send([make_embed(
-                            "🚨 ALERTE : Clé API Gemini compromise !",
-                            "Google a détecté que ta clé API a été exposée.\n\n"
-                            "**Actions requises :**\n"
-                            "1. Aller sur [aistudio.google.com](https://aistudio.google.com)\n"
-                            "2. Supprimer la clé actuelle\n"
-                            "3. Créer une nouvelle clé\n"
-                            "4. Mettre à jour `GEMINI_API_KEY` dans GitHub Secrets",
-                            0xFF0000
-                        )])
+                    msg = json.loads(body).get("error", {}).get("message", "")
+                    if "leaked" in msg.lower():
+                        print("FATAL: Cle API compromise!")
+                        d("ALERTE SECURITE", "Cle Gemini compromise. Creer une nouvelle cle.", 0xFF0000)
                         sys.exit(1)
                 except Exception:
                     pass
-            time.sleep(3)
+            time.sleep(2)
         except Exception as e:
-            print(f"[Gemini] ❌ {model}: {e}")
-            time.sleep(3)
+            print(f"[Gemini] {model}: {e}")
+            time.sleep(2)
     return False
 
-def gemini_call(prompt, max_tokens=65536, retries=3):
+def gemini(prompt, max_tokens=65536, retries=3):
     global WORKING_URL, WORKING_MODEL
 
     if not WORKING_URL:
         if not find_model():
             return None
 
-    # Tronquer si nécessaire (limite ~30k tokens input)
     if len(prompt) > 50000:
-        print(f"[Gemini] Prompt tronqué: {len(prompt)} → 50000 chars")
-        prompt = prompt[:50000] + "\n...[TRONQUÉ POUR LIMITE DE TOKENS]"
+        prompt = prompt[:50000] + "\n...[TRONQUE]"
 
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "maxOutputTokens": max_tokens,
-            "temperature": 0.1,
+            "temperature": 0.05,
         }
     }).encode("utf-8")
 
-    for attempt in range(1, retries + 1):
+    for attempt in range(1, retries+1):
         req = urllib.request.Request(
             WORKING_URL, data=payload,
             headers={"Content-Type": "application/json"},
@@ -338,52 +305,36 @@ def gemini_call(prompt, max_tokens=65536, retries=3):
         )
         try:
             with urllib.request.urlopen(req, timeout=180) as r:
-                data = json.loads(r.read().decode())
-                # Vérifier si la réponse est complète
-                finish = data["candidates"][0].get("finishReason", "STOP")
+                data   = json.loads(r.read().decode())
                 text   = data["candidates"][0]["content"]["parts"][0]["text"]
-                print(f"[Gemini] ✅ {len(text)} chars (finish: {finish})")
+                finish = data["candidates"][0].get("finishReason", "STOP")
+                print(f"[Gemini] {len(text)} chars (finish={finish})")
                 return text
-
         except urllib.error.HTTPError as e:
             body = e.read().decode()
             print(f"[Gemini] HTTP {e.code} tentative {attempt}/{retries}")
-
-            if e.code == 403:
-                # Vérifier clé compromise
-                try:
-                    err = json.loads(body).get("error", {})
-                    if "leaked" in err.get("message", "").lower():
-                        print("[Gemini] FATAL: Clé compromise !")
-                        discord_send([make_embed(
-                            "🚨 Clé Gemini compromise !",
-                            "Créer une nouvelle clé sur aistudio.google.com",
-                            0xFF0000
-                        )])
-                        sys.exit(1)
-                except Exception:
-                    pass
-                print(f"[Gemini] 403: {body[:300]}")
-                return None
-
-            elif e.code == 429:
+            if e.code == 429:
                 wait = 70 * attempt
-                print(f"[Gemini] Rate limit → attente {wait}s")
+                print(f"[Gemini] Rate limit, attente {wait}s")
                 time.sleep(wait)
-
             elif e.code in (404, 400):
-                print(f"[Gemini] Modèle KO → recherche alternative")
                 WORKING_URL = None
                 if not find_model():
                     return None
+            elif e.code == 403:
+                try:
+                    msg = json.loads(body).get("error",{}).get("message","")
+                    if "leaked" in msg.lower():
+                        d("ALERTE", "Cle compromise!", 0xFF0000)
+                        sys.exit(1)
+                except Exception:
+                    pass
+                return None
             else:
-                print(f"[Gemini] Err {e.code}: {body[:200]}")
                 time.sleep(20)
-
         except Exception as e:
             print(f"[Gemini] Exception: {e}")
             time.sleep(15)
-
     return None
 
 # ══════════════════════════════════════════
@@ -401,25 +352,17 @@ def read_all():
     return sources
 
 def build_context(sources):
-    """Contexte complet."""
     ctx  = "=== CODE SOURCE COMPLET DE MAXOS ===\n\n"
-    ctx += "FICHIERS DU PROJET :\n"
+    ctx += "FICHIERS PRESENTS :\n"
     for f in ALL_FILES:
         s = sources.get(f)
         ctx += f"  {'[OK]' if s else '[MANQUANT]'} {f}\n"
     ctx += "\n"
-
     for f in ALL_FILES:
-        content = sources.get(f)
-        ctx += f"{'='*60}\n"
-        ctx += f"FICHIER : {f}\n"
-        ctx += f"{'='*60}\n"
-        if content:
-            ctx += content + "\n"
-        else:
-            ctx += "[FICHIER MANQUANT - DOIT ÊTRE CRÉÉ]\n"
-        ctx += "\n"
-
+        c = sources.get(f)
+        ctx += f"{'='*60}\nFICHIER: {f}\n{'='*60}\n"
+        ctx += (c if c else "[MANQUANT]\n")
+        ctx += "\n\n"
     return ctx
 
 # ══════════════════════════════════════════
@@ -436,17 +379,21 @@ def git_push(msg):
     git(["add", "-A"])
     ok, out, e = git(["commit", "-m", msg])
     if not ok:
-        if "nothing to commit" in (out + e):
-            print("[Git] Rien à committer")
-            return True
-        print(f"[Git] Commit KO: {e[:300]}")
-        return False
+        if "nothing to commit" in (out+e):
+            print("[Git] Rien a committer")
+            return True, None
+        print(f"[Git] Commit KO: {e[:200]}")
+        return False, None
+    # Récupérer le hash
+    _, sha, _ = git(["rev-parse", "HEAD"])
+    sha = sha.strip()[:7]
+
     ok2, _, e2 = git(["push"])
     if not ok2:
-        print(f"[Git] Push KO: {e2[:300]}")
-        return False
-    print(f"[Git] ✅ {msg}")
-    return True
+        print(f"[Git] Push KO: {e2[:200]}")
+        return False, None
+    print(f"[Git] Pousse: {msg} [{sha}]")
+    return True, sha
 
 def make_build():
     subprocess.run(["make", "clean"], cwd=REPO_PATH, capture_output=True)
@@ -457,15 +404,15 @@ def make_build():
     )
     ok  = r.returncode == 0
     log = r.stdout + r.stderr
-    print(f"[Build] {'✅ OK' if ok else '❌ ÉCHEC'}")
+    print(f"[Build] {'OK' if ok else 'ECHEC'}")
     if not ok:
-        errs = [l for l in log.split("\n") if "error:" in l.lower() or "Error" in l]
-        for e in errs[:5]:
-            print(f"  → {e}")
+        for line in log.split("\n"):
+            if "error:" in line.lower():
+                print(f"  {line}")
     return ok, log
 
 # ══════════════════════════════════════════
-# PARSER FICHIERS
+# PARSER
 # ══════════════════════════════════════════
 def parse_files(response):
     files     = {}
@@ -476,12 +423,11 @@ def parse_files(response):
     for line in response.split("\n"):
         s = line.strip()
 
-        # Début fichier
         if "=== FILE:" in s and s.endswith("==="):
             try:
                 start = s.index("=== FILE:") + 9
                 end   = s.rindex("===")
-                fname = s[start:end].strip().strip("`").strip()
+                fname = s[start:end].strip().strip("`")
                 cur_file  = fname
                 cur_lines = []
                 in_file   = True
@@ -489,12 +435,10 @@ def parse_files(response):
                 pass
             continue
 
-        # Fin fichier
         if s == "=== END FILE ===" and in_file:
             if cur_file:
                 content = "\n".join(cur_lines).strip()
-                # Nettoyer markdown
-                for lang in ["```c", "```asm", "```nasm", "```makefile", "```ld", "```"]:
+                for lang in ["```c","```asm","```nasm","```makefile","```ld","```"]:
                     if content.startswith(lang):
                         content = content[len(lang):].lstrip("\n")
                         break
@@ -515,7 +459,6 @@ def write_files(files):
     written = []
     for path, content in files.items():
         if path.startswith("/") or ".." in path:
-            print(f"[Security] Chemin refusé: {path}")
             continue
         full = os.path.join(REPO_PATH, path)
         os.makedirs(os.path.dirname(full), exist_ok=True)
@@ -540,234 +483,196 @@ def restore_files(backups):
         os.makedirs(os.path.dirname(full), exist_ok=True)
         with open(full, "w", encoding="utf-8") as f:
             f.write(c)
-    print(f"[Restore] {len(backups)} fichier(s) restauré(s)")
+    print(f"[Restore] {len(backups)} fichier(s)")
 
 # ══════════════════════════════════════════
-# PHASE 1 : ANALYSE AUTONOME
+# PHASE 1 : ANALYSE
 # ══════════════════════════════════════════
 def phase_analyse(context):
-    print("\n[Phase 1] Gemini analyse le code...")
+    print("\n[Phase 1] Analyse...")
 
     prompt = f"""Tu es un expert OS bare metal x86.
-Analyse le code de MaxOS et décide toi-même ce que tu veux améliorer.
+
+{BARE_METAL_RULES}
 
 {context}
 
-INFORMATIONS COMPILATION :
-- gcc -m32 -ffreestanding -fno-stack-protector -fno-builtin -fno-pic -fno-pie -nostdlib -nostdinc -w -c
-- nasm -f elf (objets) / nasm -f bin (bootloader)
-- ld -m elf_i386 -T linker.ld --oformat binary
-- VGA texte : 80x25, 16 couleurs, adresse 0xB8000
-- Kernel chargé à : 0x8000
-- Stack : 0x90000
-- INTERDIT : malloc, free, printf, strcmp, strlen, memset, memcpy, stdio.h, stdlib.h, string.h
+Analyse le code de MaxOS et retourne UNIQUEMENT ce JSON valide.
+Pas de texte avant, pas de texte apres, pas de ```json.
+Commence directement par {{ :
 
-RETOURNE UNIQUEMENT LE JSON SUIVANT (pas de texte avant ou après) :
 {{
   "score_actuel": 45,
-  "commentaire_global": "Une phrase résumant l'état du code",
+  "commentaire_global": "Phrase courte",
   "problemes_critiques": [
-    {{"fichier": "path/fichier.c", "description": "problème précis"}}
+    {{"fichier": "kernel/kernel.c", "description": "probleme precis"}}
   ],
-  "fichiers_manquants": ["path/fichier.c"],
+  "fichiers_manquants": [],
   "plan_ameliorations": [
     {{
       "nom": "Nom court",
       "priorite": "CRITIQUE",
-      "fichiers_a_modifier": ["path/fichier.h", "path/fichier.c"],
+      "fichiers_a_modifier": ["ui/ui.c"],
       "fichiers_a_creer": [],
-      "description": "Ce que tu vas faire"
+      "description": "Description precise"
     }}
   ]
 }}"""
 
-    # ── Réduire max_tokens pour éviter MAX_TOKENS sur l'analyse ──
-    response = gemini_call(prompt, max_tokens=2048)
+    response = gemini(prompt, max_tokens=3000)
     if not response:
         return None
 
-    print(f"[Phase 1] Réponse: {len(response)} chars")
-    print(f"[Phase 1] Début: {response[:200]}")
+    print(f"[Phase 1] {len(response)} chars")
+    print(f"[Phase 1] Debut: {response[:150]}")
 
-    response_clean = response.strip()
+    clean = response.strip()
 
-    # Cas 1 : Réponse est directement du JSON
-    if response_clean.startswith("{"):
-        try:
-            return json.loads(response_clean)
-        except Exception:
-            pass
+    # Nettoyer les blocs markdown
+    if clean.startswith("```"):
+        lines = clean.split("\n")
+        lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        clean = "\n".join(lines).strip()
 
-    # Cas 2 : JSON dans un bloc ```json (potentiellement non fermé → MAX_TOKENS)
-    if "```json" in response_clean:
-        start = response_clean.index("```json") + 7
-        try:
-            end = response_clean.index("```", start)
-        except ValueError:
-            # Réponse tronquée : pas de ``` de fermeture, on prend jusqu'à la fin
-            end = len(response_clean)
-        try:
-            return json.loads(response_clean[start:end].strip())
-        except Exception as e:
-            print(f"[Phase 1] JSON (bloc markdown) parse error: {e}")
+    # Extraire JSON
+    for attempt in range(3):
+        i = clean.find("{")
+        j = clean.rfind("}") + 1
+        if i >= 0 and j > i:
+            try:
+                return json.loads(clean[i:j])
+            except json.JSONDecodeError as e:
+                print(f"[Phase 1] JSON erreur tentative {attempt+1}: {e}")
+                # Essayer de couper à la dernière virgule valide
+                clean = clean[i:j-1]
 
-    # Cas 3 : Chercher le premier { et dernier }
-    i = response_clean.find("{")
-    j = response_clean.rfind("}") + 1
-    if i >= 0 and j > i:
-        try:
-            return json.loads(response_clean[i:j])
-        except Exception as e:
-            print(f"[Phase 1] JSON parse error: {e}")
-            print(f"[Phase 1] Tentative sur: {response_clean[i:i+500]}")
-
-    # Cas 4 : Plan par défaut si tout échoue
-    print("[Phase 1] JSON introuvable, plan par défaut...")
+    # Plan par défaut
+    print("[Phase 1] Utilisation plan par defaut")
     return {
-        "score_actuel": 40,
-        "commentaire_global": "Analyse automatique - plan par défaut appliqué",
+        "score_actuel": 50,
+        "commentaire_global": "Analyse automatique - plan standard",
         "problemes_critiques": [],
         "fichiers_manquants": [],
         "plan_ameliorations": [
             {
-                "nom": "Amélioration UI complète",
+                "nom": "Interface UI amelioree",
                 "priorite": "HAUTE",
                 "fichiers_a_modifier": ["ui/ui.h", "ui/ui.c"],
                 "fichiers_a_creer": [],
-                "description": "Améliorer l'interface utilisateur style Windows 11"
+                "description": "Ameliorer topbar et taskbar style Windows 11"
             },
             {
                 "nom": "Terminal avec historique",
                 "priorite": "HAUTE",
                 "fichiers_a_modifier": ["apps/terminal.h", "apps/terminal.c"],
                 "fichiers_a_creer": [],
-                "description": "Ajouter historique et nouvelles commandes au terminal"
+                "description": "Ajouter historique commandes et nouvelles commandes"
             },
             {
-                "nom": "Bloc-Notes amélioré",
+                "nom": "Bloc-Notes ameliore",
                 "priorite": "NORMALE",
                 "fichiers_a_modifier": ["apps/notepad.h", "apps/notepad.c"],
                 "fichiers_a_creer": [],
-                "description": "Améliorer l'éditeur de texte"
+                "description": "Ameliorer editeur de texte avec meilleur curseur"
             },
-            {
-                "nom": "Calculatrice",
-                "priorite": "NORMALE",
-                "fichiers_a_modifier": ["kernel/kernel.c"],
-                "fichiers_a_creer": ["apps/calculator.h", "apps/calculator.c"],
-                "description": "Créer une application calculatrice"
-            }
         ]
     }
 
 # ══════════════════════════════════════════
-# PHASE 2 : IMPLÉMENTATION
+# PHASE 2 : IMPLEMENTATION
 # ══════════════════════════════════════════
-def phase_implement(amelioration, all_sources):
-    nom        = amelioration.get("nom", "Amélioration")
-    fichiers_m = amelioration.get("fichiers_a_modifier", [])
-    fichiers_c = amelioration.get("fichiers_a_creer", [])
-    desc       = amelioration.get("description", "")
+def phase_implement(task, all_sources):
+    nom        = task.get("nom", "Amelioration")
+    fichiers_m = task.get("fichiers_a_modifier", [])
+    fichiers_c = task.get("fichiers_a_creer", [])
+    desc       = task.get("description", "")
     tous       = list(set(fichiers_m + fichiers_c))
 
     print(f"\n[Impl] {nom}")
-    print(f"[Impl] Fichiers cibles: {tous}")
+    print(f"[Impl] Cibles: {tous}")
 
-    # Fichiers liés automatiquement
+    # Contexte ciblé
     lies = set(tous)
     for f in tous:
-        base = f.replace(".c", "").replace(".h", "")
+        base = f.replace(".c","").replace(".h","")
         for ext in [".c", ".h"]:
-            cand = base + ext
-            if cand in all_sources:
-                lies.add(cand)
+            if (base+ext) in all_sources:
+                lies.add(base+ext)
 
-    # Toujours inclure ces fichiers clés
     for key in ["kernel/kernel.c", "drivers/screen.h",
                 "drivers/keyboard.h", "ui/ui.h", "Makefile"]:
         lies.add(key)
 
-    # Contexte ciblé
-    ctx = "=== FICHIERS À MODIFIER ===\n\n"
+    ctx = "=== FICHIERS CONCERNES ===\n\n"
     for f in sorted(lies):
         c = all_sources.get(f, "")
-        ctx += f"--- {f} ---\n"
-        ctx += (c if c else "[MANQUANT - À CRÉER]\n")
-        ctx += "\n\n"
+        ctx += f"--- {f} ---\n{c if c else '[MANQUANT]'}\n\n"
 
-    prompt = f"""Tu es un expert OS bare metal x86. Tu travailles sur MaxOS.
+    prompt = f"""Tu es un expert OS bare metal x86.
 
-TÂCHE : {nom}
-DESCRIPTION : {desc}
+{BARE_METAL_RULES}
 
-FICHIERS À MODIFIER : {fichiers_m}
-FICHIERS À CRÉER    : {fichiers_c}
-
+CONTEXTE MAXOS :
 {ctx}
 
-RÈGLES ABSOLUES :
-1. C pur - PAS de #include librairies standard
-2. PAS malloc, free, printf, strlen, strcmp, memset, memcpy
-3. PAS #include <stdio.h> <stdlib.h> <string.h>
-4. Compatible: gcc -m32 -ffreestanding -fno-pic -fno-pie -nostdlib -nostdinc
-5. Code COMPLET dans chaque fichier (pas de "reste inchangé")
-6. Si tu modifies kernel.c, donne le fichier complet avec toutes les apps
-7. Si tu crées un nouveau .c, modifie le Makefile pour l'inclure
+TACHE : {nom}
+DESCRIPTION : {desc}
+FICHIERS A MODIFIER : {fichiers_m}
+FICHIERS A CREER    : {fichiers_c}
 
-COMMENCE DIRECTEMENT PAR LES FICHIERS - PAS DE TEXTE AVANT :
+INSTRUCTIONS CRITIQUES :
+- Code COMPLET dans chaque fichier
+- PAS de "// reste inchange" ou "..."
+- Respecter EXACTEMENT les signatures des fonctions existantes
+- si_draw() et ab_draw() existent deja - ne pas creer si_key/ab_key/si_init/ab_init
+- kernel.c doit garder TOUTES les apps (notepad, terminal, sysinfo, about)
+- Si nouveau fichier .c : mettre a jour le Makefile
 
-=== FILE: premier/fichier.h ===
-[code complet]
-=== END FILE ===
+COMMENCE DIRECTEMENT PAR LE PREMIER FICHIER - PAS DE TEXTE AVANT :
 
-=== FILE: premier/fichier.c ===
+=== FILE: chemin/fichier.h ===
 [code complet]
 === END FILE ==="""
 
     t0       = time.time()
-    response = gemini_call(prompt, max_tokens=65536)
+    response = gemini(prompt, max_tokens=65536)
     elapsed  = time.time() - t0
 
     if not response:
-        d_task_err(nom, "Gemini n'a pas répondu après 3 tentatives.")
+        d(f"Echec: {nom}", "Gemini n'a pas repondu", 0xFF0000)
         return False, []
 
-    print(f"[Impl] Réponse: {len(response)} chars en {elapsed:.1f}s")
+    print(f"[Impl] {len(response)} chars en {elapsed:.1f}s")
 
-    # Parser
     files = parse_files(response)
     if not files:
-        print(f"[Debug] Début réponse:\n{response[:1000]}")
-        d_task_err(nom, f"Aucun fichier parsé.\n```\n{response[:800]}\n```")
+        print(f"[Debug] Debut reponse:\n{response[:800]}")
+        d(f"Echec: {nom}", f"Aucun fichier parse.\n```\n{response[:600]}\n```", 0xFF0000)
         return False, []
 
-    print(f"[Impl] Parsé: {list(files.keys())}")
+    print(f"[Impl] Parse: {list(files.keys())}")
 
-    # Backup + écriture
     backs   = backup_files(list(files.keys()))
     written = write_files(files)
 
     if not written:
-        d_task_err(nom, "Aucun fichier écrit.")
+        d(f"Echec: {nom}", "Aucun fichier ecrit", 0xFF0000)
         return False, []
 
-    # Build
     build_ok, log = make_build()
 
     if build_ok:
-        pushed = git_push(f"feat(ai): {nom} [{WORKING_MODEL}]")
+        pushed, sha = git_push(f"feat: {nom} [{WORKING_MODEL}]")
         if pushed:
-            d_task_ok(nom, written, elapsed, WORKING_MODEL)
             return True, written
-        d_task_err(nom, "Push Git échoué.")
         restore_files(backs)
         return False, []
     else:
         # Auto-fix
-        print("[Build] Tentative auto-correction...")
         fixed = auto_fix(log, files, backs)
         if fixed:
-            d_autofix(True)
             return True, written
 
         restore_files(backs)
@@ -777,14 +682,13 @@ COMMENCE DIRECTEMENT PAR LES FICHIERS - PAS DE TEXTE AVANT :
                 if os.path.exists(fp):
                     os.remove(fp)
 
-        d_build_err(nom, log)
         return False, []
 
 # ══════════════════════════════════════════
 # AUTO-FIX
 # ══════════════════════════════════════════
 def auto_fix(build_log, generated_files, backups):
-    print("[Fix] Demande correction à Gemini...")
+    print("[Fix] Auto-correction...")
 
     current = {}
     for p in generated_files:
@@ -797,24 +701,36 @@ def auto_fix(build_log, generated_files, backups):
     for p, c in current.items():
         ctx += f"--- {p} ---\n{c}\n\n"
 
-    prompt = f"""Le code généré pour MaxOS ne compile pas.
+    # Extraire les erreurs importantes
+    errors = [l for l in build_log.split("\n")
+              if "error:" in l.lower() and l.strip()][:15]
+    error_txt = "\n".join(errors)
+
+    prompt = f"""Corrige ces erreurs de compilation bare metal x86.
+
+{BARE_METAL_RULES}
 
 ERREURS :
-{build_log[-2000:]}
+```
+{error_txt}
+```
 
+LOG COMPLET (fin) :
+```
+{build_log[-1500:]}
+```
 
-FICHIERS GÉNÉRÉS :
+FICHIERS ACTUELS :
 {ctx}
 
-RÈGLES : C pur, gcc -m32 -ffreestanding -nostdlib -nostdinc, pas de librairies.
+Corrige UNIQUEMENT les erreurs. Code complet.
+Commence directement par le fichier :
 
-Corrige UNIQUEMENT les erreurs. Réponds directement avec les fichiers :
-
-=== FILE: path/fichier.c ===
-[code corrigé complet]
+=== FILE: chemin/fichier.c ===
+[code corrige complet]
 === END FILE ==="""
 
-    response = gemini_call(prompt, max_tokens=32768)
+    response = gemini(prompt, max_tokens=32768)
     if not response:
         return False
 
@@ -826,44 +742,139 @@ Corrige UNIQUEMENT les erreurs. Réponds directement avec les fichiers :
     ok, log = make_build()
 
     if ok:
-        git_push("fix(ai): Auto-correction erreurs compilation")
+        git_push("fix: Auto-correction erreurs de compilation")
+        d("Auto-correction reussie", "Erreurs corrigees automatiquement.", 0x00AAFF)
         return True
 
-    d_autofix(False)
+    restore_files(backups)
     return False
+
+# ══════════════════════════════════════════
+# RELEASE GITHUB
+# ══════════════════════════════════════════
+def create_release(tasks_done, score_before, score_after=None):
+    """Crée une release GitHub professionnelle."""
+    if not GITHUB_TOKEN:
+        print("[Release] Pas de GITHUB_TOKEN")
+        return
+
+    # Récupérer le dernier tag
+    result = github_api("GET", "tags?per_page=1")
+    last_tag = "v0.0.0"
+    if result and len(result) > 0:
+        last_tag = result[0].get("name", "v0.0.0")
+
+    # Incrémenter la version
+    try:
+        parts   = last_tag.lstrip("v").split(".")
+        parts   = [int(x) for x in parts]
+        parts[2] += 1
+        if parts[2] >= 10:
+            parts[2] = 0
+            parts[1] += 1
+        new_tag = f"v{parts[0]}.{parts[1]}.{parts[2]}"
+    except Exception:
+        new_tag = "v1.0.1"
+
+    # Construire le changelog
+    now = datetime.utcnow().strftime("%Y-%m-%d")
+
+    changes = "\n".join([f"- {t}" for t in tasks_done]) if tasks_done else "- Maintenance automatique"
+
+    release_body = f"""# MaxOS {new_tag}
+
+Release generee automatiquement par MaxOS AI Developer v7.0.
+
+## Date de publication
+
+{now}
+
+## Changements
+
+{changes}
+
+## Informations techniques
+
+- Architecture : x86 32-bit Protected Mode
+- Compilateur  : GCC -m32 -ffreestanding
+- Assembleur   : NASM
+- Emulateur    : QEMU i386
+
+## Lancer l'OS
+
+```bash
+qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr
+```
+
+## Controles
+
+- TAB : Changer d'application
+- F1  : Bloc-Notes
+- F2  : Terminal
+- F3  : Systeme
+- F4  : A propos
+
+## Modele IA utilise
+
+{WORKING_MODEL or "gemini"}
+"""
+
+    url = github_create_release(
+        tag=new_tag,
+        name=f"MaxOS {new_tag} - Build automatique {now}",
+        body=release_body,
+        prerelease=False
+    )
+
+    if url:
+        d(
+            f"Release {new_tag} publiee",
+            f"Une nouvelle release a ete creee sur GitHub.\n{url}",
+            0x00FF00,
+            [
+                {"name": "Version",    "value": new_tag,       "inline": True},
+                {"name": "Changements","value": str(len(tasks_done)), "inline": True},
+                {"name": "Lien",       "value": f"[Voir la release]({url})", "inline": False},
+            ]
+        )
+    return url
 
 # ══════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════
 def main():
-    print("╔══════════════════════════════════════════════╗")
-    print("║   MaxOS AI Developer v6.0                    ║")
-    print("║   Sécurisé + Webhook riche + Autonome        ║")
-    print("╚══════════════════════════════════════════════╝\n")
+    print("=" * 55)
+    print("  MaxOS AI Developer v7.0")
+    print("  Autonome + Releases + GitHub Integration")
+    print("=" * 55 + "\n")
 
     if not find_model():
-        print("FATAL: Aucun modèle disponible!")
+        print("FATAL: Aucun modele disponible")
         sys.exit(1)
 
-    d_start(WORKING_MODEL, len(ALL_FILES))
+    d(
+        "MaxOS AI Developer v7.0 demarre",
+        f"Modele : {WORKING_MODEL}\nRepo : {REPO_OWNER}/{REPO_NAME}",
+        0x5865F2,
+        [
+            {"name": "Modele",  "value": WORKING_MODEL, "inline": True},
+            {"name": "Heure",   "value": datetime.now().strftime("%H:%M:%S"), "inline": True},
+        ]
+    )
 
-    # Lire le code
+    # Lire les sources
     sources = read_all()
     context = build_context(sources)
-    print(f"[Sources] {len([s for s in sources.values() if s])} fichiers OK, {len(context)} chars")
+    print(f"[Sources] {len([s for s in sources.values() if s])} fichiers, {len(context)} chars")
 
     # Phase 1 : Analyse
-    print("\n" + "═"*55)
-    print(" PHASE 1 : Analyse autonome")
-    print("═"*55)
+    print("\n" + "="*55)
+    print(" PHASE 1 : Analyse")
+    print("="*55)
 
     analyse = phase_analyse(context)
     if not analyse:
-        discord_send([make_embed(
-            "❌ Analyse échouée",
-            "Gemini n'a pas pu analyser le code. Vérifier la clé API.",
-            0xFF0000
-        )])
+        d("Analyse echouee", "Impossible d'analyser le code.", 0xFF0000)
         sys.exit(1)
 
     score   = analyse.get("score_actuel", 0)
@@ -872,50 +883,104 @@ def main():
     bugs    = analyse.get("problemes_critiques", [])
     manq    = analyse.get("fichiers_manquants", [])
 
-    print(f"\n[Rapport] Score: {score}/100 — {comment}")
-    print(f"[Rapport] {len(plan)} amélioration(s) planifiée(s)")
-    for i, a in enumerate(plan):
-        print(f"  [{i+1}] [{a.get('priorite','?')}] {a.get('nom','?')}")
+    print(f"\n[Rapport] Score: {score}/100")
+    print(f"[Rapport] {comment}")
+    print(f"[Rapport] {len(plan)} ameliorations planifiees")
 
-    d_analyse(score, comment, bugs, plan, manq)
+    bugs_txt = "\n".join([
+        f"- `{b.get('fichier','?')}` : {b.get('description','')[:80]}"
+        for b in bugs[:5]
+    ]) or "Aucun probleme critique detecte."
 
-    # Phase 2 : Implémentation
-    print("\n" + "═"*55)
-    print(" PHASE 2 : Implémentation")
-    print("═"*55)
+    plan_txt = "\n".join([
+        f"- [{a.get('priorite','?')}] {a.get('nom','?')}"
+        for a in plan[:8]
+    ]) or "Aucun"
 
-    # Trier par priorité
-    order   = {"CRITIQUE": 0, "HAUTE": 1, "NORMALE": 2}
-    plan_ok = sorted(plan, key=lambda x: order.get(x.get("priorite","NORMALE"), 2))
+    d(
+        f"Rapport d'analyse - Score {score}/100",
+        f"```\n{progress_bar(score)}\n```\n{comment}",
+        0x00FF00 if score >= 70 else 0xFFA500 if score >= 40 else 0xFF0000,
+        [
+            {"name": "Problemes detectes",  "value": bugs_txt[:1024],  "inline": False},
+            {"name": "Plan d'amelioration", "value": plan_txt[:1024],  "inline": False},
+            {"name": "Fichiers manquants",  "value": "\n".join([f"- `{f}`" for f in manq]) or "Aucun", "inline": True},
+        ]
+    )
 
-    success = 0
-    total   = len(plan_ok)
+    # Phase 2 : Implementation
+    print("\n" + "="*55)
+    print(" PHASE 2 : Implementation")
+    print("="*55)
 
-    for i, task in enumerate(plan_ok, 1):
-        nom      = task.get("nom", f"Tâche {i}")
+    order    = {"CRITIQUE": 0, "HAUTE": 1, "NORMALE": 2, "BASSE": 3}
+    plan_sorted = sorted(plan, key=lambda x: order.get(x.get("priorite","NORMALE"), 2))
+
+    success      = 0
+    total        = len(plan_sorted)
+    tasks_done   = []
+
+    for i, task in enumerate(plan_sorted, 1):
+        nom      = task.get("nom", f"Tache {i}")
         priorite = task.get("priorite", "NORMALE")
 
-        print(f"\n{'═'*55}")
+        print(f"\n{'='*55}")
         print(f" [{i}/{total}] [{priorite}] {nom}")
-        print(f"{'═'*55}")
+        print(f"{'='*55}")
 
-        d_task_start(i, total, nom, priorite, task.get("description",""))
+        d(
+            f"[{i}/{total}] {nom}",
+            f"Priorite : {priorite}\n{task.get('description','')}",
+            0xFFA500,
+            [{"name": "Position", "value": f"{i}/{total}", "inline": True}]
+        )
 
         sources = read_all()
         ok, written = phase_implement(task, sources)
 
         if ok:
             success += 1
+            tasks_done.append(f"{nom} ({', '.join(written[:3])})")
+            d(
+                f"Succes : {nom}",
+                f"Amelioration appliquee.",
+                0x00FF00,
+                [
+                    {"name": "Fichiers", "value": "\n".join([f"`{f}`" for f in written[:5]]), "inline": False},
+                    {"name": "Modele",   "value": WORKING_MODEL, "inline": True},
+                ]
+            )
             sources = read_all()
             context = build_context(sources)
+        else:
+            d(f"Echec : {nom}", "Code restaure automatiquement.", 0xFF6600)
 
         if i < total:
-            wait = 30
-            print(f"[Pause] {wait}s...")
-            time.sleep(wait)
+            print(f"[Pause] 30s...")
+            time.sleep(30)
 
-    d_final(success, total, score, WORKING_MODEL)
-    print(f"\n[FIN] {success}/{total} améliorations réussies.")
+    # Creer une release si des ameliorations ont reussi
+    if success > 0:
+        print(f"\n[Release] Creation release GitHub...")
+        create_release(tasks_done, score)
+
+    # Rapport final
+    pct   = int(success / total * 100) if total > 0 else 0
+    color = 0x00FF00 if pct >= 80 else 0xFFA500 if pct >= 50 else 0xFF4444
+
+    d(
+        f"Cycle termine : {success}/{total} reussies",
+        f"```\n{progress_bar(pct)}\n```",
+        color,
+        [
+            {"name": "Succes",  "value": str(success),         "inline": True},
+            {"name": "Echecs",  "value": str(total-success),   "inline": True},
+            {"name": "Taux",    "value": f"{pct}%",            "inline": True},
+            {"name": "Modele",  "value": WORKING_MODEL or "?", "inline": True},
+        ]
+    )
+
+    print(f"\n[FIN] {success}/{total} ameliorations.")
 
 if __name__ == "__main__":
     main()
