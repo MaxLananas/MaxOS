@@ -225,14 +225,30 @@ def find_model_for_key(idx):
     return False
 
 def find_all_models():
-    print("[Init] Initialisation des cles...")
+    """
+    Init SANS appels de test = 0 quota consommé au démarrage.
+    Le premier vrai appel gemini() déterminera si ça marche.
+    """
+    print("[Init] Init lazy (sans appels test)...")
     ok = 0
     for i in range(len(API_KEYS)):
-        if API_KEYS[i]:
-            if find_model_for_key(i):
+        if not API_KEYS[i]:
+            continue
+        forbidden = KEY_STATE["forbidden"].get(i, set())
+        for model in MODELS_PRIORITY:
+            if model not in forbidden:
+                ACTIVE_MODELS[i] = {
+                    "model": model,
+                    "url": (
+                        "https://generativelanguage.googleapis.com"
+                        "/v1beta/models/" + model +
+                        ":generateContent?key=" + API_KEYS[i]
+                    )
+                }
+                print("[Init] Cle " + str(i+1) + " -> " + model + " (lazy)")
                 ok += 1
-            time.sleep(1)  # Éviter le rate limit entre tests
-    print("[Init] " + str(ok) + "/" + str(len(API_KEYS)) + " cle(s) OK")
+                break
+    print("[Init] " + str(ok) + "/" + str(len(API_KEYS)) + " cles configurees")
     return ok > 0
 
 # ══════════════════════════════════════════════════════
