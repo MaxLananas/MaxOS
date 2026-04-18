@@ -3,82 +3,105 @@ CC   = gcc
 LD   = ld
 QEMU = qemu-system-i386
 
+BUILD_DIR = build
+
 CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-builtin \
          -fno-pic -fno-pie -nostdlib -nostdinc -w -c
 
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
-.PHONY: all clean run
+.PHONY: all clean run run-nographic
 
-all: prepare build/os.img
+# ======================
+# Build principal
+# ======================
+
+all: prepare $(BUILD_DIR)/os.img
 	@echo ""
-	@echo "  MaxOS compile !"
-	@echo "  make run  pour lancer"
+	@echo "  MaxOS compilé !"
+	@echo "  make run pour lancer"
 	@echo ""
 
 prepare:
-	@mkdir -p build
+	@mkdir -p $(BUILD_DIR)
 
-build/boot.bin: boot/boot.asm
+# ======================
+# Compilation
+# ======================
+
+$(BUILD_DIR)/boot.bin: boot/boot.asm
 	$(ASM) -f bin $< -o $@
 
-build/kernel_entry.o: kernel/kernel_entry.asm
+$(BUILD_DIR)/kernel_entry.o: kernel/kernel_entry.asm
 	$(ASM) -f elf $< -o $@
 
-build/kernel.o: kernel/kernel.c
+$(BUILD_DIR)/kernel.o: kernel/kernel.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/screen.o: drivers/screen.c
+$(BUILD_DIR)/screen.o: drivers/screen.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/keyboard.o: drivers/keyboard.c
+$(BUILD_DIR)/keyboard.o: drivers/keyboard.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/ui.o: ui/ui.c
+$(BUILD_DIR)/ui.o: ui/ui.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/notepad.o: apps/notepad.c
+$(BUILD_DIR)/notepad.o: apps/notepad.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/terminal.o: apps/terminal.c
+$(BUILD_DIR)/terminal.o: apps/terminal.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/sysinfo.o: apps/sysinfo.c
+$(BUILD_DIR)/sysinfo.o: apps/sysinfo.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/about.o: apps/about.c
+$(BUILD_DIR)/about.o: apps/about.c
 	$(CC) $(CFLAGS) $< -o $@
 
-build/kernel.bin: \
-    build/kernel_entry.o \
-    build/kernel.o \
-    build/screen.o \
-    build/keyboard.o \
-    build/ui.o \
-    build/notepad.o \
-    build/terminal.o \
-    build/sysinfo.o \
-    build/about.o
+$(BUILD_DIR)/kernel.bin: \
+    $(BUILD_DIR)/kernel_entry.o \
+    $(BUILD_DIR)/kernel.o \
+    $(BUILD_DIR)/screen.o \
+    $(BUILD_DIR)/keyboard.o \
+    $(BUILD_DIR)/ui.o \
+    $(BUILD_DIR)/notepad.o \
+    $(BUILD_DIR)/terminal.o \
+    $(BUILD_DIR)/sysinfo.o \
+    $(BUILD_DIR)/about.o
 	$(LD) $(LFLAGS) $^ -o $@
 
-build/os.img: build/boot.bin build/kernel.bin
+$(BUILD_DIR)/os.img: $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin
 	@echo "Construction de l'image disque..."
-	@echo "Taille du bootloader: $(shell stat -f%z build/boot.bin) octets"
-	@echo "Taille du kernel: $(shell stat -f%z build/kernel.bin) octets"
-	@echo "Taille totale du kernel (bootloader + kernel): $(shell expr $(shell stat -f%z build/boot.bin) + $(shell stat -f%z build/kernel.bin)) octets"
-	cat $^ > $@
-	truncate -s 1474560 $@
-	@echo "Image disque 'build/os.img' créée."
+	@cat $^ > $@
+	@truncate -s 1474560 $@
+	@echo "Image disque créée : $(BUILD_DIR)/os.img"
 
-# QEMU avec -no-fd-bootchk et keyboard layout
-run: build/os.img
+# ======================
+# QEMU
+# ======================
+
+run: $(BUILD_DIR)/os.img
 	$(QEMU) \
-	  -drive format=raw,file=build/os.img,if=floppy \
-	  -boot a \
-	  -vga std \
-	  -k fr \
-	  -no-fd-bootchk
+		-drive format=raw,file=$(BUILD_DIR)/os.img,if=floppy \
+		-boot a \
+		-vga std \
+		-k fr \
+		-m 32 \
+		-no-fd-bootchk \
+		-no-reboot
+
+run-nographic: $(BUILD_DIR)/os.img
+	$(QEMU) \
+		-drive format=raw,file=$(BUILD_DIR)/os.img,if=floppy \
+		-boot a \
+		-nographic \
+		-no-reboot
+
+# ======================
+# Clean
+# ======================
 
 clean:
-	@rm -rf build/
+	@rm -rf $(BUILD_DIR)
 	@echo "Nettoyage terminé !"
