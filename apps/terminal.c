@@ -8,7 +8,7 @@
 #define TM_ROW    (WIN_R + 2)
 #define TM_TH     (WIN_H - 5)
 
-#define HISTORY_SIZE 16
+#define HISTORY_SIZE 20 /* Augmenté à 20 entrées */
 #define MAX_CMD_LEN TM_W
 
 static char tm_buf[TM_LINES][TM_W];
@@ -24,9 +24,24 @@ static int  tm_history_idx = 0;
 /* Complétion automatique */
 static const char* commands[] = {
     "help", "clear", "uname", "mem", "cpu", "ls", "date", "version", "echo",
-    /* Ajoutez d'autres commandes ici si nécessaire */
+    "uptime", "reboot", "halt", "color", "beep", "calc", "snake", "pong",
+    "about", "credits", "license", "ps", "sysinfo"
 };
 static int num_commands = sizeof(commands) / sizeof(commands[0]);
+
+/* Horloge externe */
+extern unsigned int CLK_H;
+extern unsigned int CLK_M;
+extern unsigned int CLK_S;
+
+/* Uptime externe (sera défini dans kernel/timer.c) */
+extern unsigned int uptime_seconds;
+
+/* Fonctions d'E/S et de contrôle système (définies dans kernel/kernel.c) */
+extern void outb(unsigned short port, unsigned char data);
+extern unsigned char inb(unsigned short port);
+extern void reboot(void);
+extern void halt(void);
 
 /* ── utils ── */
 static int se(const char* a, const char* b) {
@@ -68,6 +83,30 @@ static void println(const char* s) {
     tm_cur++;
 }
 
+/* Convertit un unsigned int en chaîne de caractères */
+static void uitoa(unsigned int n, char* s) {
+    int i = 0;
+    char buf[11]; // Max for 32-bit unsigned int is 10 digits + null
+    int k = 0;
+
+    if (n == 0) {
+        s[0] = '0';
+        s[1] = '\0';
+        return;
+    }
+
+    while (n > 0) {
+        buf[k++] = (char)('0' + (n % 10));
+        n /= 10;
+    }
+
+    // Reverse the buffer
+    while (k > 0) {
+        s[i++] = buf[--k];
+    }
+    s[i] = '\0';
+}
+
 static void add_to_history(const char* cmd) {
     if (cmd[0] == '\0') return;
     if (tm_history_count < HISTORY_SIZE) {
@@ -90,8 +129,8 @@ static void get_history_entry(int direction) {
     if (direction == KEY_UP) {
         if (tm_history_idx > 0) tm_history_idx--;
     } else if (direction == KEY_DOWN) {
-        if (tm_history_idx < tm_history_count - 1) tm_history_idx++;
-        else tm_history_idx = tm_history_count; /* Retour au prompt vide */
+        if (tm_history_idx < tm_history_count) tm_history_idx++;
+        /* Si on dépasse le dernier élément, on revient au prompt vide */
     }
 
     if (tm_history_idx < tm_history_count) {
@@ -144,7 +183,15 @@ static void complete_command(void) {
                         line_idx += cmd_len;
                         line[line_idx++] = ' ';
                     } else {
-                        break; /* Pas assez de place sur la ligne */
+                        /* Pas assez de place sur la ligne, afficher et passer à la ligne suivante */
+                        line[line_idx] = '\0';
+                        println(line);
+                        line_idx = 0;
+                        line[line_idx++] = ' ';
+                        line[line_idx++] = ' ';
+                        sc(line + line_idx, commands[i], TM_W - line_idx);
+                        line_idx += cmd_len;
+                        line[line_idx++] = ' ';
                     }
                 }
             }
@@ -169,11 +216,6 @@ void tm_init(void) {
     println("------------------------------------------");
 }
 
-/* Horloge externe */
-extern unsigned int CLK_H;
-extern unsigned int CLK_M;
-extern unsigned int CLK_S;
-
 static void exec(const char* cmd) {
     /* Afficher prompt + commande */
     char line[TM_W];
@@ -189,16 +231,30 @@ static void exec(const char* cmd) {
     } else if (se(cmd, "help")) {
         println("  help     - Cette aide");
         println("  clear    - Vider le terminal");
+        println("  cls      - Alias de clear");
         println("  uname    - Infos systeme");
         println("  mem      - Infos memoire");
         println("  cpu      - Infos CPU");
         println("  ls       - Lister fichiers");
         println("  date     - Date et heure");
+        println("  uptime   - Temps de fonctionnement");
         println("  version  - Version MaxOS");
         println("  echo [x] - Afficher texte");
+        println("  reboot   - Redemarrer le systeme");
+        println("  halt     - Eteindre le systeme");
+        println("  color    - Changer les couleurs (WIP)");
+        println("  beep     - Jouer un son (WIP)");
+        println("  calc     - Calculatrice (WIP)");
+        println("  snake    - Jeu Snake (WIP)");
+        println("  pong     - Jeu Pong (WIP)");
+        println("  about    - A propos de MaxOS");
+        println("  credits  - Credits de developpement");
+        println("  license  - Informations de licence");
+        println("  ps       - Processus en cours (WIP)");
+        println("  sysinfo  - Informations systeme detaillees");
         println("  tab      - Complétion automatique");
         println("  up/down  - Historique commandes");
-    } else if (se(cmd, "clear")) {
+    } else if (se(cmd, "clear") || se(cmd, "cls")) {
         int k; for (k = 0; k < TM_LINES; k++) mc(tm_buf[k], TM_W);
         tm_cur = 0;
     } else if (se(cmd, "uname")) {
@@ -230,6 +286,14 @@ static void exec(const char* cmd) {
         d[14] = (char)('0' + CLK_S / 10); d[15] = (char)('0' + CLK_S % 10);
         d[16] = '\0';
         println(d);
+    } else if (se(cmd, "uptime")) {
+        char u_str[16];
+        uitoa(uptime_seconds, u_str);
+        char output[TM_W];
+        sc(output, "  Uptime: ", TM_W);
+        sc(output + 10, u_str, TM_W - 10);
+        sc(output + 10 + (int)sizeof(u_str), " secondes", TM_W - 10 - (int)sizeof(u_str));
+        println(output);
     } else if (se(cmd, "version")) {
         println("  MaxOS v1.1");
         println("  x86 32-bit | VGA 80x25 | PS/2 AZERTY");
@@ -240,6 +304,43 @@ static void exec(const char* cmd) {
         while (cmd[ci] && oi < TM_W - 1) out[oi++] = cmd[ci++];
         out[oi] = '\0';
         println(out);
+    } else if (se(cmd, "reboot")) {
+        println("  Redemarrage du systeme...");
+        reboot();
+    } else if (se(cmd, "halt")) {
+        println("  Arret du systeme...");
+        halt();
+    } else if (se(cmd, "color")) {
+        println("  La commande 'color' n'est pas encore implementee avec des arguments.");
+        println("  Elle changera les couleurs du terminal a l'avenir.");
+    } else if (se(cmd, "beep")) {
+        println("  La fonction 'beep' n'est pas encore implementee.");
+    } else if (se(cmd, "calc")) {
+        println("  La calculatrice n'est pas encore implementee.");
+    } else if (se(cmd, "snake")) {
+        println("  Le jeu Snake n'est pas encore implemente.");
+    } else if (se(cmd, "pong")) {
+        println("  Le jeu Pong n'est pas encore implemente.");
+    } else if (se(cmd, "about")) {
+        println("  MaxOS est un systeme d'exploitation bare-metal");
+        println("  developpe par l'IA pour l'architecture x86.");
+        println("  Objectif: un OS complet type Windows 11.");
+    } else if (se(cmd, "credits")) {
+        println("  Developpement principal: IA (MaxOS Project)");
+        println("  Inspiration: divers projets OSdev open-source");
+        println("  Remerciements: Communauté OSdev pour les ressources");
+    } else if (se(cmd, "license")) {
+        println("  MaxOS est distribue sous une licence permissive.");
+        println("  Veuillez consulter le fichier LICENSE pour plus de details.");
+    } else if (se(cmd, "ps")) {
+        println("  La gestion des processus n'est pas encore implementee.");
+        println("  Actuellement, un seul thread d'execution est actif.");
+    } else if (se(cmd, "sysinfo")) {
+        println("  MaxOS v1.1 (Build 2024)");
+        println("  Architecture: x86 32-bit Protected Mode");
+        println("  Memoire: 640KB basse, ~255MB haute (detectee)");
+        println("  Peripheriques: VGA 80x25, Clavier PS/2");
+        println("  Status: Noyau en developpement actif.");
     } else {
         println("  Commande inconnue. Tape 'help'.");
     }

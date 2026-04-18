@@ -11,7 +11,36 @@ unsigned int CLK_H = 14;
 unsigned int CLK_M = 30;
 unsigned int CLK_S = 0;
 
+/* Variable d'uptime globale (sera incrémentée par le timer) */
+unsigned int uptime_seconds = 0;
+
 static int active = 0;
+
+/* Fonctions d'E/S pour les commandes reboot/halt */
+void outb(unsigned short port, unsigned char data) {
+    __asm__ volatile("outb %0, %1" : : "a"(data), "dN"(port));
+}
+
+unsigned char inb(unsigned short port) {
+    unsigned char ret;
+    __asm__ volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
+    return ret;
+}
+
+void reboot(void) {
+    unsigned char good = 0x02;
+    // Attendre que le contrôleur de clavier soit prêt (bit 1 de 0x64 est 0)
+    while (good & 0x02)
+        good = inb(0x64);
+    // Envoyer la commande de réinitialisation au contrôleur de clavier
+    outb(0x64, 0xFE);
+    // Si la réinitialisation échoue, boucler indéfiniment
+    while(1) __asm__ volatile("hlt");
+}
+
+void halt(void) {
+    __asm__ volatile("hlt");
+}
 
 static void itoa2(unsigned int n, char* b) {
     b[0] = (char)('0' + (n / 10) % 10);
@@ -88,6 +117,7 @@ void kernel_main(void) {
         if (t % 4000000 == 0) { /* Fréquence de rafraîchissement de l'horloge */
             clock_tick();
             clock_draw();
+            uptime_seconds++; // Incrémenter l'uptime chaque seconde
         }
 
         if (!kb_haskey()) continue;
