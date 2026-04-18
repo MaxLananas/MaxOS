@@ -1,4 +1,4 @@
-name: Build
+name: 🔨 Build & Test
 
 on:
   push:
@@ -12,15 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install
-        run: sudo apt-get install -y nasm gcc make -qq
+      - name: 🛠️ Install
+        run: sudo apt-get install -y nasm gcc make gcc-multilib -qq
 
-      - name: Build
+      - name: 🔨 Build
         run: make
 
-      - name: Upload
+      - name: ✅ Verify image
+        run: |
+          ls -lh build/os.img
+          file build/os.img
+          echo "Taille: $(du -b build/os.img | cut -f1) bytes"
+
+      - name: 📦 Upload
         uses: actions/upload-artifact@v4
         with:
-          name: maxos-build-${{ github.sha }}
+          name: maxos-${{ github.sha }}
           path: build/os.img
-          if-no-files-found: ignore
+          if-no-files-found: error
