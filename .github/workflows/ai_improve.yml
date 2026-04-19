@@ -1,14 +1,10 @@
-name: MaxOS AI Auto-Improvement v15
+name: MaxOS AI Auto-Improvement v16
 
 on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
-      source:
-        description: 'Source du declenchement'
-        required: false
-        default: 'manual'
       debug:
         description: 'Mode debug (0=off, 1=on)'
         required: false
@@ -28,13 +24,13 @@ jobs:
       issues: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Python 3.11
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -52,7 +48,7 @@ jobs:
           git config push.default current
           git config rebase.autoStash true
 
-      - name: Run MaxOS AI Developer v15
+      - name: Run MaxOS AI Developer v16
         env:
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
@@ -63,21 +59,30 @@ jobs:
           GROQ_KEY_2:       ${{ secrets.GROQ_KEY_2 }}
           MISTRAL_KEY:      ${{ secrets.MISTRAL_KEY }}
           DISCORD_WEBHOOK:  ${{ secrets.DISCORD_WEBHOOK }}
+          GH_PAT:           ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
           REPO_OWNER:       ${{ github.repository_owner }}
           REPO_NAME:        ${{ github.event.repository.name }}
           MAXOS_DEBUG:      ${{ github.event.inputs.debug || '0' }}
         run: python3 ai_dev/maxos_ai.py
 
-      - name: Upload build artifact
+      - name: Upload os.img artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maxos-img-${{ github.run_number }}
+          path: os.img
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: maxos-build-${{ github.run_number }}
           path: |
-            build/os.img
-            build/*.bin
-            build/*.elf
+            build/boot.bin
+            build/kernel.bin
           if-no-files-found: ignore
           retention-days: 14
 
@@ -97,6 +102,33 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Attach os.img to latest release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO:     ${{ github.repository }}
+        run: |
+          if [ ! -f os.img ]; then
+            echo "os.img introuvable, skip upload release"
+            exit 0
+          fi
+          RELEASE_ID=$(curl -s \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/releases?per_page=1" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['id']) if d else print('')")
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Aucune release trouvée"
+            exit 0
+          fi
+          echo "Upload os.img vers release $RELEASE_ID"
+          curl -s -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @os.img \
+            "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=os.img" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Upload OK:', d.get('browser_download_url','?'))"
+
       - name: Notify Discord on failure
         if: failure()
         env:
@@ -107,22 +139,9 @@ jobs:
           SERVER_URL:      ${{ github.server_url }}
         run: |
           LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
-          PAYLOAD=$(cat <<EOF
-          {
-            "username": "MaxOS AI Bot",
-            "embeds": [{
-              "title": "❌ Cycle #${RUN_NUMBER} échoué",
-              "description": "Le workflow AI a échoué.\n[📋 Voir les logs](${LINK})",
-              "color": 16711680,
-              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-              "footer": {"text": "MaxOS AI v15 | GitHub Actions"}
-            }]
-          }
-          EOF
-          )
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "$PAYLOAD" || true
+            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"❌ Cycle #${RUN_NUMBER} échoué\",\"description\":\"[📋 Voir les logs](${LINK})\",\"color\":16711680,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"footer\":{\"text\":\"MaxOS AI v16 | GitHub Actions\"}}]}" || true
 
       - name: Notify Discord on success
         if: success()
@@ -133,20 +152,9 @@ jobs:
           SERVER_URL:      ${{ github.server_url }}
           RUN_ID:          ${{ github.run_id }}
         run: |
+          IMG_STATUS="❌ Manquant"
+          [ -f os.img ] && IMG_STATUS="✅ $(du -h os.img | cut -f1)"
           LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
-          PAYLOAD=$(cat <<EOF
-          {
-            "username": "MaxOS AI Bot",
-            "embeds": [{
-              "title": "✅ Cycle #${RUN_NUMBER} terminé avec succès",
-              "description": "[📋 Voir les logs](${LINK})",
-              "color": 65280,
-              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-              "footer": {"text": "MaxOS AI v15 | GitHub Actions"}
-            }]
-          }
-          EOF
-          )
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "$PAYLOAD" || true
+            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"✅ Cycle #${RUN_NUMBER} terminé\",\"description\":\"os.img: ${IMG_STATUS}\\n[📋 Logs](${LINK})\",\"color\":65280,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"footer\":{\"text\":\"MaxOS AI v16 | GitHub Actions\"}}]}" || true
