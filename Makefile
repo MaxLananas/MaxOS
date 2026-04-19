@@ -10,9 +10,10 @@ CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-builtin \
 
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
-.PHONY: all clean run run-nographic
+.PHONY: all clean run run-nographic prepare
 
-all: prepare $(BUILD_DIR)/os.img
+
+all: os.img
 	@echo ""
 	@echo "  MaxOS compile !"
 	@echo "  make run pour lancer"
@@ -21,53 +22,59 @@ all: prepare $(BUILD_DIR)/os.img
 prepare:
 	@mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/boot.bin: boot/boot.asm
+
+$(BUILD_DIR)/boot.bin: boot/boot.asm | prepare
 	$(ASM) -f bin $< -o $@
 
-$(BUILD_DIR)/kernel_entry.o: kernel/kernel_entry.asm
+
+$(BUILD_DIR)/kernel_entry.o: kernel/kernel_entry.asm | prepare
 	$(ASM) -f elf $< -o $@
 
-$(BUILD_DIR)/kernel.o: kernel/kernel.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/screen.o: drivers/screen.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/keyboard.o: drivers/keyboard.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/ui.o: ui/ui.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/notepad.o: apps/notepad.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/terminal.o: apps/terminal.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/sysinfo.o: apps/sysinfo.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/about.o: apps/about.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/idt.o: kernel/idt.c
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BUILD_DIR)/isr.o: kernel/isr.asm
+$(BUILD_DIR)/isr.o: kernel/isr.asm | prepare
 	$(ASM) -f elf $< -o $@
 
-$(BUILD_DIR)/isr_c.o: kernel/isr.c
+
+$(BUILD_DIR)/kernel.o: kernel/kernel.c | prepare
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/timer.o: kernel/timer.c
+$(BUILD_DIR)/idt.o: kernel/idt.c | prepare
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/memory.o: kernel/memory.c
+$(BUILD_DIR)/isr_c.o: kernel/isr.c | prepare
 	$(CC) $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/vga.o: drivers/vga.c
+$(BUILD_DIR)/timer.o: kernel/timer.c | prepare
 	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/memory.o: kernel/memory.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+
+$(BUILD_DIR)/screen.o: drivers/screen.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/keyboard.o: drivers/keyboard.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/vga.o: drivers/vga.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+
+$(BUILD_DIR)/ui.o: ui/ui.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/notepad.o: apps/notepad.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/terminal.o: apps/terminal.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/sysinfo.o: apps/sysinfo.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/about.o: apps/about.c | prepare
+	$(CC) $(CFLAGS) $< -o $@
+
 
 KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/kernel.o \
@@ -88,23 +95,16 @@ KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
 $(BUILD_DIR)/kernel.bin: $(KERNEL_OBJS)
 	$(LD) $(LFLAGS) $^ -o $@
 
-$(BUILD_DIR)/os.img: $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin
+os.img: $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin
 	@echo "Construction image disque..."
-	@KERNEL_SIZE=$$(wc -c < $(BUILD_DIR)/kernel.bin); \
-	 SECTORS=$$(( (KERNEL_SIZE + 511) / 512 )); \
-	 echo "  Kernel: $$KERNEL_SIZE bytes = $$SECTORS secteurs"; \
-	 if [ $$SECTORS -gt 2879 ]; then \
-	   echo "ERREUR: Kernel trop grand ($$SECTORS secteurs > 2879)"; \
-	   exit 1; \
-	 fi; \
-	 echo "  Secteurs OK: $$SECTORS"
-	@cat $(BUILD_DIR)/boot.bin $(BUILD_DIR)/kernel.bin > $(BUILD_DIR)/os.img
-	@truncate -s 1474560 $(BUILD_DIR)/os.img
-	@echo "Image creee: $(BUILD_DIR)/os.img"
+	dd if=/dev/zero of=os.img bs=512 count=2880
+	dd if=$(BUILD_DIR)/boot.bin of=os.img conv=notrunc
+	dd if=$(BUILD_DIR)/kernel.bin of=os.img seek=1 conv=notrunc
+	@echo "Image creee: os.img"
 
-run: $(BUILD_DIR)/os.img
+run: os.img
 	$(QEMU) \
-		-drive format=raw,file=$(BUILD_DIR)/os.img,if=floppy \
+		-drive format=raw,file=os.img,if=floppy \
 		-boot a \
 		-vga std \
 		-k fr \
@@ -112,13 +112,13 @@ run: $(BUILD_DIR)/os.img
 		-no-fd-bootchk \
 		-no-reboot
 
-run-nographic: $(BUILD_DIR)/os.img
+run-nographic: os.img
 	$(QEMU) \
-		-drive format=raw,file=$(BUILD_DIR)/os.img,if=floppy \
+		-drive format=raw,file=os.img,if=floppy \
 		-boot a \
 		-nographic \
 		-no-reboot
 
 clean:
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR) os.img
 	@echo "Nettoyage termine"
