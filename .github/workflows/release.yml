@@ -3,38 +3,89 @@ name: 🚀 Release MaxOS
 on:
   push:
     tags:
-      - 'v*'   # Déclenché quand tu fais : git tag v1.0
+      - 'v*'
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🛠️ Installer
+      - name: 🛠️ Install
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y nasm gcc make
+          sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
 
-      - name: 🔨 Compiler
+      - name: 🔨 Build
         run: make
 
+      - name: ✅ Vérifier os.img
+        run: |
+          if [ ! -f os.img ]; then
+            echo "❌ os.img MANQUANT — build incomplet"
+            ls -la build/ || true
+            exit 1
+          fi
+          echo "✅ os.img présent: $(du -h os.img | cut -f1)"
+
+      - name: 📝 Générer changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | sed -n '2p' || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            LOG=$(git log ${PREV_TAG}..HEAD --oneline --no-merges | head -20 | sed 's/^/- /' || echo "- Améliorations diverses")
+          else
+            LOG=$(git log --oneline --no-merges | head -20 | sed 's/^/- /' || echo "- Version initiale")
+          fi
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$LOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          SIZE=$(du -h os.img | cut -f1)
+          echo "IMG_SIZE=$SIZE" >> $GITHUB_OUTPUT
+
       - name: 🚀 Créer la Release GitHub
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: build/os.img
+          files: os.img
           name: MaxOS ${{ github.ref_name }}
           body: |
-            ## MaxOS ${{ github.ref_name }}
+            # 🖥️ MaxOS ${{ github.ref_name }}
 
-            ### Télécharger et tester :
+            ## 💾 Image disquette bootable
+            Télécharge **os.img** (${{ steps.changelog.outputs.IMG_SIZE }}) ci-dessous.
+
+            ## 🚀 Tester avec QEMU
             ```bash
-            qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr
+            qemu-system-i386 \
+              -drive format=raw,file=os.img,if=floppy \
+              -boot a \
+              -vga std \
+              -k fr \
+              -m 32
             ```
 
-            ### Contrôles :
-            - **TAB** : Changer d'application
-            - **F1** : Bloc-Notes
-            - **F2** : Terminal
-            - **F3** : Système
-            - **F4** : À propos
+            ## 🐟 Tester avec Bochs
+            ```bash
+            bochs -q 'boot:a' 'floppya: 1_44=os.img, status=inserted'
+            ```
+
+            ## ⌨️ Contrôles
+            | Touche | Action |
+            |--------|--------|
+            | TAB    | Changer d'application |
+            | F1     | Bloc-Notes |
+            | F2     | Terminal |
+            | F3     | Infos système |
+            | F4     | À propos |
+
+            ## 📝 Changements
+            ${{ steps.changelog.outputs.CHANGELOG }}
+
+            ---
+            *Généré automatiquement par MaxOS AI v16*
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
