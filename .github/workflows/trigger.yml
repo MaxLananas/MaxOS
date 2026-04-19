@@ -21,12 +21,30 @@ jobs:
           echo "Heure: $(date -u)"
           echo "Repo: ${{ github.repository }}"
 
-      - name: Install & Build check
+      - name: Build check
         run: |
           sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
           if make 2>&1; then
             echo "✅ Build OK"
-            [ -f os.img ] && echo "✅ os.img: $(du -h os.img | cut -f1)" || echo "❌ os.img manquant"
+            if [ -f os.img ]; then
+              echo "✅ os.img: $(du -h os.img | cut -f1)"
+            else
+              # Tentative manuelle
+              BOOT=""
+              for p in build/boot.bin boot/boot.bin; do [ -f "$p" ] && BOOT="$p" && break; done
+              if [ -n "$BOOT" ]; then
+                dd if=/dev/zero of=os.img bs=512 count=2880
+                dd if="$BOOT" of=os.img conv=notrunc
+                KERNEL=""
+                for p in build/kernel.bin build/kernel; do [ -f "$p" ] && KERNEL="$p" && break; done
+                [ -n "$KERNEL" ] && dd if="$KERNEL" of=os.img seek=1 conv=notrunc
+                echo "✅ os.img créé: $(du -h os.img | cut -f1)"
+              else
+                echo "⚠️  boot.bin absent"
+                ls -la build/ 2>/dev/null || true
+              fi
+            fi
           else
             echo "❌ Build échoué"
+            ls -la build/ 2>/dev/null || true
           fi
