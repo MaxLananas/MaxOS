@@ -1,15 +1,16 @@
+BITS 32
+
+section .text
 global _stack_top
 global _start
 
-section .bss
-    resb 16384
-_stack_top:
-
-section .text
-bits 32
 _start:
-    extern kernel_main
     mov esp, _stack_top
-    call kernel_main
+    extern kmain
+    call kmain
     cli
     hlt
+
+section .bss
+resb 8192
+_stack_top:

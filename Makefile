@@ -36,22 +36,10 @@ $(BUILD_DIR)/kernel.o: kernel/kernel.c | prepare
 $(BUILD_DIR)/idt.o: kernel/idt.c | prepare
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/isr_c.o: kernel/isr.c | prepare
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/timer.o: kernel/timer.c | prepare
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/memory.o: kernel/memory.c | prepare
-	$(CC) $(CFLAGS) -c $< -o $@
-
 $(BUILD_DIR)/screen.o: drivers/screen.c | prepare
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/keyboard.o: drivers/keyboard.c | prepare
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD_DIR)/vga.o: drivers/vga.c | prepare
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/ui.o: ui/ui.c | prepare
@@ -69,8 +57,19 @@ $(BUILD_DIR)/sysinfo.o: apps/sysinfo.c | prepare
 $(BUILD_DIR)/about.o: apps/about.c | prepare
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD_DIR)/vga.o: drivers/vga.c | prepare
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/timer.o: kernel/timer.c | prepare
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/memory.o: kernel/memory.c | prepare
+	$(CC) $(CFLAGS) -c $< -o $@
+
 KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/kernel.o \
+               $(BUILD_DIR)/idt.o \
+               $(BUILD_DIR)/isr.o \
                $(BUILD_DIR)/screen.o \
                $(BUILD_DIR)/keyboard.o \
                $(BUILD_DIR)/ui.o \
@@ -78,9 +77,6 @@ KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/terminal.o \
                $(BUILD_DIR)/sysinfo.o \
                $(BUILD_DIR)/about.o \
-               $(BUILD_DIR)/idt.o \
-               $(BUILD_DIR)/isr.o \
-               $(BUILD_DIR)/isr_c.o \
                $(BUILD_DIR)/timer.o \
                $(BUILD_DIR)/memory.o \
                $(BUILD_DIR)/vga.o
