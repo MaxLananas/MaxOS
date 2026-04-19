@@ -13,20 +13,40 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: 🛠️ Install
-        run: sudo apt-get install -y nasm gcc make gcc-multilib -qq
+        run: sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
 
       - name: 🔨 Build
         run: make
 
-      - name: ✅ Verify image
+      - name: ✅ Verify os.img
         run: |
-          ls -lh build/os.img
-          file build/os.img
-          echo "Taille: $(du -b build/os.img | cut -f1) bytes"
+          if [ ! -f os.img ]; then
+            echo "❌ os.img MANQUANT"
+            exit 1
+          fi
+          ls -lh os.img
+          file os.img
+          SIZE=$(du -b os.img | cut -f1)
+          echo "✅ os.img: ${SIZE} bytes"
+          if [ "$SIZE" -lt 512 ]; then
+            echo "❌ os.img trop petit (${SIZE} < 512 bytes)"
+            exit 1
+          fi
 
-      - name: 📦 Upload
+      - name: 📦 Upload os.img
         uses: actions/upload-artifact@v4
         with:
           name: maxos-${{ github.sha }}
-          path: build/os.img
+          path: os.img
           if-no-files-found: error
+          retention-days: 30
+
+      - name: 📦 Upload binaires
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maxos-bins-${{ github.sha }}
+          path: |
+            build/boot.bin
+            build/kernel.bin
+          if-no-files-found: ignore
