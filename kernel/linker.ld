@@ -16,9 +16,10 @@ SECTIONS {
     }
 
     .bss : {
+        *(COMMON)
         *(.bss)
     }
 
     _stack_top = .;
-    . += 16K;
+    . += 0x4000;
 }

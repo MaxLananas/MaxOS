@@ -1,31 +1,41 @@
 #include "idt.h"
 #include "io.h"
 
-struct IDTEntry idt[IDT_ENTRIES];
-struct IDTPtr idt_p;
+#define IDT_ENTRIES 256
+
+typedef struct {
+    unsigned short base_low;
+    unsigned short sel;
+    unsigned char zero;
+    unsigned char flags;
+    unsigned short base_high;
+} __attribute__((packed)) idt_entry_t;
+
+typedef struct {
+    unsigned short limit;
+    unsigned int base;
+} __attribute__((packed)) idt_ptr_t;
+
+static idt_entry_t idt[IDT_ENTRIES];
+static idt_ptr_t idt_ptr;
 
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
     idt[num].base_low = base & 0xFFFF;
     idt[num].base_high = (base >> 16) & 0xFFFF;
     idt[num].sel = sel;
-    idt[num].always0 = 0;
-    idt[num].flags = flags | 0x60;
+    idt[num].zero = 0;
+    idt[num].flags = flags;
 }
 
-void idt_init(void) {
-    idt_p.limit = sizeof(struct IDTEntry) * IDT_ENTRIES - 1;
-    idt_p.base = (unsigned int)&idt;
+void idt_load() {
+    idt_ptr.limit = sizeof(idt_entry_t) * IDT_ENTRIES - 1;
+    idt_ptr.base = (unsigned int)&idt;
+    asm volatile("lidt %0" : : "m"(idt_ptr));
+}
 
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
-    outb(0x21, 0x00);
-    outb(0xA1, 0x00);
-
-    asm volatile("lidt %0" : : "m"(idt_p));
+void idt_init() {
+    for(unsigned int i = 0; i < IDT_ENTRIES; i++) {
+        idt_set_gate(i, 0, 0, 0);
+    }
+    idt_load();
 }

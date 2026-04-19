@@ -1,131 +1,138 @@
-[BITS 16]
-[ORG 0x7C00]
+[bits 16]
 
-start:
-    cli
+section .text
+global _start
+
+_start:
+    jmp 0x0000:init_cs
+init_cs:
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x7C00
-    mov [boot_drive], dl
-    sti
+    mov sp, _stack_top
 
-    ; Reset disque
-    xor ah, ah
-    mov dl, [boot_drive]
-    int 0x13
-    jc disk_error ; Jump if carry flag is set (error)
+    mov si, msg
+    call print_string
 
-    ; Lire le kernel
-    ; On suppose que le kernel fait 28 secteurs (14KB)
-    ; On va lire 28 secteurs (0x1C) à partir du secteur 2 (0x02)
-    ; vers l'adresse 0x0000:0x8000 (qui correspond à 0x8000 en mémoire linéaire)
-    mov ah, 0x02          ; Service: Lire secteurs
-    mov al, 28            ; Nombre de secteurs à lire
-    mov ch, 0             ; Cylindre 0
-    mov cl, 2             ; Secteur 2 (après le bootloader)
-    mov dh, 0             ; Tête 0
-    mov dl, [boot_drive]  ; Disque de boot
-    xor bx, bx            ; Offset dans le buffer
-    mov es, bx            ; Segment ES = 0x0000
-    mov bx, 0x8000        ; Offset dans le buffer = 0x8000
-    int 0x13
-    jc disk_error ; Jump if carry flag is set (error)
+    call check_a20
+    jne a20_enabled
 
-    ; Vérifier la taille du kernel
-    ; Le kernel est censé être à 0x8000.
-    ; On va lire les 4 premiers octets pour obtenir la taille.
-    ; On suppose que la taille est stockée en little-endian.
-    mov esi, 0x8000       ; Adresse du début du kernel
-    mov eax, [esi]        ; Lire les 4 premiers octets (taille du kernel)
-    mov [kernel_size], eax
+    call enable_a20
+    call check_a20
+    jne a20_enabled
 
-    ; Vérifier si la taille est raisonnable (par exemple, moins de 1MB)
-    cmp eax, 1048576      ; 1MB
-    ja kernel_too_large
+    mov si, a20_fail
+    call print_string
+    jmp $
 
-    ; Mode protege
+a20_enabled:
     cli
+
     lgdt [gdt_descriptor]
+
     mov eax, cr0
-    or  eax, 1
+    or eax, 0x1
     mov cr0, eax
-    jmp CODE_SEG:start32
 
-disk_error:
-    ; Afficher un message d'erreur simple
-    mov si, error_msg_disk
-    call print_string
-    cli
-    hlt
+    jmp CODE_SEG:init_pm
 
-kernel_too_large:
-    ; Afficher un message d'erreur simple
-    mov si, error_msg_kernel_size
-    call print_string
-    cli
-    hlt
-
-print_string:
-    ; Affiche une chaîne de caractères terminée par 0
-    ; SI pointe vers la chaîne
-    mov ah, 0x0E ; Teletype output
-.loop:
-    lodsb
-    or al, al
-    jz .done
-    int 0x10
-    jmp .loop
-.done:
-    ret
-
-[BITS 32]
-start32:
+[bits 32]
+init_pm:
     mov ax, DATA_SEG
     mov ds, ax
     mov ss, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov ebp, 0x90000
+
+    mov ebp, _stack_top
     mov esp, ebp
-    call 0x8000 ; Appel au kernel
-    ; Ne jamais revenir ici
-    cli
-    hlt
 
-[BITS 16]
-boot_drive db 0
-kernel_size dd 0
+    extern kmain
+    call kmain
 
-error_msg_disk db 'Erreur de lecture disque !', 0
-error_msg_kernel_size db 'Taille du kernel trop grande !', 0
+    jmp $
+
+print_string:
+    lodsb
+    or al, al
+    jz .done
+    mov ah, 0x0E
+    int 0x10
+    jmp print_string
+.done:
+    ret
+
+check_a20:
+    pushf
+    push ds
+    push es
+    push di
+    push si
+
+    xor ax, ax
+    mov es, ax
+    not ax
+    mov ds, ax
+    mov di, 0x0500
+    mov si, 0x0510
+    mov al, byte [es:di]
+    push ax
+    mov al, byte [ds:si]
+    push ax
+    mov byte [es:di], 0x00
+    mov byte [ds:si], 0xFF
+    cmp byte [es:di], 0xFF
+    pop ax
+    mov byte [ds:si], al
+    pop ax
+    mov byte [es:di], al
+
+    mov ax, 0
+    je check_a20_done
+    mov ax, 1
+check_a20_done:
+    pop si
+    pop di
+    pop es
+    pop ds
+    popf
+    ret
+
+enable_a20:
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+    ret
+
+msg db "Booting...", 0
+a20_fail db "A20 line not enabled", 0
 
 gdt_start:
-dq 0
+gdt_null:
+    dq 0x0
 gdt_code:
     dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 10011010b ; Present, Ring 0, Code, Executable, Read
-    db 11001111b ; Granularity, 32-bit, Limit high
-    db 0x00
+    dw 0x0
+    db 0x0
+    db 0x9A
+    db 0xCF
+    db 0x0
 gdt_data:
     dw 0xFFFF
-    dw 0x0000
-    db 0x00
-    db 10010010b ; Present, Ring 0, Data, ReadWrite
-    db 11001111b ; Granularity, 32-bit, Limit high
-    db 0x00
+    dw 0x0
+    db 0x0
+    db 0x92
+    db 0xCF
+    db 0x0
 gdt_end:
 
 gdt_descriptor:
-    dw gdt_end - gdt_start - 1 ; Limit (size - 1)
-    dd gdt_start              ; Base address
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
 
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
-times 510-($-$$) db 0
-dw 0xAA55
+_stack_top:

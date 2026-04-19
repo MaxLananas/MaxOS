@@ -1,5 +1,6 @@
 #include "screen.h"
 #include "../kernel/io.h"
+#include "pci.h"
 
 #define VGA_ADDRESS 0xB8000
 #define VGA_WIDTH 80
@@ -10,6 +11,7 @@ static unsigned int cursor_x = 0;
 static unsigned int cursor_y = 0;
 
 void v_init(void) {
+    pci_probe_vga();
     for (unsigned int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
         vga_buffer[i] = (C_BLACK << 12) | (C_BLACK << 8) | ' ';
     }
