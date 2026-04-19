@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "io.h"
 
 #define PAGE_SIZE 4096
 
