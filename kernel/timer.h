@@ -4,5 +4,6 @@
 void timer_init(void);
 unsigned int timer_ticks(void);
 void sleep_ms(unsigned int ms);
+void timer_handler(void);
 
 #endif
