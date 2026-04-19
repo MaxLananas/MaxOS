@@ -1,4 +1,4 @@
-name: MaxOS AI Auto-Improvement
+name: MaxOS AI Auto-Improvement v15
 
 on:
   schedule:
@@ -10,7 +10,7 @@ on:
         required: false
         default: 'manual'
       debug:
-        description: 'Mode debug (0 ou 1)'
+        description: 'Mode debug (0=off, 1=on)'
         required: false
         default: '0'
 
@@ -28,13 +28,13 @@ jobs:
       issues: write
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -50,22 +50,23 @@ jobs:
           git config user.email "ai@maxos.dev"
           git config pull.rebase true
           git config push.default current
+          git config rebase.autoStash true
 
       - name: Run MaxOS AI Developer v15
         env:
-          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_API_KEY_2:  ${{ secrets.GEMINI_API_KEY_2 }}
-          OPENROUTER_KEY:    ${{ secrets.OPENROUTER_KEY }}
-          OPENROUTER_KEY_2:  ${{ secrets.OPENROUTER_KEY_2 }}
-          OPENROUTER_KEY_3:  ${{ secrets.OPENROUTER_KEY_3 }}
-          GROQ_KEY:          ${{ secrets.GROQ_KEY }}
-          GROQ_KEY_2:        ${{ secrets.GROQ_KEY_2 }}
-          MISTRAL_KEY:       ${{ secrets.MISTRAL_KEY }}
-          DISCORD_WEBHOOK:   ${{ secrets.DISCORD_WEBHOOK }}
-          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
-          REPO_OWNER:        ${{ github.repository_owner }}
-          REPO_NAME:         ${{ github.event.repository.name }}
-          MAXOS_DEBUG:       ${{ github.event.inputs.debug || '0' }}
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+          OPENROUTER_KEY:   ${{ secrets.OPENROUTER_KEY }}
+          OPENROUTER_KEY_2: ${{ secrets.OPENROUTER_KEY_2 }}
+          OPENROUTER_KEY_3: ${{ secrets.OPENROUTER_KEY_3 }}
+          GROQ_KEY:         ${{ secrets.GROQ_KEY }}
+          GROQ_KEY_2:       ${{ secrets.GROQ_KEY_2 }}
+          MISTRAL_KEY:      ${{ secrets.MISTRAL_KEY }}
+          DISCORD_WEBHOOK:  ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER:       ${{ github.repository_owner }}
+          REPO_NAME:        ${{ github.event.repository.name }}
+          MAXOS_DEBUG:      ${{ github.event.inputs.debug || '0' }}
         run: python3 ai_dev/maxos_ai.py
 
       - name: Upload build artifact
@@ -76,6 +77,7 @@ jobs:
           path: |
             build/os.img
             build/*.bin
+            build/*.elf
           if-no-files-found: ignore
           retention-days: 14
 
@@ -105,17 +107,22 @@ jobs:
           SERVER_URL:      ${{ github.server_url }}
         run: |
           LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+          PAYLOAD=$(cat <<EOF
+          {
+            "username": "MaxOS AI Bot",
+            "embeds": [{
+              "title": "❌ Cycle #${RUN_NUMBER} échoué",
+              "description": "Le workflow AI a échoué.\n[📋 Voir les logs](${LINK})",
+              "color": 16711680,
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "footer": {"text": "MaxOS AI v15 | GitHub Actions"}
+            }]
+          }
+          EOF
+          )
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"username\": \"MaxOS AI Bot\",
-              \"embeds\": [{
-                \"title\": \"❌ Cycle #${RUN_NUMBER} échoué\",
-                \"description\": \"Le workflow a échoué.\\n[Voir les logs](${LINK})\",
-                \"color\": 16711680,
-                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
-              }]
-            }" || true
+            -d "$PAYLOAD" || true
 
       - name: Notify Discord on success
         if: success()
@@ -127,14 +134,19 @@ jobs:
           RUN_ID:          ${{ github.run_id }}
         run: |
           LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+          PAYLOAD=$(cat <<EOF
+          {
+            "username": "MaxOS AI Bot",
+            "embeds": [{
+              "title": "✅ Cycle #${RUN_NUMBER} terminé avec succès",
+              "description": "[📋 Voir les logs](${LINK})",
+              "color": 65280,
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "footer": {"text": "MaxOS AI v15 | GitHub Actions"}
+            }]
+          }
+          EOF
+          )
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"username\": \"MaxOS AI Bot\",
-              \"embeds\": [{
-                \"title\": \"✅ Cycle #${RUN_NUMBER} terminé\",
-                \"description\": \"[Voir les logs](${LINK})\",
-                \"color\": 65280,
-                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
-              }]
-            }" || true
+            -d "$PAYLOAD" || true
