@@ -5,8 +5,8 @@ QEMU = qemu-system-i386
 
 BUILD_DIR = build
 
-CFLAGS = -m32 -ffreestanding -fno-stack-protector -fno-builtin \
-         -fno-pic -fno-pie -nostdlib -nostdinc -w -c
+CFLAGS = -m32 -ffreestanding -fno-builtin \
+         -fno-pic -fno-pie -nostdlib -nostdinc -I. -c
 
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 

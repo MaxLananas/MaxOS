@@ -1,12 +1,15 @@
-ENTRY(_start)
+ENTRY(kmain)
 
 SECTIONS {
-    . = 0x8000;
+    . = 0x1000;
     .text : {
         *(.text)
     }
     .data : {
         *(.data)
+    }
+    .rodata : {
+        *(.rodata)
     }
     .bss : {
         *(.bss)
