@@ -2,7 +2,7 @@ name: PR Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
 
 jobs:
   review:
@@ -18,17 +18,58 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install
-        run: sudo apt-get install -y nasm gcc make -qq
+      - name: Install build tools
+        run: sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
 
-      - name: Review PR
+      - name: Try build PR
+        id: build
+        run: |
+          if make 2>&1; then
+            echo "BUILD_OK=true" >> $GITHUB_OUTPUT
+            if [ -f os.img ]; then
+              echo "IMG_OK=true" >> $GITHUB_OUTPUT
+              echo "IMG_SIZE=$(du -h os.img | cut -f1)" >> $GITHUB_OUTPUT
+            else
+              echo "IMG_OK=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "BUILD_OK=false" >> $GITHUB_OUTPUT
+            echo "IMG_OK=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post build status comment
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_OWNER: ${{ github.repository_owner }}
-          REPO_NAME: ${{ github.event.repository.name }}
-        run: python3 ai_dev/pr_reviewer.py
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM:   ${{ github.event.pull_request.number }}
+          REPO:     ${{ github.repository }}
+          BUILD_OK: ${{ steps.build.outputs.BUILD_OK }}
+          IMG_OK:   ${{ steps.build.outputs.IMG_OK }}
+          IMG_SIZE: ${{ steps.build.outputs.IMG_SIZE }}
+          SHA:      ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$BUILD_OK" = "true" ]; then
+            BUILD_ICON="✅"
+            BUILD_MSG="Build réussi"
+          else
+            BUILD_ICON="❌"
+            BUILD_MSG="Build échoué"
+          fi
+          if [ "$IMG_OK" = "true" ]; then
+            IMG_MSG="✅ os.img généré ($IMG_SIZE)"
+          else
+            IMG_MSG="❌ os.img non généré"
+          fi
+          BODY="## 🤖 MaxOS AI — Vérification PR\n\n| Check | Status |\n|---|---|\n| ${BUILD_ICON} Build | ${BUILD_MSG} |\n| 💾 Image | ${IMG_MSG} |\n| 🔑 Commit | \`${SHA:0:7}\` |\n\n---\n*MaxOS AI v16 | Vérification automatique*"
+          curl -s -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/issues/$PR_NUM/comments" \
+            -d "{\"body\":\"$(echo -e "$BODY")\"}" || true
 
-      - name: Try build
-        run: make || true
+      - name: Upload os.img if built
+        if: steps.build.outputs.IMG_OK == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-${{ github.event.pull_request.number }}-os.img
+          path: os.img
+          retention-days: 7
