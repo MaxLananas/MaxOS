@@ -3,6 +3,9 @@
 #include "timer.h"
 #include "memory.h"
 
+extern void isr0();
+extern void isr32();
+
 void isr_handler(unsigned int isr_num) {
     if (isr_num == 32) {
         timer_handler();

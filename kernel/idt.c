@@ -9,7 +9,7 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt[num].base_high = (base >> 16) & 0xFFFF;
     idt[num].sel = sel;
     idt[num].always0 = 0;
-    idt[num].flags = flags;
+    idt[num].flags = flags | 0x60;
 }
 
 void idt_init(void) {
