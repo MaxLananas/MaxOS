@@ -1,8 +1,7 @@
 OUTPUT_FORMAT(elf32-i386)
-ENTRY(_start)
+ENTRY(kmain)
 
-SECTIONS
-{
+SECTIONS {
     . = 0x1000;
     .text : { *(.text) }
     .data : { *(.data) }
