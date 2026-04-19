@@ -241,99 +241,100 @@ isr32:
     cli
     push 0
     push 32
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr33:
     cli
     push 0
     push 33
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr34:
     cli
     push 0
     push 34
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr35:
     cli
     push 0
     push 35
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr36:
     cli
     push 0
     push 36
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr37:
     cli
     push 0
     push 37
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr38:
     cli
     push 0
     push 38
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr39:
     cli
     push 0
     push 39
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr40:
     cli
     push 0
     push 40
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr41:
     cli
     push 0
     push 41
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr42:
     cli
     push 0
     push 42
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr43:
     cli
     push 0
     push 43
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr44:
     cli
     push 0
     push 44
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr45:
     cli
     push 0
     push 45
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr46:
     cli
     push 0
     push 46
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr47:
     cli
     push 0
     push 47
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 extern fault_handler
+extern irq_handler
 
 isr_common_stub:
     pusha
@@ -349,6 +350,30 @@ isr_common_stub:
     mov eax, esp
     push eax
     mov eax, fault_handler
+    call eax
+    pop eax
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    add esp, 8
+    iret
+
+irq_common_stub:
+    pusha
+    push ds
+    push es
+    push fs
+    push gs
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov eax, esp
+    push eax
+    mov eax, irq_handler
     call eax
     pop eax
     pop gs
