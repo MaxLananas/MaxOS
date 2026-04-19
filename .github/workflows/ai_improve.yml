@@ -1,4 +1,4 @@
-name: AI Auto-Improvement
+name: MaxOS AI Auto-Improvement
 
 on:
   schedule:
@@ -9,6 +9,10 @@ on:
         description: 'Source du declenchement'
         required: false
         default: 'manual'
+      debug:
+        description: 'Mode debug (0 ou 1)'
+        required: false
+        default: '0'
 
 concurrency:
   group: ai-improvement
@@ -17,61 +21,120 @@ concurrency:
 jobs:
   ai_improve:
     runs-on: ubuntu-latest
-    timeout-minutes: 85
+    timeout-minutes: 62
     permissions:
       contents: write
       pull-requests: write
       issues: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install tools
+      - name: Install build tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y nasm gcc make gcc-multilib -qq
+          sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
 
       - name: Configure git
         run: |
-          git config user.name "MaxOS AI Bot"
+          git config user.name  "MaxOS AI Bot"
           git config user.email "ai@maxos.dev"
           git config pull.rebase true
+          git config push.default current
 
-      - name: Run AI Developer
+      - name: Run MaxOS AI Developer v15
         env:
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
-          GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
-          GEMINI_API_KEY_4: ${{ secrets.GEMINI_API_KEY_4 }}
-          GEMINI_API_KEY_5: ${{ secrets.GEMINI_API_KEY_5 }}
-          DISCORD_WEBHOOK:  ${{ secrets.DISCORD_WEBHOOK }}
-          GITHUB_TOKEN:     ${{ secrets.GITHUB_TOKEN }}
-          REPO_OWNER:       ${{ github.repository_owner }}
-          REPO_NAME:        ${{ github.event.repository.name }}
+          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2:  ${{ secrets.GEMINI_API_KEY_2 }}
+          OPENROUTER_KEY:    ${{ secrets.OPENROUTER_KEY }}
+          OPENROUTER_KEY_2:  ${{ secrets.OPENROUTER_KEY_2 }}
+          OPENROUTER_KEY_3:  ${{ secrets.OPENROUTER_KEY_3 }}
+          GROQ_KEY:          ${{ secrets.GROQ_KEY }}
+          GROQ_KEY_2:        ${{ secrets.GROQ_KEY_2 }}
+          MISTRAL_KEY:       ${{ secrets.MISTRAL_KEY }}
+          DISCORD_WEBHOOK:   ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER:        ${{ github.repository_owner }}
+          REPO_NAME:         ${{ github.event.repository.name }}
+          MAXOS_DEBUG:       ${{ github.event.inputs.debug || '0' }}
         run: python3 ai_dev/maxos_ai.py
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: maxos-build-${{ github.run_number }}
-          path: build/os.img
+          path: |
+            build/os.img
+            build/*.bin
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload sources snapshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maxos-sources-${{ github.run_number }}
+          path: |
+            kernel/
+            drivers/
+            apps/
+            boot/
+            ui/
+            Makefile
+            linker.ld
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Notify failure
+      - name: Notify Discord on failure
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          RUN_ID:          ${{ github.run_id }}
+          RUN_NUMBER:      ${{ github.run_number }}
+          REPO:            ${{ github.repository }}
+          SERVER_URL:      ${{ github.server_url }}
         run: |
+          LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"Cycle echoue\",\"description\":\"Run ${{ github.run_number }} a echoue. Voir: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"color\":16711680}]}" \
-          || true
+            -d "{
+              \"username\": \"MaxOS AI Bot\",
+              \"embeds\": [{
+                \"title\": \"❌ Cycle #${RUN_NUMBER} échoué\",
+                \"description\": \"Le workflow a échoué.\\n[Voir les logs](${LINK})\",
+                \"color\": 16711680,
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }" || true
+
+      - name: Notify Discord on success
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          RUN_NUMBER:      ${{ github.run_number }}
+          REPO:            ${{ github.repository }}
+          SERVER_URL:      ${{ github.server_url }}
+          RUN_ID:          ${{ github.run_id }}
+        run: |
+          LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
+          curl -s -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"username\": \"MaxOS AI Bot\",
+              \"embeds\": [{
+                \"title\": \"✅ Cycle #${RUN_NUMBER} terminé\",
+                \"description\": \"[Voir les logs](${LINK})\",
+                \"color\": 65280,
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }" || true
