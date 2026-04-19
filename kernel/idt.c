@@ -24,13 +24,12 @@ void idt_init(void) {
     outb(0xA1, 0x02);
     outb(0x21, 0x01);
     outb(0xA1, 0x01);
-    outb(0x21, 0xFF);
-    outb(0xA1, 0xFF);
+    outb(0x21, 0x00);
+    outb(0xA1, 0x00);
 
     __asm__ volatile("lidt (%0)" : : "r"(&idt_p));
 }
 
-void register_interrupt_handler(unsigned char n, void (*handler)(void)) {
-    unsigned int handler_addr = (unsigned int)handler;
-    idt_set_gate(n, handler_addr, 0x08, 0x8E);
+void register_interrupt_handler(unsigned char n, void (*handler)(unsigned int)) {
+    idt_set_gate(n, (unsigned int)handler, 0x08, 0x8E);
 }

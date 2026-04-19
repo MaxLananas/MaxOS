@@ -48,7 +48,7 @@ global isr42
 global isr43
 global isr44
 global isr45
-global isr46
+global is46
 global isr47
 
 extern isr_handler
@@ -297,11 +297,9 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov eax, esp
-    push eax
-    mov eax, isr_handler
-    call eax
-    pop eax
+    push esp
+    call isr_handler
+    add esp, 4
     pop gs
     pop fs
     pop es
