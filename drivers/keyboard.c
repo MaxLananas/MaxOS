@@ -1,6 +1,6 @@
 #include "keyboard.h"
 #include "../kernel/io.h"
-#include "pci.h"
+#include "../apps/terminal.h"
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
@@ -44,22 +44,30 @@ void keyboard_handler(void) {
             kb_buffer[kb_buffer_end] = '\b';
             kb_buffer_end = (kb_buffer_end + 1) % 256;
         }
-    } else {
-        char c = 0;
-        if (scancode < 0x3A) {
-            static const char keymap[] = {
-                0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
-                '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
-                0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,
-                '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ', 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-', 0, 0, 0, '+', 0, 0, 0, 0, 0, 0, 0, 0, 0
-            };
-            c = keymap[scancode];
+    } else if (scancode == 0x0F) {
+        if (kb_buffer_end != (kb_buffer_start - 1) % 256) {
+            kb_buffer[kb_buffer_end] = '\t';
+            kb_buffer_end = (kb_buffer_end + 1) % 256;
         }
-
+    } else if (scancode >= 0x3B && scancode <= 0x3E) {
+        unsigned char key = KEY_F1 + (scancode - 0x3B);
+        if (kb_buffer_end != (kb_buffer_start - 1) % 256) {
+            kb_buffer[kb_buffer_end] = key;
+            kb_buffer_end = (kb_buffer_end + 1) % 256;
+        }
+    } else {
+        static const unsigned char keymap[] = {
+            0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+            '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
+            0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,
+            '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ', 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-', 0, 0, 0, '+', 0, 0, 0, 0, 0, 0, 0, 0, 0
+        };
+        unsigned char c = keymap[scancode];
         if (c && kb_buffer_end != (kb_buffer_start - 1) % 256) {
             kb_buffer[kb_buffer_end] = c;
             kb_buffer_end = (kb_buffer_end + 1) % 256;
         }
     }
+    outb(0x20, 0x20);
 }
