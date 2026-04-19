@@ -1,8 +1,6 @@
 #include "memory.h"
 #include "io.h"
 
-#define PAGE_SIZE 4096
-
 static unsigned int bitmap[MAX_PAGES/32];
 static unsigned int mem_start;
 static unsigned int mem_end;

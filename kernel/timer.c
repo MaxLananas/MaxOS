@@ -12,6 +12,7 @@ void timer_init(void) {
     outb(PIT_CMD, 0x36);
     outb(PIT_CH0, divisor & 0xFF);
     outb(PIT_CH0, (divisor >> 8) & 0xFF);
+    outb(0x21, inb(0x21) & ~(1 << PIT_IRQ));
 }
 
 unsigned int timer_ticks(void) {

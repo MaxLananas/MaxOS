@@ -2,6 +2,7 @@
 #define MEMORY_H
 
 #define MAX_PAGES 1024
+#define PAGE_SIZE 4096
 
 void mem_init(unsigned int start, unsigned int end);
 unsigned int mem_alloc(void);
