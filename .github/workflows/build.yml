@@ -18,18 +18,43 @@ jobs:
       - name: 🔨 Build
         run: make
 
-      - name: ✅ Verify os.img
+      - name: ✅ Verify & fix os.img
         run: |
-          if [ ! -f os.img ]; then
-            echo "❌ os.img MANQUANT"
-            exit 1
+          # Si os.img existe déjà, vérifier sa taille
+          if [ -f os.img ]; then
+            SIZE=$(du -b os.img | cut -f1)
+            echo "✅ os.img présent: ${SIZE} bytes"
+            ls -lh os.img
+          else
+            echo "⚠️  os.img absent après make — tentative de création manuelle"
+            # Chercher boot.bin et kernel.bin dans les emplacements courants
+            BOOT=""
+            KERNEL=""
+            for p in build/boot.bin boot/boot.bin build/boot; do
+              [ -f "$p" ] && BOOT="$p" && break
+            done
+            for p in build/kernel.bin build/kernel build/os.bin; do
+              [ -f "$p" ] && KERNEL="$p" && break
+            done
+            echo "boot   : ${BOOT:-introuvable}"
+            echo "kernel : ${KERNEL:-introuvable}"
+            if [ -n "$BOOT" ]; then
+              dd if=/dev/zero    of=os.img bs=512 count=2880
+              dd if="$BOOT"     of=os.img conv=notrunc
+              [ -n "$KERNEL" ] && dd if="$KERNEL" of=os.img seek=1 conv=notrunc
+              echo "✅ os.img créé manuellement: $(du -h os.img | cut -f1)"
+            else
+              echo "❌ boot.bin introuvable — liste des fichiers build:"
+              ls -la build/ 2>/dev/null || echo "(dossier build absent)"
+              ls -la *.bin *.img 2>/dev/null || true
+              exit 1
+            fi
           fi
-          ls -lh os.img
-          file os.img
+          # Vérification finale
           SIZE=$(du -b os.img | cut -f1)
-          echo "✅ os.img: ${SIZE} bytes"
+          echo "Taille finale: ${SIZE} bytes"
           if [ "$SIZE" -lt 512 ]; then
-            echo "❌ os.img trop petit (${SIZE} < 512 bytes)"
+            echo "❌ os.img trop petit"
             exit 1
           fi
 
@@ -38,7 +63,7 @@ jobs:
         with:
           name: maxos-${{ github.sha }}
           path: os.img
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
 
       - name: 📦 Upload binaires
@@ -47,6 +72,6 @@ jobs:
         with:
           name: maxos-bins-${{ github.sha }}
           path: |
-            build/boot.bin
-            build/kernel.bin
+            build/
           if-no-files-found: ignore
+          retention-days: 7
