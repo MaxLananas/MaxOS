@@ -1,6 +1,5 @@
 #include "idt.h"
 #include "io.h"
-#include "mce.h"
 
 typedef struct {
     unsigned short base_low;
@@ -27,6 +26,18 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
 }
 
 void idt_init() {
+    // Remap PIC
+    outb(0x20, 0x11);
+    outb(0xA0, 0x11);
+    outb(0x21, 0x20);
+    outb(0xA1, 0x28);
+    outb(0x21, 0x04);
+    outb(0xA1, 0x02);
+    outb(0x21, 0x01);
+    outb(0xA1, 0x01);
+    outb(0x21, 0x0);
+    outb(0xA1, 0x0);
+
     idt_reg.base = (unsigned int)&idt;
     idt_reg.limit = sizeof(idt_gate_t) * IDT_ENTRIES - 1;
     asm volatile("lidt %0" : : "m"(idt_reg));
