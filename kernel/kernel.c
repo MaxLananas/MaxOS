@@ -7,6 +7,7 @@
 #include "../apps/about.h"
 #include "idt.h"
 #include "memory.h"
+#include "timer.h"
 
 unsigned int CLK_H = 14;
 unsigned int CLK_M = 30;
@@ -76,23 +77,11 @@ static void redraw_app(void) {
     ui_taskbar(active);
 }
 
-static void delay(unsigned int n) {
-    volatile unsigned int i;
-    for (i = 0; i < n; i++) __asm__ volatile("nop");
-}
-
-void si_key(char k) {
-    (void)k;
-}
-
-void ab_key(char k) {
-    (void)k;
-}
-
 void kernel_main(void) {
     v_init();
     kb_init();
     idt_init();
+    timer_init();
     mem_init(0x200000, 0x2000000);
 
     np_init();
@@ -102,16 +91,16 @@ void kernel_main(void) {
     ui_taskbar(active);
     np_draw();
 
-    unsigned int t = 0;
+    unsigned int last_clock_update_ticks = 0;
 
     while (1) {
-        delay(1);
-        t++;
+        __asm__ volatile("hlt");
 
-        if (t % 4000000 == 0) {
+        if (timer_ticks() - last_clock_update_ticks >= 100) {
             clock_tick();
             clock_draw();
             uptime_seconds++;
+            last_clock_update_ticks = timer_ticks();
         }
 
         if (!kb_haskey()) continue;

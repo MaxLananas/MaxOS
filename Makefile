@@ -1,6 +1,6 @@
-ASM  = nasm
-CC   = gcc
-LD   = ld
+ASM = nasm
+CC = gcc
+LD = ld
 QEMU = qemu-system-i386
 
 BUILD_DIR = build
@@ -71,25 +71,11 @@ KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/notepad.o \
                $(BUILD_DIR)/terminal.o \
                $(BUILD_DIR)/sysinfo.o \
-               $(BUILD_DIR)/about.o
-
-IDT_SRC    := $(wildcard kernel/idt.c)
-TIMER_SRC  := $(wildcard kernel/timer.c)
-MEMORY_SRC := $(wildcard kernel/memory.c)
-VGA_SRC    := $(wildcard drivers/vga.c)
-
-ifneq ($(IDT_SRC),)
-KERNEL_OBJS += $(BUILD_DIR)/idt.o
-endif
-ifneq ($(TIMER_SRC),)
-KERNEL_OBJS += $(BUILD_DIR)/timer.o
-endif
-ifneq ($(MEMORY_SRC),)
-KERNEL_OBJS += $(BUILD_DIR)/memory.o
-endif
-ifneq ($(VGA_SRC),)
-KERNEL_OBJS += $(BUILD_DIR)/vga.o
-endif
+               $(BUILD_DIR)/about.o \
+               $(BUILD_DIR)/idt.o \
+               $(BUILD_DIR)/timer.o \
+               $(BUILD_DIR)/memory.o \
+               $(BUILD_DIR)/vga.o
 
 $(BUILD_DIR)/kernel.bin: $(KERNEL_OBJS)
 	$(LD) $(LFLAGS) $^ -o $@
