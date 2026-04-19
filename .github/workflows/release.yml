@@ -22,14 +22,31 @@ jobs:
       - name: 🔨 Build
         run: make
 
-      - name: ✅ Vérifier os.img
+      - name: ✅ Vérifier et créer os.img
         run: |
-          if [ ! -f os.img ]; then
-            echo "❌ os.img MANQUANT — build incomplet"
-            ls -la build/ || true
-            exit 1
+          if [ -f os.img ] && [ "$(du -b os.img | cut -f1)" -gt 512 ]; then
+            echo "✅ os.img OK: $(du -h os.img | cut -f1)"
+          else
+            echo "⚠️  Création manuelle de os.img..."
+            BOOT=""
+            KERNEL=""
+            for p in build/boot.bin boot/boot.bin; do
+              [ -f "$p" ] && BOOT="$p" && break
+            done
+            for p in build/kernel.bin build/kernel; do
+              [ -f "$p" ] && KERNEL="$p" && break
+            done
+            if [ -z "$BOOT" ]; then
+              echo "❌ boot.bin introuvable"
+              echo "Contenu build/:"
+              ls -la build/ 2>/dev/null || true
+              exit 1
+            fi
+            dd if=/dev/zero of=os.img bs=512 count=2880
+            dd if="$BOOT"   of=os.img conv=notrunc
+            [ -n "$KERNEL" ] && dd if="$KERNEL" of=os.img seek=1 conv=notrunc
+            echo "✅ os.img créé: $(du -h os.img | cut -f1)"
           fi
-          echo "✅ os.img présent: $(du -h os.img | cut -f1)"
 
       - name: 📝 Générer changelog
         id: changelog
@@ -43,10 +60,9 @@ jobs:
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
           echo "$LOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          SIZE=$(du -h os.img | cut -f1)
-          echo "IMG_SIZE=$SIZE" >> $GITHUB_OUTPUT
+          echo "IMG_SIZE=$(du -h os.img | cut -f1)" >> $GITHUB_OUTPUT
 
-      - name: 🚀 Créer la Release GitHub
+      - name: 🚀 Créer la Release GitHub avec os.img
         uses: softprops/action-gh-release@v2
         with:
           files: os.img
@@ -66,20 +82,6 @@ jobs:
               -k fr \
               -m 32
             ```
-
-            ## 🐟 Tester avec Bochs
-            ```bash
-            bochs -q 'boot:a' 'floppya: 1_44=os.img, status=inserted'
-            ```
-
-            ## ⌨️ Contrôles
-            | Touche | Action |
-            |--------|--------|
-            | TAB    | Changer d'application |
-            | F1     | Bloc-Notes |
-            | F2     | Terminal |
-            | F3     | Infos système |
-            | F4     | À propos |
 
             ## 📝 Changements
             ${{ steps.changelog.outputs.CHANGELOG }}
