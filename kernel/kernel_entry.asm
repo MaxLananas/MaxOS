@@ -1,15 +1,15 @@
+global _stack_top
+global _start
+
 section .bss
     resb 16384
 _stack_top:
 
 section .text
-    global _start
-    extern kernel_main
-
+bits 32
 _start:
+    extern kernel_main
     mov esp, _stack_top
     call kernel_main
     cli
-.halt:
     hlt
-    jmp .halt

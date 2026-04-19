@@ -1,12 +1,8 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include "vga.h"
-
-#define CHAR_WIDTH 8
-#define CHAR_HEIGHT 8
-#define SCREEN_WIDTH_CHARS (320 / CHAR_WIDTH)
-#define SCREEN_HEIGHT_CHARS (200 / CHAR_HEIGHT)
+#define SCREEN_WIDTH_CHARS 80
+#define SCREEN_HEIGHT_CHARS 25
 
 #define C_BLACK 0x0
 #define C_BLUE 0x1
@@ -22,12 +18,12 @@
 #define C_LCYAN 0xB
 #define C_LRED 0xC
 #define C_LMAGENTA 0xD
-#define C_YELLOW 0xE
+#define C_LBROWN 0xE
 #define C_WHITE 0xF
 
 void v_init(void);
-void v_fill(unsigned int r1, unsigned int c1, unsigned int r2, unsigned int c2, unsigned char fg, unsigned char bg);
-void v_str(unsigned int r, unsigned int c, const char* str, unsigned char fg, unsigned char bg);
-void v_put(unsigned int r, unsigned int c, char ch, unsigned char fg, unsigned char bg);
+void v_put(unsigned int y, unsigned int x, char c, unsigned char bg, unsigned char fg);
+void v_str(unsigned int y, unsigned int x, const char* s, unsigned char bg, unsigned char fg);
+void v_fill(unsigned int y1, unsigned int x1, unsigned int y2, unsigned int x2, unsigned char bg, unsigned char fg);
 
 #endif

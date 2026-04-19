@@ -1,113 +1,13 @@
 #include "vga.h"
 
-void outb(unsigned short port, unsigned char data) {
-    __asm__ volatile("outb %0, %1" : : "a"(data), "dN"(port));
-}
-
-unsigned char inb(unsigned short port) {
-    unsigned char ret;
-    __asm__ volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
-    return ret;
-}
-
-static unsigned char* const VGA_MEMORY = (unsigned char*)0xA0000;
-
 void vga_init(void) {
-    outb(0x3C4, 0x00); outb(0x3C5, 0x03);
-    outb(0x3C4, 0x01); outb(0x3C5, 0x01);
-    outb(0x3C4, 0x02); outb(0x3C5, 0x0F);
-    outb(0x3C4, 0x03); outb(0x3C5, 0x00);
-    outb(0x3C4, 0x04); outb(0x3C5, 0x0E);
-
-    outb(0x3D4, 0x11); outb(0x3D5, inb(0x3D5) & ~0x80);
-
-    outb(0x3D4, 0x00); outb(0x3D5, 0x5F);
-    outb(0x3D4, 0x01); outb(0x3D5, 0x4F);
-    outb(0x3D4, 0x02); outb(0x3D5, 0x50);
-    outb(0x3D4, 0x03); outb(0x3D5, 0x82);
-    outb(0x3D4, 0x04); outb(0x3D5, 0x54);
-    outb(0x3D4, 0x05); outb(0x3D5, 0x80);
-    outb(0x3D4, 0x06); outb(0x3D5, 0xBF);
-    outb(0x3D4, 0x07); outb(0x3D5, 0x1F);
-    outb(0x3D4, 0x08); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x09); outb(0x3D5, 0x41);
-    outb(0x3D4, 0x10); outb(0x3D5, 0x9C);
-    outb(0x3D4, 0x11); outb(0x3D5, 0x8E);
-    outb(0x3D4, 0x12); outb(0x3D5, 0x8F);
-    outb(0x3D4, 0x13); outb(0x3D5, 0x28);
-    outb(0x3D4, 0x14); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x15); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x16); outb(0x3D5, 0x00);
-    outb(0x3D4, 0x17); outb(0x3D5, 0xA3);
-
-    outb(0x3CE, 0x00); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x01); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x02); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x03); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x04); outb(0x3CF, 0x00);
-    outb(0x3CE, 0x05); outb(0x3CF, 0x40);
-    outb(0x3CE, 0x06); outb(0x3CF, 0x05);
-    outb(0x3CE, 0x07); outb(0x3CF, 0x0F);
-    outb(0x3CE, 0x08); outb(0x3CF, 0xFF);
-
-    inb(0x3DA);
-    outb(0x3C0, 0x10); outb(0x3C0, 0x01);
-    outb(0x3C0, 0x11); outb(0x3C0, 0x00);
-    outb(0x3C0, 0x12); outb(0x3C0, 0x0F);
-    outb(0x3C0, 0x13); outb(0x3C0, 0x00);
-    outb(0x3C0, 0x14); outb(0x3C0, 0x00);
-
-    outb(0x3C4, 0x00); outb(0x3C5, 0x03);
-    
-    outb(0x3C8, 1);
-    outb(0x3C9, 0); outb(0x3C9, 0); outb(0x3C9, 42);
-    outb(0x3C8, 7);
-    outb(0x3C9, 42); outb(0x3C9, 42); outb(0x3C9, 42);
-    outb(0x3C8, 0);
-    outb(0x3C9, 0); outb(0x3C9, 0); outb(0x3C9, 0);
-    outb(0x3C8, 15);
-    outb(0x3C9, 63); outb(0x3C9, 63); outb(0x3C9, 63);
+    // Initialisation VGA
 }
 
-void vga_pixel(int x, int y, unsigned char c) {
-    if (x >= 0 && x < 320 && y >= 0 && y < 200) {
-        VGA_MEMORY[y * 320 + x] = c;
-    }
+void vga_putchar(char c, unsigned char fg, unsigned char bg) {
+    // Affichage caractère
 }
 
-void vga_rect(int x, int y, int w, int h, unsigned char c) {
-    int i, j;
-    for (j = y; j < y + h; j++) {
-        for (i = x; i < x + w; i++) {
-            vga_pixel(i, j, c);
-        }
-    }
-}
-
-void vga_fill(unsigned char c) {
-    vga_rect(0, 0, 320, 200, c);
-}
-
-void vga_line(int x1, int y1, int x2, int y2, unsigned char c) {
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-    int abs_dx = (dx < 0) ? -dx : dx;
-    int abs_dy = (dy < 0) ? -dy : dy;
-    int sx = (dx < 0) ? -1 : 1;
-    int sy = (dy < 0) ? -1 : 1;
-    int err = abs_dx - abs_dy;
-
-    while (1) {
-        vga_pixel(x1, y1, c);
-        if (x1 == x2 && y1 == y2) break;
-        int e2 = 2 * err;
-        if (e2 > -abs_dy) {
-            err -= abs_dy;
-            x1 += sx;
-        }
-        if (e2 < abs_dx) {
-            err += abs_dx;
-            y1 += sy;
-        }
-    }
+void vga_clear(void) {
+    // Effacement écran
 }

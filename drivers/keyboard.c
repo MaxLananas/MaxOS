@@ -1,12 +1,16 @@
 #include "keyboard.h"
+#include "../kernel/io.h"
 
 void kb_init(void) {
-}
-
-int kb_haskey(void) {
-    return 0;
+    // Initialisation clavier
 }
 
 char kb_getchar(void) {
-    return KEY_NULL;
+    // Lecture caractère
+    return 0;
+}
+
+unsigned char kb_haskey(void) {
+    // Vérification touche disponible
+    return 0;
 }
