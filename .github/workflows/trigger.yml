@@ -1,10 +1,10 @@
-name: Health Check Endpoint
+name: Health Check
 
 on:
   workflow_dispatch:
     inputs:
       source:
-        description: 'Source du declenchement'
+        description: 'Source du déclenchement'
         required: false
         default: 'manual'
 
@@ -12,8 +12,21 @@ jobs:
   health:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Status
         run: |
-          echo "MaxOS AI Bot - OK"
+          echo "MaxOS AI Bot — OK"
           echo "Source: ${{ github.event.inputs.source }}"
           echo "Heure: $(date -u)"
+          echo "Repo: ${{ github.repository }}"
+
+      - name: Install & Build check
+        run: |
+          sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
+          if make 2>&1; then
+            echo "✅ Build OK"
+            [ -f os.img ] && echo "✅ os.img: $(du -h os.img | cut -f1)" || echo "❌ os.img manquant"
+          else
+            echo "❌ Build échoué"
+          fi
