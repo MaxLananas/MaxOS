@@ -66,7 +66,34 @@ jobs:
           MAXOS_DEBUG:      ${{ github.event.inputs.debug || '0' }}
         run: python3 ai_dev/maxos_ai.py
 
-      - name: Upload os.img artifact
+      - name: Créer os.img si absent
+        if: always()
+        run: |
+          if [ -f os.img ] && [ "$(du -b os.img | cut -f1)" -gt 512 ]; then
+            echo "✅ os.img OK: $(du -h os.img | cut -f1)"
+          else
+            echo "⚠️  Tentative création os.img post-cycle..."
+            BOOT=""
+            KERNEL=""
+            for p in build/boot.bin boot/boot.bin; do
+              [ -f "$p" ] && BOOT="$p" && break
+            done
+            for p in build/kernel.bin build/kernel; do
+              [ -f "$p" ] && KERNEL="$p" && break
+            done
+            if [ -n "$BOOT" ]; then
+              dd if=/dev/zero of=os.img bs=512 count=2880
+              dd if="$BOOT"   of=os.img conv=notrunc
+              [ -n "$KERNEL" ] && dd if="$KERNEL" of=os.img seek=1 conv=notrunc
+              echo "✅ os.img créé: $(du -h os.img | cut -f1)"
+            else
+              echo "⚠️  boot.bin absent — os.img non créé"
+              echo "Fichiers build:"
+              ls -la build/ 2>/dev/null || echo "(vide)"
+            fi
+          fi
+
+      - name: Upload os.img
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -75,18 +102,16 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-      - name: Upload build artifacts
+      - name: Upload build
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: maxos-build-${{ github.run_number }}
-          path: |
-            build/boot.bin
-            build/kernel.bin
+          path: build/
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Upload sources snapshot
+      - name: Upload sources
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -102,32 +127,47 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Attach os.img to latest release
+      - name: Attacher os.img à la dernière release
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO:     ${{ github.repository }}
         run: |
-          if [ ! -f os.img ]; then
-            echo "os.img introuvable, skip upload release"
+          if [ ! -f os.img ] || [ "$(du -b os.img | cut -f1)" -lt 512 ]; then
+            echo "os.img absent ou trop petit — skip upload release"
             exit 0
           fi
-          RELEASE_ID=$(curl -s \
+          RELEASE=$(curl -s \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$REPO/releases?per_page=1" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['id']) if d else print('')")
+            "https://api.github.com/repos/$REPO/releases?per_page=1")
+          RELEASE_ID=$(echo "$RELEASE" | python3 -c "
+          import sys,json
+          try:
+            d=json.load(sys.stdin)
+            print(d[0]['id']) if d else print('')
+          except:
+            print('')
+          ")
           if [ -z "$RELEASE_ID" ]; then
             echo "Aucune release trouvée"
             exit 0
           fi
-          echo "Upload os.img vers release $RELEASE_ID"
-          curl -s -X POST \
+          echo "Upload os.img → release $RELEASE_ID"
+          RESULT=$(curl -s -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary @os.img \
-            "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=os.img" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Upload OK:', d.get('browser_download_url','?'))"
+            "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=os.img")
+          URL=$(echo "$RESULT" | python3 -c "
+          import sys,json
+          try:
+            d=json.load(sys.stdin)
+            print(d.get('browser_download_url','erreur: '+str(d.get('errors',d))))
+          except:
+            print('erreur parse')
+          ")
+          echo "Résultat: $URL"
 
       - name: Notify Discord on failure
         if: failure()
@@ -141,7 +181,7 @@ jobs:
           LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"❌ Cycle #${RUN_NUMBER} échoué\",\"description\":\"[📋 Voir les logs](${LINK})\",\"color\":16711680,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"footer\":{\"text\":\"MaxOS AI v16 | GitHub Actions\"}}]}" || true
+            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"❌ Cycle #${RUN_NUMBER} échoué\",\"description\":\"[📋 Voir les logs](${LINK})\",\"color\":16711680,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"footer\":{\"text\":\"MaxOS AI v16\"}}]}" || true
 
       - name: Notify Discord on success
         if: success()
@@ -157,4 +197,4 @@ jobs:
           LINK="${SERVER_URL}/${REPO}/actions/runs/${RUN_ID}"
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"✅ Cycle #${RUN_NUMBER} terminé\",\"description\":\"os.img: ${IMG_STATUS}\\n[📋 Logs](${LINK})\",\"color\":65280,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"footer\":{\"text\":\"MaxOS AI v16 | GitHub Actions\"}}]}" || true
+            -d "{\"username\":\"MaxOS AI Bot\",\"embeds\":[{\"title\":\"✅ Cycle #${RUN_NUMBER} terminé\",\"description\":\"os.img: ${IMG_STATUS}\\n[📋 Logs](${LINK})\",\"color\":65280,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"footer\":{\"text\":\"MaxOS AI v16\"}}]}" || true
