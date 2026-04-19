@@ -14,10 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install build tools
         run: sudo apt-get install -y nasm gcc make gcc-multilib binutils -qq
 
@@ -26,7 +22,19 @@ jobs:
         run: |
           if make 2>&1; then
             echo "BUILD_OK=true" >> $GITHUB_OUTPUT
-            if [ -f os.img ]; then
+            # Créer os.img si absent
+            if [ ! -f os.img ] || [ "$(du -b os.img | cut -f1)" -lt 512 ]; then
+              BOOT=""
+              for p in build/boot.bin boot/boot.bin; do [ -f "$p" ] && BOOT="$p" && break; done
+              KERNEL=""
+              for p in build/kernel.bin build/kernel; do [ -f "$p" ] && KERNEL="$p" && break; done
+              if [ -n "$BOOT" ]; then
+                dd if=/dev/zero of=os.img bs=512 count=2880
+                dd if="$BOOT" of=os.img conv=notrunc
+                [ -n "$KERNEL" ] && dd if="$KERNEL" of=os.img seek=1 conv=notrunc
+              fi
+            fi
+            if [ -f os.img ] && [ "$(du -b os.img | cut -f1)" -gt 512 ]; then
               echo "IMG_OK=true" >> $GITHUB_OUTPUT
               echo "IMG_SIZE=$(du -h os.img | cut -f1)" >> $GITHUB_OUTPUT
             else
@@ -37,7 +45,7 @@ jobs:
             echo "IMG_OK=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Post build status comment
+      - name: Post build status
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUM:   ${{ github.event.pull_request.number }}
@@ -47,26 +55,17 @@ jobs:
           IMG_SIZE: ${{ steps.build.outputs.IMG_SIZE }}
           SHA:      ${{ github.event.pull_request.head.sha }}
         run: |
-          if [ "$BUILD_OK" = "true" ]; then
-            BUILD_ICON="✅"
-            BUILD_MSG="Build réussi"
-          else
-            BUILD_ICON="❌"
-            BUILD_MSG="Build échoué"
-          fi
-          if [ "$IMG_OK" = "true" ]; then
-            IMG_MSG="✅ os.img généré ($IMG_SIZE)"
-          else
-            IMG_MSG="❌ os.img non généré"
-          fi
-          BODY="## 🤖 MaxOS AI — Vérification PR\n\n| Check | Status |\n|---|---|\n| ${BUILD_ICON} Build | ${BUILD_MSG} |\n| 💾 Image | ${IMG_MSG} |\n| 🔑 Commit | \`${SHA:0:7}\` |\n\n---\n*MaxOS AI v16 | Vérification automatique*"
+          B_ICON=$( [ "$BUILD_OK" = "true" ] && echo "✅" || echo "❌" )
+          B_MSG=$(  [ "$BUILD_OK" = "true" ] && echo "Build réussi" || echo "Build échoué" )
+          I_MSG=$(  [ "$IMG_OK"   = "true" ] && echo "✅ os.img OK ($IMG_SIZE)" || echo "❌ os.img absent" )
+          BODY="## 🤖 MaxOS AI — PR Check\n\n| Check | Status |\n|---|---|\n| ${B_ICON} Build | ${B_MSG} |\n| 💾 Image | ${I_MSG} |\n| 🔑 Commit | \`${SHA:0:7}\` |\n\n---\n*MaxOS AI v16*"
           curl -s -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/$REPO/issues/$PR_NUM/comments" \
-            -d "{\"body\":\"$(echo -e "$BODY")\"}" || true
+            -d "{\"body\":\"$(printf '%s' "$BODY")\"}" || true
 
-      - name: Upload os.img if built
+      - name: Upload os.img PR
         if: steps.build.outputs.IMG_OK == 'true'
         uses: actions/upload-artifact@v4
         with:
