@@ -33,8 +33,9 @@ ui/%.o: ui/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 os.img: boot.bin kernel.bin
-	$(DD) if=boot.bin of=$@ bs=512 count=1 conv=notrunc
-	$(DD) if=kernel.bin of=$@ bs=512 seek=1 conv=notrunc
+	$(DD) if=/dev/zero of=$@ bs=512 count=2880
+	$(DD) if=boot.bin of=$@ conv=notrunc
+	$(DD) if=kernel.bin of=$@ seek=1 conv=notrunc
 
 clean:
 	rm -f *.bin *.o os.img

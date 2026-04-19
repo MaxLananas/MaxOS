@@ -1,24 +1,21 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 1M;
+    . = 0x1000;
 
     .text : {
         *(.text)
-    }
-
-    .rodata : {
-        *(.rodata)
     }
 
     .data : {
         *(.data)
     }
 
+    .rodata : {
+        *(.rodata)
+    }
+
     .bss : {
         *(.bss)
     }
-
-    _stack_top = .;
-    . += 16K;
 }
