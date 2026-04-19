@@ -6,7 +6,7 @@ QEMU = qemu-system-i386
 BUILD_DIR = build
 
 CFLAGS = -m32 -ffreestanding -fno-builtin \
-         -fno-pic -fno-pie -nostdlib -nostdinc -I. -c
+         -nostdlib -nostdinc -fno-pic -fno-pie -I.
 
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
@@ -31,43 +31,43 @@ $(BUILD_DIR)/isr.o: kernel/isr.asm | prepare
 	$(ASM) -f elf $< -o $@
 
 $(BUILD_DIR)/kernel.o: kernel/kernel.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/idt.o: kernel/idt.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/isr_c.o: kernel/isr.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/timer.o: kernel/timer.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/memory.o: kernel/memory.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/screen.o: drivers/screen.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/keyboard.o: drivers/keyboard.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/vga.o: drivers/vga.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/ui.o: ui/ui.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/notepad.o: apps/notepad.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/terminal.o: apps/terminal.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/sysinfo.o: apps/sysinfo.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/about.o: apps/about.c | prepare
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 KERNEL_OBJS := $(BUILD_DIR)/kernel_entry.o \
                $(BUILD_DIR)/kernel.o \
@@ -109,7 +109,7 @@ run-nographic: os.img
 	$(QEMU) \
 		-drive format=raw,file=os.img,if=floppy \
 		-boot a \
-	 -nographic \
+		-nographic \
 		-no-reboot
 
 clean:
