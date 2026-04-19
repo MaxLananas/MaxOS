@@ -1,6 +1,13 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+#include "vga.h"
+
+#define CHAR_WIDTH 8
+#define CHAR_HEIGHT 8
+#define SCREEN_WIDTH_CHARS (320 / CHAR_WIDTH)
+#define SCREEN_HEIGHT_CHARS (200 / CHAR_HEIGHT)
+
 #define C_BLACK 0x0
 #define C_BLUE 0x1
 #define C_GREEN 0x2

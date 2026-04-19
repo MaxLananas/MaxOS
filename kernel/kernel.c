@@ -17,16 +17,6 @@ unsigned int uptime_seconds = 0;
 
 static int active = 0;
 
-void outb(unsigned short port, unsigned char data) {
-    __asm__ volatile("outb %0, %1" : : "a"(data), "dN"(port));
-}
-
-unsigned char inb(unsigned short port) {
-    unsigned char ret;
-    __asm__ volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
-    return ret;
-}
-
 void reboot(void) {
     unsigned char good = 0x02;
     while (good & 0x02)
@@ -57,13 +47,14 @@ static void clock_draw(void) {
     itoa2(CLK_H, h);
     itoa2(CLK_M, m);
     itoa2(CLK_S, s);
-    v_fill(0, 58, 1, 22, C_BLACK, C_WHITE);
-    v_str(0, 58, h, C_BLACK, C_WHITE);
-    v_put(0, 60, ':', C_DGREY, C_WHITE);
-    v_str(0, 61, m, C_BLACK, C_WHITE);
-    v_put(0, 63, ':', C_DGREY, C_WHITE);
-    v_str(0, 64, s, C_DGREY, C_WHITE);
-    v_str(0, 67, "  (wifi) [###]", C_DGREY, C_WHITE);
+    unsigned int clock_start_col = SCREEN_WIDTH_CHARS - 22;
+    v_fill(0, clock_start_col, 0, SCREEN_WIDTH_CHARS - 1, C_BLACK, C_WHITE);
+    v_str(0, clock_start_col, h, C_BLACK, C_WHITE);
+    v_put(0, clock_start_col + 2, ':', C_DGREY, C_WHITE);
+    v_str(0, clock_start_col + 3, m, C_BLACK, C_WHITE);
+    v_put(0, clock_start_col + 5, ':', C_DGREY, C_WHITE);
+    v_str(0, clock_start_col + 6, s, C_DGREY, C_WHITE);
+    v_str(0, clock_start_col + 9, "  (wifi) [###]", C_DGREY, C_WHITE);
 }
 
 static void redraw_app(void) {
