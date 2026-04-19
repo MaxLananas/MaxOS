@@ -1,12 +1,14 @@
-[bits 32]
-[extern _stack_top]
-[extern kmain]
-
+global _stack_top
 global _start
+
+section .text
+bits 32
 _start:
-    mov esp, _stack_top
+    extern kmain
     call kmain
     cli
-.hang:
     hlt
-    jmp .hang
+
+section .bss
+    resb 8192
+_stack_top:

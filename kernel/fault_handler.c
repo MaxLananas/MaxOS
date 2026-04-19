@@ -1,6 +1,6 @@
-#include "idt.h"
+#include "io.h"
 
-void fault_handler(unsigned int *esp) {
-    unsigned int isr_num = esp[11];
-    while(1);
+void fault_handler(unsigned int isr_num, unsigned int esp) {
+    outb(0x20, 0x20);
+    if (isr_num >= 40) outb(0xA0, 0x20);
 }
