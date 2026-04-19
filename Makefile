@@ -9,7 +9,7 @@ LDFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
 OBJS = kernel/main.o kernel/isr.o kernel/idt.o kernel/io.o kernel/timer.o \
        kernel/memory.o kernel/syscall.o kernel/fault_handler.o \
-       kernel/kernel_entry.o drivers/pci.o drivers/keyboard.o \
+       kernel/kernel_entry.o kernel/mce.o drivers/pci.o drivers/keyboard.o \
        drivers/screen.o ui/ui.o ui/window.o ui/widget.o
 
 all: os.img

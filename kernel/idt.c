@@ -1,5 +1,6 @@
 #include "idt.h"
 #include "io.h"
+#include "mce.h"
 
 typedef struct {
     unsigned short base_low;

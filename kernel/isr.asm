@@ -34,6 +34,22 @@ global isr28
 global isr29
 global isr30
 global isr31
+global isr32
+global isr33
+global isr34
+global isr35
+global isr36
+global isr37
+global isr38
+global isr39
+global isr40
+global isr41
+global isr42
+global isr43
+global isr44
+global isr45
+global isr46
+global isr47
 
 isr0:
     cli
@@ -135,7 +151,7 @@ isr17:
     cli
     push 0
     push 17
-    jmp isr_common_stub
+    jmp mce_common_stub
 
 isr18:
     cli
@@ -221,7 +237,104 @@ isr31:
     push 31
     jmp isr_common_stub
 
+isr32:
+    cli
+    push 0
+    push 32
+    jmp isr_common_stub
+
+isr33:
+    cli
+    push 0
+    push 33
+    jmp isr_common_stub
+
+isr34:
+    cli
+    push 0
+    push 34
+    jmp isr_common_stub
+
+isr35:
+    cli
+    push 0
+    push 35
+    jmp isr_common_stub
+
+isr36:
+    cli
+    push 0
+    push 36
+    jmp isr_common_stub
+
+isr37:
+    cli
+    push 0
+    push 37
+    jmp isr_common_stub
+
+isr38:
+    cli
+    push 0
+    push 38
+    jmp isr_common_stub
+
+isr39:
+    cli
+    push 0
+    push 39
+    jmp isr_common_stub
+
+isr40:
+    cli
+    push 0
+    push 40
+    jmp isr_common_stub
+
+isr41:
+    cli
+    push 0
+    push 41
+    jmp isr_common_stub
+
+isr42:
+    cli
+    push 0
+    push 42
+    jmp isr_common_stub
+
+isr43:
+    cli
+    push 0
+    push 43
+    jmp isr_common_stub
+
+isr44:
+    cli
+    push 0
+    push 44
+    jmp isr_common_stub
+
+isr45:
+    cli
+    push 0
+    push 45
+    jmp isr_common_stub
+
+isr46:
+    cli
+    push 0
+    push 46
+    jmp isr_common_stub
+
+isr47:
+    cli
+    push 0
+    push 47
+    jmp isr_common_stub
+
 extern fault_handler
+extern mce_handler
 
 isr_common_stub:
     pusha
@@ -237,6 +350,30 @@ isr_common_stub:
     mov eax, esp
     push eax
     mov eax, fault_handler
+    call eax
+    pop eax
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    add esp, 8
+    iret
+
+mce_common_stub:
+    pusha
+    push ds
+    push es
+    push fs
+    push gs
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov eax, esp
+    push eax
+    mov eax, mce_handler
     call eax
     pop eax
     pop gs
