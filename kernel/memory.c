@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "paging.h"
 #include "io.h"
 
 unsigned char bitmap[MAX_PAGES / 8];
@@ -70,7 +71,13 @@ void kfree(void* ptr) {
     }
 
     unsigned int page = (addr - mem_start) / PAGE_SIZE;
-    unsigned int num_pages = 1;
-
     set_page_free(page);
+}
+
+void* kmalloc_ap(unsigned int size, unsigned int* phys) {
+    void* addr = kmalloc(size);
+    if (phys) {
+        *phys = (unsigned int)addr - mem_start;
+    }
+    return addr;
 }

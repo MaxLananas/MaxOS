@@ -10,7 +10,8 @@ LDFLAGS = -m elf_i386 -T linker.ld --oformat binary
 OBJS = kernel/main.o kernel/isr.o kernel/idt.o kernel/io.o kernel/timer.o \
        kernel/memory.o kernel/syscall.o kernel/fault_handler.o \
        kernel/kernel_entry.o kernel/mce.o kernel/exceptions.o \
-       kernel/screen.o drivers/pci.o drivers/keyboard.o \
+       kernel/screen.o kernel/paging.o \
+       drivers/pci.o drivers/keyboard.o \
        drivers/screen.o ui/ui.o ui/window.o ui/widget.o apps/terminal.o
 
 all: os.img
@@ -31,4 +32,15 @@ drivers/%.o: drivers/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 ui/%.o: ui/%.c
-	$(CC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+apps/%.o: apps/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+os.img: boot.bin kernel.bin
+	$(DD) if=boot.bin of=os.img bs=512 count=1
+	$(DD) if=kernel.bin of=os.img bs=512 seek=1
+
+clean:
+	rm -f *.bin *.img
+	rm -f kernel/*.o drivers/*.o ui/*.o apps/*.o
