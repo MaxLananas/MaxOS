@@ -29,9 +29,9 @@ kernel.bin: $(OBJS)
 	$(NASM) $(NASMFLAGS) $< -o $@
 
 os.img: boot.bin kernel.bin
-	$(DD) if=/dev/zero of=os.img bs=512 count=2880
-	$(DD) if=boot.bin of=os.img conv=notrunc
-	$(DD) if=kernel.bin of=os.img seek=1 conv=notrunc
+	$(DD) if=/dev/zero of=$@ bs=512 count=2880
+	$(DD) if=boot.bin of=$@ conv=notrunc
+	$(DD) if=kernel.bin of=$@ seek=1 conv=notrunc
 
 clean:
 	rm -f *.bin *.img
