@@ -41,7 +41,7 @@ global isr35
 global isr36
 global isr37
 global isr38
-global isr39
+global isisr39
 global isr40
 global isr41
 global isr42
@@ -50,6 +50,9 @@ global isr44
 global isr45
 global isr46
 global isr47
+
+extern fault_handler
+extern irq_handler
 
 isr0:
     cli
@@ -332,9 +335,6 @@ isr47:
     push 0
     push 47
     jmp irq_common_stub
-
-extern fault_handler
-extern irq_handler
 
 isr_common_stub:
     pusha
