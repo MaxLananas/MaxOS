@@ -8,7 +8,7 @@ global isr2
 global isr3
 global isr4
 global isr5
-global isisr6
+global isr6
 global isr7
 global isr8
 global isr9
@@ -91,7 +91,8 @@ isr6:
     cli
     push 0
     push 6
-    jmp isr_common_st
+    jmp isr_common_stub
+
 isr7:
     cli
     push 0

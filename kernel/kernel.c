@@ -3,6 +3,7 @@
 #include "timer.h"
 #include "memory.h"
 #include "fault_handler.h"
+#include "screen.h"
 
 extern void isr0();
 extern void isr1();
@@ -48,12 +49,11 @@ extern void isr40();
 extern void isr41();
 extern void isr42();
 extern void isr43();
-extern FILE: kernel/screen.h ===
-#ifndef SCREEN_H
-#define SCREEN_H
+extern void isr44();
+extern void isr45();
+extern void isr46();
+extern void isr47();
 
-void screen_write(const char* str);
-void screen_write_hex(unsigned int num);
-void screen_clear();
-
-#endif
+void kernel_main(void) {
+    idt_init();
+}

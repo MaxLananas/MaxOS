@@ -1,21 +1,8 @@
 #include "idt.h"
 #include "io.h"
 
-typedef struct {
-    unsigned short base_low;
-    unsigned short sel;
-    unsigned char always0;
-    unsigned char flags;
-    unsigned short base_high;
-} __attribute__((packed)) idt_gate_t;
-
-typedef struct {
-    unsigned short limit;
-    unsigned int base;
-} __attribute__((packed)) idt_register_t;
-
-idt_gate_t idt[IDT_ENTRIES];
-idt_register_t idt_reg;
+struct IDTEntry idt[IDT_ENTRIES];
+struct IDTPtr idt_reg;
 
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
     idt[num].base_low = base & 0xFFFF;
@@ -27,7 +14,7 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
 
 void idt_init() {
     idt_reg.base = (unsigned int)&idt;
-    idt_reg.limit = sizeof(idt_gate_t) * IDT_ENTRIES - 1;
+    idt_reg.limit = sizeof(struct IDTEntry) * IDT_ENTRIES - 1;
 
     outb(0x20, 0x11);
     outb(0xA0, 0x11);
@@ -37,8 +24,8 @@ void idt_init() {
     outb(0xA1, 0x02);
     outb(0x21, 0x01);
     outb(0xA1, 0x01);
-    outb(0x21, 0x0);
-    outb(0xA1, 0x0);
+    outb(0x21, 0x00);
+    outb(0xA1, 0x00);
 
     asm volatile("lidt %0" : : "m"(idt_reg));
 }
