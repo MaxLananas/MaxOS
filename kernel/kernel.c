@@ -40,7 +40,7 @@ extern void isr31();
 extern void isr32();
 extern void isr33();
 extern void isr34();
-extern isr35();
+extern void isr35();
 extern void isr36();
 extern void isr37();
 extern void isr38();
@@ -56,4 +56,6 @@ extern void isr47();
 
 void kernel_main(void) {
     idt_init();
+    timer_init();
+    mem_init(0x100000, 0x200000);
 }
