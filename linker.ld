@@ -1,4 +1,4 @@
-ENTRY(_start)
+ENTRY(kmain)
 
 SECTIONS {
     . = 0x1000;
