@@ -22,24 +22,16 @@ boot.bin: boot/boot.asm
 kernel.bin: $(OBJS)
 	$(LD) $(LDFLAGS) $^ -o $@
 
-kernel/%.o: kernel/%.c
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-kernel/%.o: kernel/%.asm
+%.o: %.asm
 	$(NASM) $(NASMFLAGS) $< -o $@
 
-drivers/%.o: drivers/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-ui/%.o: ui/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-apps/%.o: apps/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
 os.img: boot.bin kernel.bin
-	$(DD) if=boot.bin of=os.img bs=512 count=1
-	$(DD) if=kernel.bin of=os.img bs=512 seek=1
+	$(DD) if=/dev/zero of=os.img bs=512 count=2880
+	$(DD) if=boot.bin of=os.img conv=notrunc
+	$(DD) if=kernel.bin of=os.img seek=1 conv=notrunc
 
 clean:
 	rm -f *.bin *.img
