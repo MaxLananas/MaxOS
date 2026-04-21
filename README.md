@@ -9,9 +9,9 @@
 | 🎯 Score | **35/100** |
 | 📈 Niveau | Prototype bare metal |
 | 📁 Fichiers | 86 |
-| 📝 Lignes | 2,670 |
-| 💾 os.img | ❌ Non bootable |
-| 🔐 Boot sector | os.img absent |
+| 📝 Lignes | 2,734 |
+| 💾 os.img | ✅ Bootable |
+| 🔐 Boot sector | Signature 0xAA55 ✅ | 1474560 bytes |
 
 ## 🚀 Lancer MaxOS
 

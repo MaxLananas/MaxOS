@@ -1,12 +1,7 @@
 #include "timer.h"
 #include "io.h"
-#include "screen.h"
 
-static unsigned int ticks = 0;
-
-void timer_callback(void) {
-    ticks++;
-}
+unsigned int timer_ticks = 0;
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
@@ -16,11 +11,12 @@ void timer_init(unsigned int hz) {
 }
 
 unsigned int timer_get_ticks(void) {
-    return ticks;
+    return timer_ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
-    while ((ticks - start) * (1000 / hz) < ms) {
+    unsigned int start = timer_ticks;
+    while ((timer_ticks - start) * (1000 / hz) < ms) {
+        asm volatile("hlt");
     }
 }

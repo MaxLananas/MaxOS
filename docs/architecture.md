@@ -78,6 +78,9 @@
 
 ```
 ╔══ RÈGLES BARE METAL x86 — VIOLATIONS = ÉCHEC BUILD ══╗
+║   • boot.asm: JAMAIS 'extern kmain' ou 'call kmain'    ║
+║     boot.asm fait jmp 0x10000 — c'est tout             ║
+║   • kernel_entry.asm: 'extern kmain' + 'call kmain'    ║
 ║ INCLUDES INTERDITS: stddef.h string.h stdlib.h stdio.h║
 ║   stdint.h stdbool.h stdarg.h stdnoreturn.h            ║
 ║ SYMBOLES INTERDITS: size_t NULL bool true false        ║

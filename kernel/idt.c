@@ -1,11 +1,6 @@
 #include "idt.h"
 #include "io.h"
-
-#define IDT_SIZE 256
-#define PIC1 0x20
-#define PIC2 0xA0
-#define ICW1 0x11
-#define ICW4 0x01
+#include "fault_handler.h"
 
 struct idt_entry {
     unsigned short base_low;
@@ -20,7 +15,7 @@ struct idt_ptr {
     unsigned int base;
 } __attribute__((packed));
 
-struct idt_entry idt[IDT_SIZE];
+struct idt_entry idt[256];
 struct idt_ptr idtp;
 
 extern void isr0();
@@ -59,7 +54,7 @@ extern void isr32();
 extern void isr33();
 extern void isr34();
 extern void isr35();
-extern symbol isr36();
+extern void isr36();
 extern void isr37();
 extern void isr38();
 extern void isr39();
@@ -80,22 +75,13 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt[num].flags = flags;
 }
 
-void idt_init(void) {
-    idtp.limit = (sizeof(struct idt_entry) * IDT_SIZE) - 1;
+void idt_init() {
+    idtp.limit = (sizeof(struct idt_entry) * 256) - 1;
     idtp.base = (unsigned int)&idt;
 
-    for (unsigned int i = 0; i < IDT_SIZE; i++) {
+    for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
-
-    outb(PIC1, ICW1);
-    outb(PIC2, ICW1);
-    outb(PIC1 + 1, 0x20);
-    outb(PIC2 + 1, 0x28);
-    outb(PIC1 + 1, 0x04);
-    outb(PIC2 + 1, 0x02);
-    outb(PIC1 + 1, ICW4);
-    outb(PIC2 + 1, ICW4);
 
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
@@ -113,7 +99,7 @@ void idt_init(void) {
     idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
     idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
     idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
-    idt_set_game(16, (unsigned int)isr16, 0x08, 0x8E);
+    idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
     idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
@@ -145,9 +131,6 @@ void idt_init(void) {
     idt_set_gate(45, (unsigned int)isr45, 0x08, 0x8E);
     idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
-
-    idtp.base = (unsigned int)&idt;
-    idtp.limit = (sizeof(struct idt_entry) * IDT_SIZE) - 1;
 
     asm volatile("lidt %0" : : "m"(idtp));
 }

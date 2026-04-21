@@ -7,6 +7,21 @@ BFLAGS = -f bin
 EFLAGS = -f elf
 
 BUILD  = build
+SRC    = kernel
+VPATH  = $(SRC)
+
+OBJS = $(BUILD)/kernel_entry.o \
+       $(BUILD)/isr.o \
+       $(BUILD)/start.o \
+       $(BUILD)/screen.o \
+       $(BUILD)/idt.o \
+       $(BUILD)/keyboard.o \
+       $(BUILD)/timer.o \
+       $(BUILD)/exceptions.o \
+       $(BUILD)/fault_handler.o \
+       $(BUILD)/terminal.o \
+       $(BUILD)/mouse.o \
+       $(BUILD)/memory.o
 
 .PHONY: all clean
 
@@ -53,19 +68,6 @@ $(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
 
 $(BUILD)/memory.o: kernel/memory.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
-
-OBJS = $(BUILD)/kernel_entry.o \
-       $(BUILD)/isr.o \
-       $(BUILD)/start.o \
-       $(BUILD)/screen.o \
-       $(BUILD)/idt.o \
-       $(BUILD)/keyboard.o \
-       $(BUILD)/timer.o \
-       $(BUILD)/exceptions.o \
-       $(BUILD)/fault_handler.o \
-       $(BUILD)/terminal.o \
-       $(BUILD)/mouse.o \
-       $(BUILD)/memory.o
 
 $(BUILD)/kernel.bin: $(OBJS) | $(BUILD)
 	$(LD) $(LFLAGS) $^ -o $@
