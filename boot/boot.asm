@@ -1,57 +1,71 @@
-bits 16
+BITS 16
+ORG 0x7C00
 
-section .text
-global _start
-
-_start:
-    mov ax, 0x07C0
+start:
+    cli
+    xor ax, ax
     mov ds, ax
     mov es, ax
-    mov fs, ax
-    mov gs, ax
     mov ss, ax
     mov sp, 0x7C00
+    sti
 
-    mov si, msg
-    call print_string
+    mov [boot_drive], dl
 
-    mov ah, 0x00
-    int 0x16
+    mov ah, 0x02
+    mov al, 32
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [boot_drive]
+    mov bx, 0x1000
+    mov es, bx
+    mov bx, 0x0000
+    int 0x13
+    jc disk_error
 
-    mov ax, 0x0003
-    int 0x10
-
+    cli
+    lgdt [gdt_descriptor]
     mov eax, cr0
-    or eax, 0x1
+    or eax, 1
     mov cr0, eax
+    jmp 0x08:protected_mode
 
-    jmp CODE_SEG:init_pm
-
-print_string:
+disk_error:
+    mov si, err_msg
+.loop:
     lodsb
     or al, al
     jz .done
     mov ah, 0x0E
     int 0x10
-    jmp print_string
+    jmp .loop
 .done:
-    ret
+    hlt
 
-bits 32
-CODE_SEG equ 0x08
-
-init_pm:
+BITS 32
+protected_mode:
     mov ax, 0x10
     mov ds, ax
-    mov ss, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov ebp, 0x90000
-    mov esp, ebp
+    mov ss, ax
+    mov esp, 0x90000
+    jmp 0x10000
 
-    call kmain
+gdt_start:
+    dq 0x0000000000000000
+    dq 0x00CF9A000000FFFF
+    dq 0x00CF92000000FFFF
+gdt_end:
 
-    jmp $
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
 
-msg db "Press any key to enter protected mode...", 0
+boot_drive: db 0
+err_msg:    db 'Disk error', 0
+
+times 510-($-$$) db 0
+dw 0xAA55
