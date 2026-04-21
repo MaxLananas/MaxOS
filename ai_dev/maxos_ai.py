@@ -113,6 +113,12 @@ KNOWN_FIXES = {
     "v_put": "v_put n'est pas une fonction canonique. Utiliser screen_putchar ou screen_write.",
     "v_str": "v_str n'est pas une fonction canonique. Utiliser screen_write.",
     "kernel_main": "kernel_main n'existe pas. Utiliser kmain.",
+    "symbol `kmain' not defined": (
+        "boot.asm ne peut PAS appeler kmain par nom — kmain est dans le kernel C. "
+        "boot.asm doit: 1) charger le kernel depuis le disque vers 0x1000, "
+        "2) faire 'jmp 0x1000' ou 'jmp 0x0000:0x1000' — JAMAIS 'call kmain' ou 'extern kmain'. "
+        "kernel_entry.asm appelle kmain, pas boot.asm."
+    ),
 }
 
 def ts():
@@ -1432,6 +1438,9 @@ OS_MISSION = (
 )
 
 RULES = """╔══ RÈGLES BARE METAL x86 — VIOLATIONS = ÉCHEC BUILD ══╗
+║   • boot.asm: JAMAIS 'extern kmain' ou 'call kmain'    ║
+║     boot.asm fait jmp 0x10000 — c'est tout             ║
+║   • kernel_entry.asm: 'extern kmain' + 'call kmain'    ║
 ║ INCLUDES INTERDITS: stddef.h string.h stdlib.h stdio.h║
 ║   stdint.h stdbool.h stdarg.h stdnoreturn.h            ║
 ║ SYMBOLES INTERDITS: size_t NULL bool true false        ║
@@ -1460,55 +1469,98 @@ RULES = """╔══ RÈGLES BARE METAL x86 — VIOLATIONS = ÉCHEC BUILD ══
 ║   • NE PAS inventer: v_put v_str kernel_main           ║
 ╚════════════════════════════════════════════════════════╝"""
 
-CANONICAL_MAKEFILE = """\
-AS     = nasm
-CC     = gcc
-LD     = ld
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
-LFLAGS = -m elf_i386 -T linker.ld --oformat binary
-BFLAGS = -f bin
-EFLAGS = -f elf
+CANONICAL_BOOT_ASM = """\
+BITS 16
+ORG 0x7C00
 
-BUILD  = build
+start:
+    cli
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
+    sti
 
-SRCS_C = kernel/kernel.c kernel/idt.c kernel/timer.c kernel/memory.c \\
-         kernel/fault_handler.c \\
-         drivers/screen.c drivers/keyboard.c drivers/vga.c \\
-         apps/terminal.c
+    mov [boot_drive], dl
 
-OBJS_C = $(patsubst %.c,$(BUILD)/%.o,$(notdir $(SRCS_C)))
+    mov ah, 0x02
+    mov al, 32
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [boot_drive]
+    mov bx, 0x1000
+    mov es, bx
+    mov bx, 0x0000
+    int 0x13
+    jc disk_error
 
-VPATH = kernel drivers apps
+    cli
+    lgdt [gdt_descriptor]
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+    jmp 0x08:protected_mode
 
-.PHONY: all clean
+disk_error:
+    mov si, err_msg
+.loop:
+    lodsb
+    or al, al
+    jz .done
+    mov ah, 0x0E
+    int 0x10
+    jmp .loop
+.done:
+    hlt
 
-all: os.img
+BITS 32
+protected_mode:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x90000
+    jmp 0x10000
 
-$(BUILD):
-\tmkdir -p $(BUILD)
+gdt_start:
+    dq 0x0000000000000000
+    dq 0x00CF9A000000FFFF
+    dq 0x00CF92000000FFFF
+gdt_end:
 
-$(BUILD)/boot.bin: boot/boot.asm | $(BUILD)
-\t$(AS) $(BFLAGS) $< -o $@
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
 
-$(BUILD)/kernel_entry.o: kernel/kernel_entry.asm | $(BUILD)
-\t$(AS) $(EFLAGS) $< -o $@
+boot_drive: db 0
+err_msg: db 'Disk error', 0
 
-$(BUILD)/isr.o: kernel/isr.asm | $(BUILD)
-\t$(AS) $(EFLAGS) $< -o $@
+times 510-($-$$) db 0
+dw 0xAA55
+"""
 
-$(BUILD)/%.o: %.c | $(BUILD)
-\t$(CC) $(CFLAGS) -c $< -o $@
+CANONICAL_KERNEL_ENTRY_ASM = """\
+BITS 32
+global _start
+global _stack_top
+extern kmain
 
-$(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(BUILD)/isr.o $(OBJS_C) | $(BUILD)
-\t$(LD) $(LFLAGS) $^ -o $@
+section .bss
+resb 16384
+_stack_top:
 
-os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
-\tdd if=/dev/zero    of=$@ bs=512 count=2880
-\tdd if=$(BUILD)/boot.bin   of=$@ conv=notrunc
-\tdd if=$(BUILD)/kernel.bin of=$@ seek=1 conv=notrunc
-
-clean:
-\trm -rf $(BUILD) os.img
+section .text
+_start:
+    mov esp, _stack_top
+    call kmain
+.hang:
+    cli
+    hlt
+    jmp .hang
 """
 
 LINKER_LD = """\
@@ -1526,9 +1578,12 @@ SECTIONS
 """
 
 def _ensure_build_system():
-    mf_path = os.path.join(REPO_PATH, "Makefile")
-    ld_path = os.path.join(REPO_PATH, "linker.ld")
-    modified = False
+    mf_path  = os.path.join(REPO_PATH, "Makefile")
+    ld_path  = os.path.join(REPO_PATH, "linker.ld")
+    boot_path = os.path.join(REPO_PATH, "boot", "boot.asm")
+    ke_path   = os.path.join(REPO_PATH, "kernel", "kernel_entry.asm")
+    modified  = False
+
     mf_ok = False
     if os.path.exists(mf_path):
         with open(mf_path, "r") as f:
@@ -1540,11 +1595,50 @@ def _ensure_build_system():
         with open(mf_path, "w", newline="\n") as f:
             f.write(CANONICAL_MAKEFILE)
         modified = True
+
     if not os.path.exists(ld_path):
         log("linker.ld absent — création", "WARN")
         with open(ld_path, "w", newline="\n") as f:
             f.write(LINKER_LD)
         modified = True
+
+    # Vérifier boot.asm — s'il appelle kmain par nom c'est cassé
+    boot_broken = False
+    if os.path.exists(boot_path):
+        with open(boot_path, "r", errors="ignore") as f:
+            boot_content = f.read()
+        # boot.asm ne doit PAS avoir extern kmain ou call kmain
+        if "extern kmain" in boot_content or (
+            "call kmain" in boot_content and "BITS 16" in boot_content
+        ) or "[org" in boot_content.lower():
+            boot_broken = True
+    else:
+        boot_broken = True
+
+    if boot_broken:
+        log("boot.asm cassé ou absent — injection canonique", "WARN")
+        os.makedirs(os.path.dirname(boot_path), exist_ok=True)
+        with open(boot_path, "w", newline="\n") as f:
+            f.write(CANONICAL_BOOT_ASM)
+        modified = True
+
+    # Vérifier kernel_entry.asm — doit appeler kmain
+    ke_broken = False
+    if os.path.exists(ke_path):
+        with open(ke_path, "r", errors="ignore") as f:
+            ke_content = f.read()
+        if "kmain" not in ke_content or "extern kmain" not in ke_content:
+            ke_broken = True
+    else:
+        ke_broken = True
+
+    if ke_broken:
+        log("kernel_entry.asm cassé ou absent — injection canonique", "WARN")
+        os.makedirs(os.path.dirname(ke_path), exist_ok=True)
+        with open(ke_path, "w", newline="\n") as f:
+            f.write(CANONICAL_KERNEL_ENTRY_ASM)
+        modified = True
+
     if modified:
         SOURCE_CACHE["hash"] = None
     return modified
@@ -1623,44 +1717,377 @@ def default_plan():
 
 def diagnose_errors(errs, build_log, snap):
     err_str = "\n".join(errs)
+    log_str = build_log[:8000] if build_log else ""
+    full_str = err_str + "\n" + log_str
     diagnostics = []
     corrupted = set()
     makefile_broken = False
     needs_reset = False
+    auto_fixed_files = {}
+
     for pattern, solution in KNOWN_FIXES.items():
-        if re.search(re.escape(pattern), err_str, re.IGNORECASE):
+        if re.search(re.escape(pattern), full_str, re.IGNORECASE):
             diagnostics.append(f"⚡ {solution}")
-    file_re = re.compile(r"(\w[\w/\.]+\.(?:c|h|asm|s))")
-    mentioned = set(file_re.findall(err_str))
+
+    if re.search(r"symbol [`']kmain'? not defined", full_str, re.IGNORECASE) or \
+       "extern kmain" in full_str and "boot.asm" in full_str or \
+       ("call kmain" in full_str and "BITS 16" in full_str):
+        diagnostics.append(
+            "⚡ CRITIQUE: boot.asm appelle 'kmain' par nom depuis le bootloader 16-bit — "
+            "IMPOSSIBLE. boot.asm doit charger le kernel puis 'jmp 0x10000'. "
+            "Seul kernel_entry.asm (BITS 32) peut faire 'extern kmain' + 'call kmain'."
+        )
+        boot_path = os.path.join(REPO_PATH, "boot", "boot.asm")
+        ke_path   = os.path.join(REPO_PATH, "kernel", "kernel_entry.asm")
+        os.makedirs(os.path.dirname(boot_path), exist_ok=True)
+        os.makedirs(os.path.dirname(ke_path),   exist_ok=True)
+        with open(boot_path, "w", newline="\n") as f:
+            f.write(CANONICAL_BOOT_ASM)
+        with open(ke_path, "w", newline="\n") as f:
+            f.write(CANONICAL_KERNEL_ENTRY_ASM)
+        auto_fixed_files["boot/boot.asm"]          = CANONICAL_BOOT_ASM
+        auto_fixed_files["kernel/kernel_entry.asm"] = CANONICAL_KERNEL_ENTRY_ASM
+        SOURCE_CACHE["hash"] = None
+        log("boot.asm + kernel_entry.asm réinitialisés (kmain fix)", "FIX")
+        needs_reset = True
+
+    if re.search(r"unrecognized directive \[org\]", full_str, re.IGNORECASE) or \
+       re.search(r"parser: instruction expected", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ boot.asm utilise la syntaxe MASM/TASM ([org] ou format incorrect). "
+            "NASM utilise 'ORG 0x7C00' sans crochets. Injection du boot.asm canonique."
+        )
+        boot_path = os.path.join(REPO_PATH, "boot", "boot.asm")
+        os.makedirs(os.path.dirname(boot_path), exist_ok=True)
+        with open(boot_path, "w", newline="\n") as f:
+            f.write(CANONICAL_BOOT_ASM)
+        auto_fixed_files["boot/boot.asm"] = CANONICAL_BOOT_ASM
+        SOURCE_CACHE["hash"] = None
+        log("boot.asm réinitialisé (syntaxe [org] incorrecte)", "FIX")
+
+    isr_globals = snap.get_isr_globals()
+    if re.search(r"undefined reference to [`']isr\d+", full_str, re.IGNORECASE):
+        missing = [f"isr{i}" for i in range(48) if f"isr{i}" not in isr_globals]
+        if missing:
+            diagnostics.append(
+                f"⚡ isr.asm: {len(missing)} symboles manquants ({missing[:5]}...) — "
+                "Écrire isr0:...isr47: EXPLICITEMENT avec 'global isr0'...'global isr47'. "
+                "JAMAIS %macro/%rep. Chaque stub doit pousser 0+numéro ou juste le numéro."
+            )
+            needs_reset = True
+
+    if re.search(r"undefined reference to [`']?main['`]?", full_str, re.IGNORECASE) and \
+       "kmain" not in full_str.split("undefined reference")[0]:
+        diagnostics.append(
+            "⚡ kernel_entry.asm appelle 'main' au lieu de 'kmain'. "
+            "Changer 'extern main' → 'extern kmain' et 'call main' → 'call kmain'."
+        )
+        ke_path = os.path.join(REPO_PATH, "kernel", "kernel_entry.asm")
+        if os.path.exists(ke_path):
+            with open(ke_path, "r", errors="ignore") as f:
+                ke_content = f.read()
+            if "extern main" in ke_content or "call main" in ke_content:
+                ke_fixed = ke_content.replace("extern main", "extern kmain").replace("call main", "call kmain")
+                with open(ke_path, "w", newline="\n") as f:
+                    f.write(ke_fixed)
+                auto_fixed_files["kernel/kernel_entry.asm"] = ke_fixed
+                SOURCE_CACHE["hash"] = None
+                log("kernel_entry.asm: main → kmain corrigé automatiquement", "FIX")
+        else:
+            with open(ke_path, "w", newline="\n") as f:
+                f.write(CANONICAL_KERNEL_ENTRY_ASM)
+            auto_fixed_files["kernel/kernel_entry.asm"] = CANONICAL_KERNEL_ENTRY_ASM
+            SOURCE_CACHE["hash"] = None
+
+    if re.search(r"undefined reference to [`']?kernel_main['`]?", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ 'kernel_main' n'existe pas — la fonction d'entrée s'appelle 'kmain'. "
+            "Renommer void kernel_main() → void kmain() dans kernel.c ET kernel_entry.asm."
+        )
+        for fname in ["kernel/kernel.c", "kernel/kmain.c", "kernel/start.c"]:
+            fpath = os.path.join(REPO_PATH, fname)
+            if os.path.exists(fpath):
+                with open(fpath, "r", errors="ignore") as f:
+                    content = f.read()
+                if "kernel_main" in content:
+                    fixed = content.replace("kernel_main", "kmain")
+                    with open(fpath, "w", newline="\n") as f:
+                        f.write(fixed)
+                    auto_fixed_files[fname] = fixed
+                    SOURCE_CACHE["hash"] = None
+                    log(f"{fname}: kernel_main → kmain corrigé", "FIX")
+
+    if re.search(r"No rule to make target", full_str, re.IGNORECASE) or \
+       re.search(r"\*\*\* No rule", full_str, re.IGNORECASE):
+        makefile_broken = True
+        orphan_re = re.compile(r"No rule to make target [`']([^'`]+\.o)[`']", re.IGNORECASE)
+        orphans = orphan_re.findall(full_str)
+        if orphans:
+            diagnostics.append(
+                f"⚡ Makefile référence des .o orphelins: {orphans[:5]} — "
+                "Retirer ces objets de OBJS dans le Makefile ou créer les fichiers sources."
+            )
+            mf_path = os.path.join(REPO_PATH, "Makefile")
+            if os.path.exists(mf_path):
+                with open(mf_path, "r") as f:
+                    mf = f.read()
+                for orphan in orphans:
+                    base = os.path.basename(orphan).replace(".o", "")
+                    for pattern in [f"$(BUILD)/{base}.o", f"build/{base}.o", f"{base}.o"]:
+                        mf = mf.replace(" " + pattern, "").replace("\t" + pattern, "")
+                with open(mf_path, "w", newline="\n") as f:
+                    f.write(mf)
+                auto_fixed_files["Makefile"] = mf
+                SOURCE_CACHE["hash"] = None
+                log(f"Makefile: {len(orphans)} objets orphelins retirés", "FIX")
+        else:
+            diagnostics.append("⚡ Makefile cassé — vérifier OBJS, VPATH et noms de cibles")
+            needs_reset = True
+
+    if re.search(r"Stop\.", full_str) and not makefile_broken:
+        makefile_broken = True
+        diagnostics.append("⚡ make Stop — Makefile a une erreur de syntaxe ou une dépendance circulaire")
+
+    conflicting_re = re.compile(r"conflicting types for [`'](\w+)[`']", re.IGNORECASE)
+    conflicts = set(conflicting_re.findall(full_str))
+    for func in conflicts:
+        canonical = CANONICAL_SIGNATURES.get(func)
+        if canonical:
+            diagnostics.append(
+                f"⚡ Type conflictuel pour '{func}' — signature EXACTE requise: {canonical}. "
+                f"Vérifier TOUS les fichiers .h et .c qui déclarent/définissent '{func}'."
+            )
+            for fname, content in snap.sources.items():
+                if not content or not fname.endswith((".c", ".h")):
+                    continue
+                if func in content:
+                    func_re = re.compile(
+                        r"(?:void|int|char|unsigned\s+\w+|\w+)\s+" + re.escape(func) + r"\s*\([^)]*\)",
+                        re.MULTILINE
+                    )
+                    for m in func_re.finditer(content):
+                        actual_sig = m.group(0).strip()
+                        if actual_sig != canonical.split("{")[0].strip() and actual_sig != canonical:
+                            corrupted.add(fname)
+        else:
+            diagnostics.append(
+                f"⚡ Type conflictuel pour '{func}' — aligner toutes les déclarations sur une seule signature."
+            )
+
+    missing_header_re = re.compile(r"fatal error: ([^\s:]+\.h): No such file or directory", re.IGNORECASE)
+    missing_headers = set(missing_header_re.findall(full_str))
+    for header in missing_headers:
+        diagnostics.append(
+            f"⚡ Header '{header}' introuvable. "
+            f"Vérifier le chemin #include et que CFLAGS contient -I. "
+            f"Si dans drivers/ → utiliser #include \"drivers/{header}\". "
+            f"Si dans kernel/ → utiliser #include \"kernel/{header}\"."
+        )
+        for fname, content in snap.sources.items():
+            if not content:
+                continue
+            if f'"{header}"' in content or f"<{header}>" in content:
+                if os.path.basename(fname).replace(".c", ".h") != header:
+                    corrupted.add(fname)
+
+    too_many_re = re.compile(r"too many arguments to function [`'](\w+)[`']", re.IGNORECASE)
+    too_few_re  = re.compile(r"too few arguments to function [`'](\w+)[`']", re.IGNORECASE)
+    for func in set(too_many_re.findall(full_str)) | set(too_few_re.findall(full_str)):
+        canonical = CANONICAL_SIGNATURES.get(func)
+        if canonical:
+            diagnostics.append(
+                f"⚡ Mauvais nombre d'arguments pour '{func}'. "
+                f"Signature EXACTE: {canonical}"
+            )
+        else:
+            diagnostics.append(f"⚡ Mauvais nombre d'arguments pour '{func}' — vérifier la déclaration.")
+
+    invented_syms = {
+        "kernel_main": "kmain",
+        "v_put":       "screen_putchar",
+        "v_str":       "screen_write",
+        "unsigned_char": "unsigned char",
+        "screen_puthex": "screen_write (implémenter hex manuellement)",
+        "screen_putstr": "screen_write",
+        "vga_putstr":    "screen_write",
+        "vga_puts":      "screen_write",
+        "con_write":     "screen_write",
+        "con_puts":      "screen_write",
+        "kprint":        "screen_write",
+        "kprintf":       "screen_write (pas de printf bare metal)",
+        "panic":         "screen_write + hlt inline",
+    }
+    for sym, replacement in invented_syms.items():
+        if re.search(r"\b" + re.escape(sym) + r"\b", full_str):
+            diagnostics.append(
+                f"⚡ SYMBOLE INVENTÉ '{sym}' — utiliser '{replacement}' à la place."
+            )
+            for fname, content in snap.sources.items():
+                if content and re.search(r"\b" + re.escape(sym) + r"\b", content):
+                    corrupted.add(fname)
+
+    if re.search(r"bad register name [`']%eip[`']", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ 'push eip' ou '%eip' invalide en mode 32-bit NASM. "
+            "EIP ne peut pas être manipulé directement. "
+            "Utiliser 'call $+5 / pop eax' pour obtenir EIP si nécessaire. "
+            "Sinon supprimer complètement cette ligne."
+        )
+        for fname, content in snap.sources.items():
+            if content and fname.endswith((".asm", ".s")) and "%eip" in content:
+                fpath = os.path.join(REPO_PATH, fname)
+                if os.path.exists(fpath):
+                    lines = content.split("\n")
+                    fixed_lines = [l for l in lines if "%eip" not in l and "push eip" not in l.lower()]
+                    fixed_content = "\n".join(fixed_lines)
+                    with open(fpath, "w", newline="\n") as f:
+                        f.write(fixed_content)
+                    auto_fixed_files[fname] = fixed_content
+                    SOURCE_CACHE["hash"] = None
+                    log(f"{fname}: lignes %eip supprimées automatiquement", "FIX")
+
+    if re.search(r"multiple definition of [`'](\w+)[`']", full_str, re.IGNORECASE):
+        multi_re = re.compile(r"multiple definition of [`'](\w+)[`']", re.IGNORECASE)
+        multis = set(multi_re.findall(full_str))
+        for sym in multis:
+            if sym in ("outb", "inb"):
+                diagnostics.append(
+                    f"⚡ '{sym}' défini en plusieurs endroits. "
+                    "outb/inb doivent être UNIQUEMENT dans kernel/io.h comme static inline. "
+                    "Retirer toute autre définition de outb/inb dans les .c"
+                )
+            else:
+                diagnostics.append(
+                    f"⚡ '{sym}' défini plusieurs fois. "
+                    "Une seule définition autorisée — les autres fichiers doivent déclarer 'extern'."
+                )
+
+    if re.search(r"undefined reference to [`']outb[`']|undefined reference to [`']inb[`']", full_str):
+        diagnostics.append(
+            "⚡ outb/inb non trouvés — vérifier que kernel/io.h est inclus dans le fichier concerné. "
+            "#include \"kernel/io.h\" ou #include \"io.h\" selon VPATH."
+        )
+
+    if re.search(r"ld:.*cannot find|ld:.*no such file", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ Linker ne trouve pas un fichier .o ou .bin. "
+            "Vérifier que tous les fichiers listés dans Makefile existent et sont compilés."
+        )
+
+    if re.search(r"BITS 16.*extern|extern.*BITS 16", full_str, re.DOTALL | re.IGNORECASE):
+        diagnostics.append(
+            "⚡ 'extern' utilisé dans du code BITS 16 — impossible. "
+            "En mode 16-bit (bootloader) on ne peut pas appeler des fonctions C par nom. "
+            "Seul kernel_entry.asm en BITS 32 peut utiliser 'extern'."
+        )
+
+    if re.search(r"linker command failed|cannot open output file.*kernel\.bin", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ Erreur finale du linker — vérifier linker.ld: "
+            "ENTRY(kmain), . = 0x1000, sections .text .data .rodata .bss présentes. "
+            "Vérifier que tous les .o sont passés au linker."
+        )
+
+    if re.search(r"format of input file.*not recognized|file not recognized", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ Un fichier .o a un format incorrect. "
+            "Vérifier que nasm utilise -f elf (pas -f bin) pour kernel_entry.asm et isr.asm. "
+            "boot.asm utilise -f bin."
+        )
+
+    if re.search(r"unknown type name [`']unsigned_char[`']", full_str, re.IGNORECASE):
+        diagnostics.append(
+            "⚡ 'unsigned_char' est une typo — écrire 'unsigned char' avec un espace."
+        )
+        for fname, content in snap.sources.items():
+            if not content:
+                continue
+            if "unsigned_char" in content:
+                fpath = os.path.join(REPO_PATH, fname)
+                if os.path.exists(fpath):
+                    fixed = content.replace("unsigned_char", "unsigned char")
+                    with open(fpath, "w", newline="\n") as f:
+                        f.write(fixed)
+                    auto_fixed_files[fname] = fixed
+                    SOURCE_CACHE["hash"] = None
+                    log(f"{fname}: unsigned_char → unsigned char corrigé", "FIX")
+
+    if re.search(r"implicit declaration of function", full_str, re.IGNORECASE):
+        impl_re = re.compile(r"implicit declaration of function [`'](\w+)[`']", re.IGNORECASE)
+        implicit_funcs = set(impl_re.findall(full_str))
+        for func in implicit_funcs:
+            canonical = CANONICAL_SIGNATURES.get(func)
+            if canonical:
+                diagnostics.append(
+                    f"⚡ '{func}' utilisé sans déclaration. "
+                    f"Inclure le bon header. Signature: {canonical}"
+                )
+            else:
+                diagnostics.append(
+                    f"⚡ '{func}' utilisé sans déclaration — inclure le header approprié "
+                    f"ou déclarer 'extern {func}(...)' avant utilisation."
+                )
+
+    if re.search(r"timeout", full_str, re.IGNORECASE) and "180s" in full_str:
+        diagnostics.append(
+            "⚡ Build timeout 180s — le Makefile a peut-être une boucle infinie ou dépendance circulaire. "
+            "Reset du Makefile recommandé."
+        )
+        makefile_broken = True
+        needs_reset = True
+
+    if re.search(r"error:.*undeclared.*first use", full_str, re.IGNORECASE):
+        undecl_re = re.compile(r"[`'](\w+)[`'].*undeclared", re.IGNORECASE)
+        undecl = set(undecl_re.findall(full_str))
+        for sym in undecl:
+            canonical = CANONICAL_SIGNATURES.get(sym)
+            if canonical:
+                diagnostics.append(
+                    f"⚡ '{sym}' non déclaré — inclure son header. Signature: {canonical}"
+                )
+            elif sym in ("TASK_BLOCKED", "TASK_RUNNING", "TASK_READY"):
+                diagnostics.append(
+                    f"⚡ '{sym}' non déclaré — inclure kernel/task.h qui définit ces constantes."
+                )
+            elif sym in ("scheduler_ticks", "task_list"):
+                diagnostics.append(
+                    f"⚡ '{sym}' non déclaré — inclure kernel/task.h et vérifier que task.c est dans Makefile."
+                )
+
+    mentioned_files_re = re.compile(r"(\w[\w/\.]+\.(?:c|h|asm|s))")
+    mentioned = set(mentioned_files_re.findall(err_str))
     for f in mentioned:
         if any(bad in f for bad in ["unsigned_char", "kernel_main", "v_put", "v_str"]):
             corrupted.add(f)
-    invented_syms = ["kernel_main", "v_put", "v_str", "unsigned_char"]
-    for sym in invented_syms:
-        if sym in err_str:
-            diagnostics.append(f"⚡ SYMBOLE INVENTÉ '{sym}' — utiliser les noms canoniques")
-    if "No rule to make target" in err_str or "Stop." in err_str:
-        makefile_broken = True
-        diagnostics.append("⚡ Makefile cassé — vérifier OBJS et VPATH")
-    isr_globals = snap.get_isr_globals()
-    if "undefined reference to `isr" in err_str:
-        missing_count = sum(1 for i in range(48) if f"isr{i}" not in isr_globals)
-        if missing_count > 0:
-            diagnostics.append(
-                f"⚡ isr.asm: {missing_count} symboles isr manquants — "
-                "écrire isr0:...isr47: explicitement avec 'global isr0' ... 'global isr47'"
-            )
-            needs_reset = True
-    if len(errs) > 20 and not diagnostics:
-        needs_reset = True
-        diagnostics.append("⚡ Trop d'erreurs — reset Makefile recommandé")
-    return {
-        "diagnostics": diagnostics,
-        "corrupted_files": list(corrupted),
-        "makefile_broken": makefile_broken,
-        "needs_reset": needs_reset,
-    }
 
+    if len(errs) > 15 and not diagnostics:
+        needs_reset = True
+        diagnostics.append(
+            f"⚡ {len(errs)} erreurs sans diagnostic connu — "
+            "reset Makefile + linker.ld + boot.asm + kernel_entry.asm recommandé."
+        )
+
+    if len(errs) > 25:
+        needs_reset = True
+        makefile_broken = True
+        diagnostics.append(
+            f"⚡ {len(errs)} erreurs — projet très cassé. "
+            "Reset complet du système de build recommandé."
+        )
+
+    if auto_fixed_files:
+        log(f"Diagnose: {len(auto_fixed_files)} fichier(s) corrigés automatiquement: {list(auto_fixed_files.keys())[:5]}", "FIX")
+        diagnostics.insert(0, f"✅ Auto-corrigé: {', '.join(list(auto_fixed_files.keys())[:5])}")
+
+    unique_diagnostics = list(dict.fromkeys(diagnostics))
+
+    return {
+        "diagnostics":      unique_diagnostics,
+        "corrupted_files":  list(corrupted),
+        "makefile_broken":  makefile_broken,
+        "needs_reset":      needs_reset,
+        "auto_fixed_files": auto_fixed_files,
+    }
 def _build_signatures_block(snap):
     all_sigs = snap.get_all_func_signatures()
     lines = ["=== SIGNATURES CANONIQUES (utiliser EXACTEMENT) ===\n"]
