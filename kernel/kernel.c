@@ -3,6 +3,8 @@
 #include "keyboard.h"
 #include "idt.h"
 #include "io.h"
+#include "mouse.h"
+#include "mouse_handler.h"
 
 void kmain(void) {
     screen_init();
@@ -13,10 +15,12 @@ void kmain(void) {
     idt_init();
     timer_init(1000);
     keyboard_init();
+    mouse_init();
 
     asm volatile("sti");
 
     while (1) {
+        mouse_draw_cursor();
         asm volatile("hlt");
     }
 }

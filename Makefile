@@ -22,6 +22,7 @@ OBJS = $(BUILD)/kernel_entry.o \
        $(BUILD)/fault_handler.o \
        $(BUILD)/terminal.o \
        $(BUILD)/mouse.o \
+       $(BUILD)/mouse_handler.o \
        $(BUILD)/memory.o \
        $(BUILD)/mce.o \
        $(BUILD)/hpet.o \
@@ -71,6 +72,9 @@ $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/mouse_handler.o: kernel/mouse_handler.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/memory.o: kernel/memory.c | $(BUILD)
