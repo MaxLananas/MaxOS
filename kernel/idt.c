@@ -1,23 +1,27 @@
 #include "idt.h"
 #include "io.h"
 
-#define IDT_ENTRIES 256
+#define IDT_SIZE 256
+#define PIC1 0x20
+#define PIC2 0xA0
+#define ICW1 0x11
+#define ICW4 0x01
 
-typedef struct {
+struct idt_entry {
     unsigned short base_low;
     unsigned short sel;
-    unsigned char zero;
+    unsigned char always0;
     unsigned char flags;
     unsigned short base_high;
-} __attribute__((packed)) idt_entry_t;
+} __attribute__((packed));
 
-typedef struct {
+struct idt_ptr {
     unsigned short limit;
     unsigned int base;
-} __attribute__((packed)) idt_ptr_t;
+} __attribute__((packed));
 
-static idt_entry_t idt[IDT_ENTRIES];
-static idt_ptr_t idt_ptr;
+struct idt_entry idt[IDT_SIZE];
+struct idt_ptr idtp;
 
 extern void isr0();
 extern void isr1();
@@ -55,7 +59,7 @@ extern void isr32();
 extern void isr33();
 extern void isr34();
 extern void isr35();
-extern void isr36();
+extern symbol isr36();
 extern void isr37();
 extern void isr38();
 extern void isr39();
@@ -72,17 +76,26 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt[num].base_low = base & 0xFFFF;
     idt[num].base_high = (base >> 16) & 0xFFFF;
     idt[num].sel = sel;
-    idt[num].zero = 0;
+    idt[num].always0 = 0;
     idt[num].flags = flags;
 }
 
-void idt_install() {
-    idt_ptr.limit = sizeof(idt_entry_t) * IDT_ENTRIES - 1;
-    idt_ptr.base = (unsigned int)&idt;
+void idt_init(void) {
+    idtp.limit = (sizeof(struct idt_entry) * IDT_SIZE) - 1;
+    idtp.base = (unsigned int)&idt;
 
-    for (unsigned int i = 0; i < IDT_ENTRIES; i++) {
+    for (unsigned int i = 0; i < IDT_SIZE; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
+
+    outb(PIC1, ICW1);
+    outb(PIC2, ICW1);
+    outb(PIC1 + 1, 0x20);
+    outb(PIC2 + 1, 0x28);
+    outb(PIC1 + 1, 0x04);
+    outb(PIC2 + 1, 0x02);
+    outb(PIC1 + 1, ICW4);
+    outb(PIC2 + 1, ICW4);
 
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
@@ -100,7 +113,7 @@ void idt_install() {
     idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
     idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
     idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
-    idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
+    idt_set_game(16, (unsigned int)isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
     idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
@@ -133,5 +146,8 @@ void idt_install() {
     idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
 
-    asm volatile("lidt %0" : : "m"(idt_ptr));
+    idtp.base = (unsigned int)&idt;
+    idtp.limit = (sizeof(struct idt_entry) * IDT_SIZE) - 1;
+
+    asm volatile("lidt %0" : : "m"(idtp));
 }

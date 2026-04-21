@@ -1,47 +1,56 @@
-# MaxOS 🖥️
+# 🖥️ MaxOS — Bare Metal x86 OS
 
-> Système d'exploitation minimaliste en C et Assembly x86
+> Développé automatiquement par **MaxOS AI v18.0**
 
-![Build](https://github.com/MaxLananas/MaxOS/actions/workflows/build.yml/badge.svg)
+## 📊 État actuel
 
-## Aperçu
+| Métrique | Valeur |
+|---|---|
+| 🎯 Score | **35/100** |
+| 📈 Niveau | Prototype bare metal |
+| 📁 Fichiers | 86 |
+| 📝 Lignes | 2,670 |
+| 💾 os.img | ❌ Non bootable |
+| 🔐 Boot sector | os.img absent |
 
-MaxOS est un OS fait from scratch en C et Assembly x86 32-bit.
-- ~~Interface style Windows 11~~ (non mdr)
-- Bloc-Notes avec édition de texte
-- Terminal avec commandes
-- Horloge en temps réel
-- Clavier AZERTY
-
-## Compiler et tester
+## 🚀 Lancer MaxOS
 
 ```bash
-# Installer les dépendances
-sudo apt install nasm gcc make qemu-system-x86
-
 # Compiler
 make
 
-# Lancer
-make run
+# Lancer dans QEMU
+qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr -m 32
 ```
 
-## Contrôles
+## ✅ Fonctionnalités présentes
 
-| Touche | Action |
-|--------|--------|
-| TAB    | Changer d'app |
-| F1     | Bloc-Notes |
-| F2     | Terminal |
-| F3     | Système |
-| F4     | À propos |
+- Boot x86
+- VGA texte 80x25
 
-## Architecture
+## 🚧 En développement
+
+- IDT+PIC
+- Timer
+- Mémoire
+
+## 📈 Progression
+
+
+## 🏗️ Architecture
 
 ```
-boot/      Bootloader MBR 512 bytes
-kernel/    Noyau principal
-drivers/   VGA + Clavier PS/2
-ui/        Interface graphique
-apps/      Applications
+MaxOS/
+├── boot/          # Bootloader NASM
+├── kernel/        # Kernel C + ASM
+├── drivers/       # Pilotes (screen, keyboard, vga)
+├── apps/          # Applications (terminal)
+└── ai_dev/        # Bot IA développeur
 ```
+
+## 🤖 Bot IA
+
+Aucun historique disponible.
+
+---
+*Mis à jour automatiquement par MaxOS AI v18.0*

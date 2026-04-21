@@ -1,13 +1,24 @@
-unsigned int _stack_top;
+#include "screen.h"
+#include "idt.h"
+#include "isr.h"
+#include "timer.h"
+#include "keyboard.h"
+#include "mouse.h"
+#include "mem.h"
+#include "heap.h"
+#include "terminal.h"
 
-void kernel_main() {
-    _stack_top = 0x100000;
+void kmain(void) {
     screen_init();
-    screen_write("Kernel started successfully!",30);
-    while(1);
-}
+    screen_clear();
+    screen_writeln("Kernel started", 0x0F);
 
-void _start() {
-    asm volatile("movl %0, %%esp" : : "r"(_stack_top));
-    kernel_main();
+    idt_init();
+    keyboard_init();
+    mouse_init();
+    timer_init(100);
+
+    screen_writeln("Initialization complete", 0x0A);
+    terminal_init();
+    terminal_run();
 }

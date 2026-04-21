@@ -1,6 +1,6 @@
 #ifndef FAULT_HANDLER_H
 #define FAULT_HANDLER_H
 
-void fault_handler(unsigned int isr_num, unsigned int err_code);
+void fault_handler(unsigned int num, unsigned int err);
 
 #endif

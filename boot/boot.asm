@@ -1,32 +1,31 @@
-[org 0x7C00]
-[bits 16]
+bits 16
 
-start:
-    xor ax, ax
+section .text
+global _start
+
+_start:
+    mov ax, 0x07C0
     mov ds, ax
     mov es, ax
+    mov fs, ax
+    mov gs, ax
     mov ss, ax
     mov sp, 0x7C00
 
     mov si, msg
     call print_string
 
-    mov ah, 0x02
-    mov al, 0x01
-    mov ch, 0x00
-    mov dh, 0x00
-    mov cl, 0x02
-    mov bx, 0x7E00
-    int 0x13
+    mov ah, 0x00
+    int 0x16
 
-    jc disk_error
+    mov ax, 0x0003
+    int 0x10
 
-    jmp 0x7E00
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
 
-disk_error:
-    mov si, disk_error_msg
-    call print_string
-    jmp $
+    jmp CODE_SEG:init_pm
 
 print_string:
     lodsb
@@ -38,8 +37,21 @@ print_string:
 .done:
     ret
 
-msg db "Booting...", 0
-disk_error_msg db "Disk read error!", 0
+bits 32
+CODE_SEG equ 0x08
 
-times 510-($-$$) db 0
-dw 0xAA55
+init_pm:
+    mov ax, 0x10
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ebp, 0x90000
+    mov esp, ebp
+
+    call kmain
+
+    jmp $
+
+msg db "Press any key to enter protected mode...", 0
