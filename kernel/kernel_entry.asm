@@ -4,7 +4,7 @@ global _stack_top
 extern kmain
 
 section .bss
-resb 16384
+    resb 16384
 _stack_top:
 
 section .text

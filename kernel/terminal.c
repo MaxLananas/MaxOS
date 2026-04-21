@@ -1,19 +1,15 @@
-#include "terminal.h"
 #include "screen.h"
-#include "keyboard.h"
 
 void terminal_init(void) {
-    screen_clear();
+    screen_init();
 }
 
 void terminal_run(void) {
     while (1) {
-        char c = keyboard_getchar();
-        if (c) {
-            screen_putchar(c, 0x0F);
-        }
+        asm volatile("hlt");
     }
 }
 
 void terminal_process(const char *cmd) {
+    (void)cmd;
 }

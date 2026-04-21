@@ -1,12 +1,14 @@
-#include "fault_handler.h"
 #include "screen.h"
-#include "io.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_set_color(0x0C);
-    screen_writeln("EXCEPTION OCCURRED", 0x0C);
-    screen_write("Exception: ", 0x0C);
-    screen_putchar('0' + num, 0x0C);
-    screen_writeln("", 0x0C);
-    for (;;);
+    screen_writeln("Fault occurred!", 0x0C);
+    screen_writeln("Interrupt number:", 0x0C);
+    char num_str[16];
+    num_str[0] = '0' + (num / 10);
+    num_str[1] = '0' + (num % 10);
+    num_str[2] = 0;
+    screen_writeln(num_str, 0x0C);
+    while (1) {
+        asm volatile("hlt");
+    }
 }

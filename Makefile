@@ -12,16 +12,20 @@ VPATH  = $(SRC)
 
 OBJS = $(BUILD)/kernel_entry.o \
        $(BUILD)/isr.o \
-       $(BUILD)/start.o \
        $(BUILD)/screen.o \
        $(BUILD)/idt.o \
        $(BUILD)/keyboard.o \
        $(BUILD)/timer.o \
+       $(BUILD)/irq.o \
+       $(BUILD)/io.o \
        $(BUILD)/exceptions.o \
        $(BUILD)/fault_handler.o \
        $(BUILD)/terminal.o \
        $(BUILD)/mouse.o \
-       $(BUILD)/memory.o
+       $(BUILD)/memory.o \
+       $(BUILD)/mce.o \
+       $(BUILD)/hpet.o \
+       $(BUILD)/kernel.o
 
 .PHONY: all clean
 
@@ -39,9 +43,6 @@ $(BUILD)/kernel_entry.o: kernel/kernel_entry.asm | $(BUILD)
 $(BUILD)/isr.o: kernel/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/start.o: kernel/start.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
 $(BUILD)/screen.o: kernel/screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -52,6 +53,12 @@ $(BUILD)/keyboard.o: kernel/keyboard.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/timer.o: kernel/timer.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/irq.o: kernel/irq.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/io.o: kernel/io.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/exceptions.o: kernel/exceptions.c | $(BUILD)
@@ -69,12 +76,21 @@ $(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
 $(BUILD)/memory.o: kernel/memory.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD)/mce.o: kernel/mce.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/hpet.o: kernel/hpet.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(BUILD)/kernel.bin: $(OBJS) | $(BUILD)
 	$(LD) $(LFLAGS) $^ -o $@
 
 os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
-	dd if=/dev/zero    of=$@ bs=512 count=2880
-	dd if=$(BUILD)/boot.bin   of=$@ conv=notrunc
+	dd if=/dev/zero of=$@ bs=512 count=2880
+	dd if=$(BUILD)/boot.bin of=$@ conv=notrunc
 	dd if=$(BUILD)/kernel.bin of=$@ seek=1 conv=notrunc
 
 clean:

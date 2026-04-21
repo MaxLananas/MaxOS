@@ -2,6 +2,7 @@ bits 32
 
 section .text
 
+; ISRs 0-31 (exceptions)
 global isr0
 global isr1
 global isr2
@@ -34,6 +35,8 @@ global isr28
 global isr29
 global isr30
 global isr31
+
+; IRQs 32-47
 global isr32
 global isr33
 global isr34
@@ -54,6 +57,7 @@ global isr47
 extern isr_handler
 extern irq_handler
 
+; ISR handlers
 isr0:
     cli
     push 0
@@ -240,6 +244,7 @@ isr31:
     push 31
     jmp isr_common_stub
 
+; IRQ handlers
 isr32:
     cli
     push 0
@@ -336,6 +341,7 @@ isr47:
     push 47
     jmp irq_common_stub
 
+; Common ISR stub
 isr_common_stub:
     pusha
     push ds
@@ -349,8 +355,12 @@ isr_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
+    mov eax, [esp+40]
+    push eax
+    mov eax, [esp+40]
+    push eax
     call isr_handler
-    pop eax
+    add esp, 12
     pop gs
     pop fs
     pop es
@@ -359,6 +369,7 @@ isr_common_stub:
     add esp, 8
     iret
 
+; Common IRQ stub
 irq_common_stub:
     pusha
     push ds
@@ -372,8 +383,10 @@ irq_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
+    mov eax, [esp+36]
+    push eax
     call irq_handler
-    pop eax
+    add esp, 8
     pop gs
     pop fs
     pop es

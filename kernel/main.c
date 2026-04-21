@@ -1,17 +1,14 @@
-#include "io.h"
+#include "screen.h"
 #include "idt.h"
-#include "../drivers/keyboard.h"
-#include "../apps/terminal.h"
+#include "timer.h"
+#include "keyboard.h"
+#include "terminal.h"
 
-void main(unsigned int magic, unsigned int mbaddr) {
+void kmain(void) {
+    screen_init();
+    idt_init();
+    timer_init(1000);
     keyboard_init();
-    idt_install();
-
-    tm_init();
-    tm_print("Bare metal x86 OS\n");
-    tm_print("> ");
-
-    while (1) {
-        asm volatile("hlt");
-    }
+    terminal_init();
+    terminal_run();
 }
