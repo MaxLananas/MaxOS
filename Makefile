@@ -1,33 +1,79 @@
-CC = gcc
-NASM = nasm
-LD = ld
-DD = dd
+AS     = nasm
+CC     = gcc
+LD     = ld
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
+LFLAGS = -m elf_i386 -T linker.ld --oformat binary
+BFLAGS = -f bin
+EFLAGS = -f elf
 
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie
-NASMFLAGS = -f bin
-LDFLAGS = -m elf_i386 -T linker.ld --oformat binary
+BUILD  = build
 
-OBJS = kernel/start.o kernel/screen.o kernel/exceptions.o kernel/fault_handler.o
+.PHONY: all clean
 
 all: os.img
 
-boot.bin: boot/boot.asm
-	$(NASM) $(NASMFLAGS) $< -o $@
+$(BUILD):
+	mkdir -p $(BUILD)
 
-kernel.bin: $(OBJS)
-	$(LD) $(LDFLAGS) $^ -o $@
+$(BUILD)/boot.bin: boot/boot.asm | $(BUILD)
+	$(AS) $(BFLAGS) $< -o $@
 
-os.img: boot.bin kernel.bin
-	$(DD) if=boot.bin of=os.img bs=512
-	$(DD) if=kernel.bin of=os.img bs=512 seek=1
+$(BUILD)/kernel_entry.o: kernel/kernel_entry.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
 
-%.o: %.c
+$(BUILD)/isr.o: kernel/isr.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
+$(BUILD)/start.o: kernel/start.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.asm
-	$(NASM) -f elf $< -o $@
+$(BUILD)/screen.o: kernel/screen.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/idt.o: kernel/idt.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/keyboard.o: kernel/keyboard.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/timer.o: kernel/timer.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/exceptions.o: kernel/exceptions.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/fault_handler.o: kernel/fault_handler.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/memory.o: kernel/memory.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+OBJS = $(BUILD)/kernel_entry.o \
+       $(BUILD)/isr.o \
+       $(BUILD)/start.o \
+       $(BUILD)/screen.o \
+       $(BUILD)/idt.o \
+       $(BUILD)/keyboard.o \
+       $(BUILD)/timer.o \
+       $(BUILD)/exceptions.o \
+       $(BUILD)/fault_handler.o \
+       $(BUILD)/terminal.o \
+       $(BUILD)/mouse.o \
+       $(BUILD)/memory.o
+
+$(BUILD)/kernel.bin: $(OBJS) | $(BUILD)
+	$(LD) $(LFLAGS) $^ -o $@
+
+os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
+	dd if=/dev/zero    of=$@ bs=512 count=2880
+	dd if=$(BUILD)/boot.bin   of=$@ conv=notrunc
+	dd if=$(BUILD)/kernel.bin of=$@ seek=1 conv=notrunc
 
 clean:
-	rm -f *.bin *.img *.o
-
-.PHONY: all clean
+	rm -rf $(BUILD) os.img
