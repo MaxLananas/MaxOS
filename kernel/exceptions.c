@@ -1,13 +1,11 @@
-#include "screen.h"
+#include "fault_handler.h"
+#include "io.h"
 
 void isr_handler(unsigned int num, unsigned int err) {
-    screen_writeln("Exception occurred!", 0x0C);
-    char num_str[16];
-    num_str[0] = '0' + (num / 10);
-    num_str[1] = '0' + (num % 10);
-    num_str[2] = 0;
-    screen_writeln(num_str, 0x0C);
-    while (1) {
-        asm volatile("hlt");
-    }
+    fault_handler(num, err);
+}
+
+void irq_handler(unsigned int num) {
+    if (num >= 40) outb(0xA0, 0x20);
+    outb(0x20, 0x20);
 }

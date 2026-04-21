@@ -1,15 +1,9 @@
-[bits 32]
-[extern isr_handler]
-
-global idt_load
+bits 32
 
 section .text
-idt_load:
-    lidt [idtp]
-    sti
-    ret
 
-section .data
-idtp:
-    dw 256*8-1
-    dd 0
+global idt_flush
+idt_flush:
+    mov eax, [esp + 4]
+    lidt [eax]
+    ret

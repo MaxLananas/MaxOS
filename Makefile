@@ -18,14 +18,11 @@ OBJS = $(BUILD)/kernel_entry.o \
        $(BUILD)/timer.o \
        $(BUILD)/irq.o \
        $(BUILD)/io.o \
+       $(BUILD)/log.o \
        $(BUILD)/exceptions.o \
-       $(BUILD)/fault_handler.o \
        $(BUILD)/terminal.o \
        $(BUILD)/mouse.o \
-       $(BUILD)/mouse_handler.o \
        $(BUILD)/memory.o \
-       $(BUILD)/mce.o \
-       $(BUILD)/hpet.o \
        $(BUILD)/kernel.o
 
 .PHONY: all clean
@@ -62,10 +59,10 @@ $(BUILD)/irq.o: kernel/irq.c | $(BUILD)
 $(BUILD)/io.o: kernel/io.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/exceptions.o: kernel/exceptions.c | $(BUILD)
+$(BUILD)/log.o: kernel/log.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/fault_handler.o: kernel/fault_handler.c | $(BUILD)
+$(BUILD)/exceptions.o: kernel/exceptions.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
@@ -74,16 +71,7 @@ $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
 $(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/mouse_handler.o: kernel/mouse_handler.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
 $(BUILD)/memory.o: kernel/memory.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/mce.o: kernel/mce.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/hpet.o: kernel/hpet.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)

@@ -1,26 +1,21 @@
 #include "screen.h"
+#include "idt.h"
 #include "timer.h"
 #include "keyboard.h"
-#include "idt.h"
-#include "io.h"
+#include "log.h"
+#include "terminal.h"
 #include "mouse.h"
-#include "mouse_handler.h"
+#include "memory.h"
 
 void kmain(void) {
     screen_init();
-    screen_clear();
-    screen_set_color(0x0F);
-    screen_writeln("Kernel initialized", 0x0F);
-
     idt_init();
     timer_init(1000);
     keyboard_init();
+    log_init();
+    terminal_init();
     mouse_init();
+    mem_init(0x100000, 0x4000000);
 
-    asm volatile("sti");
-
-    while (1) {
-        mouse_draw_cursor();
-        asm volatile("hlt");
-    }
+    terminal_run();
 }

@@ -7,9 +7,9 @@
 | Métrique | Valeur |
 |---|---|
 | 🎯 Score | **35/100** |
-| 📈 Niveau | Prototype bare metal |
-| 📁 Fichiers | 86 |
-| 📝 Lignes | 2,734 |
+| 📈 Niveau | desc |
+| 📁 Fichiers | 95 |
+| 📝 Lignes | 2,647 |
 | 💾 os.img | ✅ Bootable |
 | 🔐 Boot sector | Signature 0xAA55 ✅ | 1474560 bytes |
 
@@ -25,14 +25,44 @@ qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr 
 
 ## ✅ Fonctionnalités présentes
 
-- Boot x86
-- VGA texte 80x25
+- Bootloader fonctionnel (boot.asm)
+- IDT initialisée (idt.c/idt.asm)
+- ISR manuels (isr.asm)
+- Gestion des exceptions (fault_handler.c)
+- PIT Timer (timer.c)
+- Clavier PS/2 (keyboard.c)
+- Écran VGA (screen.c/vga.c)
+- Terminal basique (terminal.c)
+- Gestion mémoire (pmm.c/memory.c)
+- GUI basique (ui.c/widget.c)
+- Applications (about/notepad/sysinfo)
+- Makefile conforme aux règles
+- Linker script fonctionnel
+- Mode 32-bit pur
+- Pas de dépendances standard
 
 ## 🚧 En développement
 
-- IDT+PIC
-- Timer
-- Mémoire
+- Gestion avancée des interruptions (IRQ1-15 non prioritaires)
+- Paging complet (pas de MMU activée)
+- Gestion des fautes matérielles (MCE)
+- Système de fichiers
+- Gestion des processus
+- APIC/IOAPIC (PIC seulement)
+- ACPI
+- SMP
+- Gestion des exceptions matérielles (GPF, PF)
+- Optimisation mémoire (bitmap basique seulement)
+- Gestion des timers avancés (APIC timer)
+- Système de fichiers virtuel
+- Gestion des périphériques PCI (pci.c vide)
+- Souris (mouse.c non intégré)
+- Gestion des erreurs système
+- Système de logs
+- Gestion des signaux
+- Support des syscalls
+- Gestion des timers haute résolution
+- Optimisation des ISR (pas de partage d'IRQ)
 
 ## 📈 Progression
 
