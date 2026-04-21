@@ -1,5 +1,4 @@
-bits 32
-
+[bits 32]
 section .text
 
 global isr0
@@ -149,7 +148,6 @@ isr16:
 
 isr17:
     cli
-    push 0
     push 17
     jmp isr_common_stub
 

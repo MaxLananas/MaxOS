@@ -1,14 +1,9 @@
-global _stack_top
 global _start
+extern _stack_top
 
 section .text
-bits 32
 _start:
-    extern kmain
-    call kmain
-    cli
-    hlt
-
-section .bss
-    resb 8192
-_stack_top:
+    mov esp, _stack_top
+    extern kernel_main
+    call kernel_main
+    jmp $

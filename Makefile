@@ -3,16 +3,11 @@ NASM = nasm
 LD = ld
 DD = dd
 
-CFLAGS = -m32 -ffreestanding -fno-builtin -fno-pic -fno-pie -nostdlib -nostdinc -Iinclude
-NASMFLAGS = -f elf
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie
+NASMFLAGS = -f bin
 LDFLAGS = -m elf_i386 -T linker.ld --oformat binary
 
-OBJS = kernel/main.o kernel/isr.o kernel/idt.o kernel/io.o kernel/timer.o \
-       kernel/memory.o kernel/pmm.o kernel/syscall.o kernel/fault_handler.o \
-       kernel/kernel_entry.o kernel/mce.o kernel/exceptions.o \
-       kernel/screen.o kernel/paging.o \
-       drivers/pci.o drivers/keyboard.o \
-       drivers/screen.o ui/ui.o ui/window.o ui/widget.o apps/terminal.o
+OBJS = kernel/start.o kernel/screen.o kernel/exceptions.o kernel/fault_handler.o
 
 all: os.img
 
@@ -22,17 +17,17 @@ boot.bin: boot/boot.asm
 kernel.bin: $(OBJS)
 	$(LD) $(LDFLAGS) $^ -o $@
 
+os.img: boot.bin kernel.bin
+	$(DD) if=boot.bin of=os.img bs=512
+	$(DD) if=kernel.bin of=os.img bs=512 seek=1
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.asm
-	$(NASM) $(NASMFLAGS) $< -o $@
-
-os.img: boot.bin kernel.bin
-	$(DD) if=/dev/zero of=$@ bs=512 count=2880
-	$(DD) if=boot.bin of=$@ conv=notrunc
-	$(DD) if=kernel.bin of=$@ seek=1 conv=notrunc
+	$(NASM) -f elf $< -o $@
 
 clean:
-	rm -f *.bin *.img
-	rm -f kernel/*.o drivers/*.o ui/*.o apps/*.o
+	rm -f *.bin *.img *.o
+
+.PHONY: all clean
