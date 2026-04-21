@@ -41,7 +41,7 @@ global isr35
 global isr36
 global isr37
 global isr38
-global isisr39
+global isr39
 global isr40
 global isr41
 global isr42
@@ -316,7 +316,7 @@ isr44:
     cli
     push 0
     push 44
-    jmp irq_common_stub
+    jmp irrq_common_stub
 
 isr45:
     cli

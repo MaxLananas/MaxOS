@@ -40,22 +40,15 @@ extern void isr31();
 extern void isr32();
 extern void isr33();
 extern void isr34();
-extern void isr35();
-extern void isr36();
-extern void isr37();
-extern void isr38();
-extern void isr39();
-extern void isr40();
-extern void isr41();
-extern void isr42();
-extern void isr43();
-extern void isr44();
-extern void isr45();
-extern void isr46();
-extern void isr47();
+extern FILE: kernel/kernel.c ===
+#include "idt.h"
+#include "io.h"
+#include "timer.h"
+#include "memory.h"
+#include "fault_handler.h"
+#include "screen.h"
 
-void kernel_main(void) {
-    idt_init();
-    timer_init();
-    mem_init(0x100000, 0x200000);
-}
+extern void isr0();
+extern void isr1();
+extern void isr2();
+extern void isr3
