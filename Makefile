@@ -17,8 +17,6 @@ OBJS = $(BUILD)/kernel_entry.o \
        $(BUILD)/keyboard.o \
        $(BUILD)/timer.o \
        $(BUILD)/irq.o \
-       $(BUILD)/io.o \
-       $(BUILD)/log.o \
        $(BUILD)/exceptions.o \
        $(BUILD)/terminal.o \
        $(BUILD)/mouse.o \
@@ -54,12 +52,6 @@ $(BUILD)/timer.o: kernel/timer.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/irq.o: kernel/irq.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/io.o: kernel/io.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/log.o: kernel/log.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/exceptions.o: kernel/exceptions.c | $(BUILD)

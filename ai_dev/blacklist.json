@@ -1,11 +1,11 @@
 {
   "Makefile canonique + os.img garanti": {
-    "consecutive_fails": 2,
-    "last_fail": 1776798485
+    "consecutive_fails": 3,
+    "last_fail": 1776814233
   },
   "kernel/io.h + IDT + ISR complet": {
-    "consecutive_fails": 2,
-    "last_fail": 1776798693
+    "consecutive_fails": 3,
+    "last_fail": 1776814437
   },
   "Activation du paging et MMU": {
     "consecutive_fails": 1,

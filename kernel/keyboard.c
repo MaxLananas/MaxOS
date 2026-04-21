@@ -2,13 +2,12 @@
 #include "io.h"
 #include "screen.h"
 
-void keyboard_handler();
-
 void keyboard_init() {
-    outb(0x21, 0xFD);
-    outb(0xA1, 0xFF);
+    outb(0x64, 0xAE);
+    outb(0x64, 0x20);
 }
 
-char keyboard_getchar() {
-    return 0;
+void keyboard_handler() {
+    unsigned char scancode = inb(0x60);
+    screen_putchar(scancode, 0x0F);
 }

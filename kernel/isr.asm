@@ -57,6 +57,60 @@ global isr47
 extern isr_handler
 extern irq_handler
 
+; Common ISR stub
+isr_common_stub:
+    pusha
+    push ds
+    push es
+    push fs
+    push gs
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov eax, esp
+    push eax
+    mov eax, [esp+40]
+    push eax
+    mov eax, [esp+40]
+    push eax
+    call isr_handler
+    add esp, 12
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    add esp, 8
+    iret
+
+; Common IRQ stub
+irq_common_stub:
+    pusha
+    push ds
+    push es
+    push fs
+    push gs
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov eax, esp
+    push eax
+    mov eax, [esp+36]
+    push eax
+    call irq_handler
+    add esp, 8
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    add esp, 8
+    iret
+
 ; ISR handlers
 isr0:
     cli
@@ -340,57 +394,3 @@ isr47:
     push 0
     push 47
     jmp irq_common_stub
-
-; Common ISR stub
-isr_common_stub:
-    pusha
-    push ds
-    push es
-    push fs
-    push gs
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov eax, esp
-    push eax
-    mov eax, [esp+40]
-    push eax
-    mov eax, [esp+40]
-    push eax
-    call isr_handler
-    add esp, 12
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
-    add esp, 8
-    iret
-
-; Common IRQ stub
-irq_common_stub:
-    pusha
-    push ds
-    push es
-    push fs
-    push gs
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov eax, esp
-    push eax
-    mov eax, [esp+36]
-    push eax
-    call irq_handler
-    add esp, 8
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
-    add esp, 8
-    iret
