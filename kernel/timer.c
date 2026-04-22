@@ -1,10 +1,10 @@
 #include "timer.h"
-#include "isr.h"
+#include "idt.h"
 #include "io.h"
 
 static unsigned int timer_ticks = 0;
 
-void timer_handler() {
+void timer_callback() {
     timer_ticks++;
 }
 
@@ -21,7 +21,7 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_get_ticks();
-    unsigned int end = start + (ms * 1000) / 1000;
-    while (timer_get_ticks() < end);
+    unsigned int start = timer_ticks;
+    unsigned int wait = ms / 10;
+    while ((timer_ticks - start) < wait);
 }

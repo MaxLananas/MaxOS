@@ -258,6 +258,7 @@ isr24:
 
 isr25:
     cli
+
     push 0
     push 25
     jmp isr_common_stub
