@@ -1,8 +1,5 @@
-bits 32
+BITS 32
 
-section .text
-
-; ISRs 0-31 (exceptions)
 global isr0
 global isr1
 global isr2
@@ -35,8 +32,6 @@ global isr28
 global isr29
 global isr30
 global isr31
-
-; IRQs 32-47
 global isr32
 global isr33
 global isr34
@@ -57,7 +52,56 @@ global isr47
 extern isr_handler
 extern irq_handler
 
-; Common ISR stub
+isr0:  push 0  \n  push 0  \n  jmp isr_common_stub
+isr1:  push 0  \n  push 1  \n  jmp isr_common_stub
+isr2:  push 0  \n  push 2  \n  jmp isr_common_stub
+isr3:  push 0  \n  push 3  \n  jmp isr_common_stub
+isr4:  push 0  \n  push 4  \n  jmp isr_common_stub
+isr5:  push 0  \n  push 5  \n  jmp isr_common_stub
+isr6:  push 0  \n  push 6  \n  jmp isr_common_stub
+isr7:  push 0  \n  push 7  \n  jmp isr_common_stub
+isr8:  push 8  \n  jmp isr_common_stub
+isr9:  push 0  \n  push 9  \n  jmp isr_common_stub
+isr10: push 10 \n  jmp isr_common_stub
+isr11: push 11 \n  jmp isr_common_stub
+isr12: push 12 \n  jmp isr_common_stub
+isr13: push 13 \n  jmp isr_common_stub
+isr14: push 14 \n  jmp isr_common_stub
+isr15: push 0  \n  push 15 \n  jmp isr_common_stub
+isr16: push 0  \n  push 16 \n  jmp isr_common_stub
+isr17: push 17 \n  jmp isr_common_stub
+isr18: push 0  \n  push 18 \n  jmp isr_common_stub
+isr19: push 0  \n  push 19 \n  jmp isr_common_stub
+isr20: push 0  \n  push 20 \n  jmp isr_common_stub
+isr21: push 0  \n  push 21 \n  jmp isr_common_stub
+isr22: push 0  \n  push 22 \n  jmp isr_common_stub
+isr23: push 0  \n  push 23 \n  jmp isr_common_stub
+isr24: push 0  \n  push 24 \n  jmp isr_common_stub
+isr25: push 0  \n  push 25 \n  jmp isr_common_stub
+isr26: push 0  \n  push 26 \n  jmp isr_common_stub
+isr27: push 0  \n  push 27 \n  jmp isr_common_stub
+isr28: push 0  \n  push 28 \n  jmp isr_common_stub
+isr29: push 0  \n  push 29 \n  jmp isr_common_stub
+isr30: push 0  \n  push 30 \n  jmp isr_common_stub
+isr31: push 0  \n  push 31 \n  jmp isr_common_stub
+
+isr32: push 0  \n  push 32 \n  jmp irq_common_stub
+isr33: push 0  \n  push 33 \n  jmp irq_common_stub
+isr34: push 0  \n  push 34 \n  jmp irq_common_stub
+isr35: push 0  \n  push 35 \n  jmp irq_common_stub
+isr36: push 0  \n  push 36 \n  jmp irq_common_stub
+isr37: push 0  \n  push 37 \n  jmp irq_common_stub
+isr38: push 0  \n  push 38 \n  jmp irq_common_stub
+isr39: push 0  \n  push 39 \n  jmp irq_common_stub
+isr40: push 0  \n  push 40 \n  jmp irq_common_stub
+isr41: push 0  \n  push 41 \n  jmp irq_common_stub
+isr42: push 0  \n  push 42 \n  jmp irq_common_stub
+isr43: push 0  \n  push 43 \n  jmp irq_common_stub
+isr44: push 0  \n  push 44 \n  jmp irq_common_stub
+isr45: push 0  \n  push 45 \n  jmp irq_common_stub
+isr46: push 0  \n  push 46 \n  jmp irq_common_stub
+isr47: push 0  \n  push 47 \n  jmp irq_common_stub
+
 isr_common_stub:
     pusha
     push ds
@@ -69,14 +113,9 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov eax, esp
-    push eax
-    mov eax, [esp+40]
-    push eax
-    mov eax, [esp+40]
-    push eax
+    push esp
     call isr_handler
-    add esp, 12
+    pop eax
     pop gs
     pop fs
     pop es
@@ -85,7 +124,6 @@ isr_common_stub:
     add esp, 8
     iret
 
-; Common IRQ stub
 irq_common_stub:
     pusha
     push ds
@@ -97,12 +135,9 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov eax, esp
-    push eax
-    mov eax, [esp+36]
-    push eax
+    push esp
     call irq_handler
-    add esp, 8
+    pop eax
     pop gs
     pop fs
     pop es
@@ -110,287 +145,3 @@ irq_common_stub:
     popa
     add esp, 8
     iret
-
-; ISR handlers
-isr0:
-    cli
-    push byte 0
-    push byte 0
-    jmp isr_common_stub
-
-isr1:
-    cli
-    push byte 0
-    push byte 1
-    jmp isr_common_stub
-
-isr2:
-    cli
-    push byte 0
-    push byte 2
-    jmp isr_common_stub
-
-isr3:
-    cli
-    push byte 0
-    push byte 3
-    jmp isr_common_stub
-
-isr4:
-    cli
-    push byte 0
-    push byte 4
-    jmp isr_common_stub
-
-isr5:
-    cli
-    push byte 0
-    push byte 5
-    jmp isr_common_stub
-
-isr6:
-    cli
-    push byte 0
-    push byte 6
-    jmp isr_common_stub
-
-isr7:
-    cli
-    push byte 0
-    push byte 7
-    jmp isr_common_stub
-
-isr8:
-    cli
-    push dword 8
-    jmp isr_common_stub
-
-isr9:
-    cli
-    push byte 0
-    push byte 9
-    jmp isr_common_stub
-
-isr10:
-    cli
-    push dword 10
-    jmp isr_common_stub
-
-isr11:
-    cli
-    push dword 11
-    jmp isr_common_stub
-
-isr12:
-    cli
-    push dword 12
-    jmp isr_common_stub
-
-isr13:
-    cli
-    push dword 13
-    jmp isr_common_stub
-
-isr14:
-    cli
-    push dword 14
-    jmp isr_common_stub
-
-isr15:
-    cli
-    push byte 0
-    push byte 15
-    jmp isr_common_stub
-
-isr16:
-    cli
-    push byte 0
-    push byte 16
-    jmp isr_common_stub
-
-isr17:
-    cli
-    push byte 0
-    push byte 17
-    jmp isr_common_stub
-
-isr18:
-    cli
-    push byte 0
-    push byte 18
-    jmp isr_common_stub
-
-isr19:
-    cli
-    push byte 0
-    push byte 19
-    jmp isr_common_stub
-
-isr20:
-    cli
-    push byte 0
-    push byte 20
-    jmp isr_common_stub
-
-isr21:
-    cli
-    push byte 0
-    push byte 21
-    jmp isr_common_stub
-
-isr22:
-    cli
-    push byte 0
-    push byte 22
-    jmp isr_common_stub
-
-isr23:
-    cli
-    push byte 0
-    push byte 23
-    jmp isr_common_stub
-
-isr24:
-    cli
-    push byte 0
-    push byte 24
-    jmp isr_common_stub
-
-isr25:
-    cli
-    push byte 0
-    push byte 25
-    jmp isr_common_stub
-
-isr26:
-    cli
-    push byte 0
-    push byte 26
-    jmp isr_common_stub
-
-isr27:
-    cli
-    push byte 0
-    push byte 27
-    jmp isr_common_stub
-
-isr28:
-    cli
-    push byte 0
-    push byte 28
-    jmp isr_common_stub
-
-isr29:
-    cli
-    push byte 0
-    push byte 29
-    jmp isr_common_stub
-
-isr30:
-    cli
-    push byte 0
-    push byte 30
-    jmp isr_common_stub
-
-isr31:
-    cli
-    push byte 0
-    push byte 31
-    jmp isr_common_stub
-
-; IRQ handlers
-isr32:
-    cli
-    push byte 0
-    push byte 32
-    jmp irq_common_stub
-
-isr33:
-    cli
-    push byte 0
-    push byte 33
-    jmp irq_common_stub
-
-isr34:
-    cli
-    push byte 0
-    push byte 34
-    jmp irq_common_stub
-
-isr35:
-    cli
-    push byte 0
-    push byte 35
-    jmp irq_common_stub
-
-isr36:
-    cli
-    push byte 0
-    push byte 36
-    jmp irq_common_stub
-
-isr37:
-    cli
-    push byte 0
-    push byte 37
-    jmp irq_common_stub
-
-isr38:
-    cli
-    push byte 0
-    push byte 38
-    jmp irq_common_stub
-
-isr39:
-    cli
-    push byte 0
-    push byte 39
-    jmp irq_common_stub
-
-isr40:
-    cli
-    push byte 0
-    push byte 40
-    jmp irq_common_stub
-
-isr41:
-    cli
-    push byte 0
-    push byte 41
-    jmp irq_common_stub
-
-isr42:
-    cli
-    push byte 0
-    push byte 42
-    jmp irq_common_stub
-
-isr43:
-    cli
-    push byte 0
-    push byte 43
-    jmp irq_common_stub
-
-isr44:
-    cli
-    push byte 0
-    push byte 44
-    jmp irq_common_stub
-
-isr45:
-    cli
-    push byte 0
-    push byte 45
-    jmp irq_common_stub
-
-isr46:
-    cli
-    push byte 0
-    push byte 46
-    jmp irq_common_stub
-
-isr47:
-    cli
-    push byte 0
-    push byte 47
-    jmp irq_common_stub
