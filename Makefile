@@ -24,9 +24,14 @@ $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel/kernel_entry.asm | $(BUILD)
 $(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
+$(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
 SRCS_C = \
 	$(SRC_DIR)/kernel/idt.c \
 	$(SRC_DIR)/kernel/isr.c \
+	$(SRC_DIR)/kernel/irq.c \
+	$(SRC_DIR)/kernel/irq_handler.c \
 	$(SRC_DIR)/kernel/timer.c \
 	$(SRC_DIR)/kernel/memory.c \
 	$(SRC_DIR)/kernel/fault_handler.c \
@@ -40,8 +45,10 @@ SRCS_C = \
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
+	$(BUILD)/irq.o \
 	$(BUILD)/idt.o \
 	$(BUILD)/isr_c.o \
+	$(BUILD)/irq_handler.o \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
 	$(BUILD)/fault_handler.o \
@@ -56,6 +63,9 @@ $(BUILD)/idt.o: $(SRC_DIR)/kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/isr_c.o: $(SRC_DIR)/kernel/isr.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/irq_handler.o: $(SRC_DIR)/kernel/irq_handler.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/timer.o: $(SRC_DIR)/kernel/timer.c | $(BUILD)
