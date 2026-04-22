@@ -96,8 +96,8 @@ $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
 	$(LD) $(LFLAGS) $^ -o $@
 
 os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
-	dd if=/dev/zero    of=$@ bs=512 count=2880
-	dd if=$(BUILD)/boot.bin   of=$@ conv=notrunc
+	dd if=/dev/zero of=$@ bs=512 count=2880
+	dd if=$(BUILD)/boot.bin of=$@ conv=notrunc
 	dd if=$(BUILD)/kernel.bin of=$@ seek=1 conv=notrunc
 
 clean:
