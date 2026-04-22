@@ -1,9 +1,12 @@
+#include "kernel/timer.h"
 #include "kernel/idt.h"
 #include "kernel/io.h"
+#include "kernel/isr.h"
 
-static unsigned int ticks = 0;
+static volatile unsigned int ticks = 0;
 
-static void timer_callback(void) {
+static void timer_callback(struct registers *regs) {
+    (void)regs;
     ticks++;
 }
 
@@ -22,5 +25,7 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int end = ticks + ms;
-    while (ticks < end) {}
+    while (ticks < end) {
+        __asm__ volatile("hlt");
+    }
 }
