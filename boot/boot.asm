@@ -9,9 +9,7 @@ start:
     mov ss, ax
     mov sp, 0x7C00
     sti
-
     mov [boot_drive], dl
-
     mov ah, 0x02
     mov al, 32
     mov ch, 0
@@ -22,8 +20,7 @@ start:
     mov es, bx
     mov bx, 0x0000
     int 0x13
-    jc disk_error
-
+    jc .disk_error
     cli
     lgdt [gdt_descriptor]
     mov eax, cr0
@@ -31,16 +28,16 @@ start:
     mov cr0, eax
     jmp 0x08:protected_mode
 
-disk_error:
-    mov si, err_msg
+.disk_error:
+    mov si, msg_err
 .loop:
     lodsb
     or al, al
-    jz .done
+    jz .halt
     mov ah, 0x0E
     int 0x10
     jmp .loop
-.done:
+.halt:
     hlt
 
 BITS 32
@@ -65,7 +62,7 @@ gdt_descriptor:
     dd gdt_start
 
 boot_drive: db 0
-err_msg:    db 'Disk error', 0
+msg_err:    db 'Boot error', 0
 
 times 510-($-$$) db 0
 dw 0xAA55
