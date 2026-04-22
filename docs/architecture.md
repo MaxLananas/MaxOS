@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (115)
+## Fonctions implémentées (119)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -50,29 +50,29 @@
 | `np_key` | — | `;` |
 | `si_draw` | — | `void si_draw(void);` |
 | `si_key` | — | `;` |
-| `tm_init` | — | `void tm_init(void);` |
-| `tm_draw` | — | `;` |
-| `tm_key` | — | `;` |
-| `tm_scroll_up` | — | `;` |
-| `tm_print` | — | `;` |
-| `tm_print_char` | — | `;` |
-| `tm_execute_command` | — | `;` |
-| `tm_draw_input_line` | — | `;` |
-| `tm_set_cursor` | — | `;` |
-| `tm_beep` | — | `;` |
-| `tm_str_len` | — | `;` |
-| `tm_str_cmp` | — | `;` |
-| `tm_str_cpy` | — | `;` |
-| `tm_str_cat` | — | `;` |
-| `tm_mem_set` | — | `;` |
-| `tm_mem_cpy` | — | `;` |
-| `tm_int_to_str` | — | `;` |
-| `tm_int_to_str_padded` | — | `;` |
-| `tm_int_to_hex_str` | — | `;` |
-| `tm_str_to_int` | — | `;` |
-| `tm_parse_arg` | — | `;` |
-| `kb_init` | — | `void kb_init(void);` |
-| `kb_haskey` | — | `;` |
+| `terminal_init` | — | `void terminal_init(void);` |
+| `terminal_run` | — | `;` |
+| `terminal_process` | — | `;` |
+| `keyboard_init` | — | `void keyboard_init(void);` |
+| `keyboard_getchar` | — | `;` |
+| `keyboard_handler` | — | `;` |
+| `mouse_init` | — | `void mouse_init(void);` |
+| `mouse_handler` | — | `void mouse_handler(void) {` |
+| `pci_init` | — | `void pci_init();` |
+| `screen_init` | — | `void screen_init(void);` |
+| `screen_clear` | — | `;` |
+| `screen_putchar` | — | `;` |
+| `screen_write` | — | `;` |
+| `screen_writeln` | — | `;` |
+| `screen_set_color` | — | `;` |
+| `screen_get_row` | — | `;` |
+| `screen_scroll` | — | `;` |
+| `vga_init` | — | `void vga_init(void);` |
+| `vga_putchar` | — | `;` |
+| `vga_clear` | — | `;` |
+| `inb` | — | `static inline unsigned char inb(unsigned short port) {` |
+| `outb` | — | `static inline void outb(unsigned short port, unsigned char v` |
+| `inw` | — | `static inline unsigned short inw(unsigned short port) {` |
 
 ## Règles bare metal
 

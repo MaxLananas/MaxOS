@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = $(SRC_DIR)/kernel:$(SRC_DIR)/drivers:$(SRC_DIR)/apps
-
 .PHONY: all clean
 
 all: os.img
@@ -44,7 +42,6 @@ OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/idt.o \
-	$(BUILD)/isr_c.o \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
 	$(BUILD)/fault_handler.o \
