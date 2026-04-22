@@ -1,73 +1,47 @@
-#include "keyboard.h"
-#include "../kernel/io.h"
-#include "../apps/terminal.h"
+#include "kernel/io.h"
+#include "kernel/keyboard.h"
+#include "drivers/screen.h"
 
 #define KEYBOARD_DATA_PORT 0x60
 #define KEYBOARD_STATUS_PORT 0x64
-#define KEYBOARD_IRQ 1
 
-static unsigned char kb_buffer[256];
-static unsigned int kb_buffer_start = 0;
-static unsigned int kb_buffer_end = 0;
+static char keyboard_buffer[256];
+static unsigned int buffer_pos = 0;
 
-void kb_init(void) {
-    outb(0x64, 0xAE);
-    outb(0x64, 0x20);
-    unsigned char status = inb(0x60);
-    status |= 1;
-    outb(0x64, 0x60);
-    outb(0x60, status);
-    outb(0x61, 0x01);
+void keyboard_init(void) {
+    outb(0x21, inb(0x21) & 0xFD);
 }
 
-unsigned char kb_haskey(void) {
-    return kb_buffer_start != kb_buffer_end;
-}
-
-char kb_getchar(void) {
-    if (!kb_haskey()) {
-        return 0;
+char keyboard_getchar(void) {
+    if (buffer_pos == 0) return 0;
+    char c = keyboard_buffer[0];
+    for (unsigned int i = 0; i < buffer_pos - 1; i++) {
+        keyboard_buffer[i] = keyboard_buffer[i + 1];
     }
-    char c = kb_buffer[kb_buffer_start];
-    kb_buffer_start = (kb_buffer_start + 1) % 256;
+    buffer_pos--;
     return c;
 }
 
 void keyboard_handler(void) {
     unsigned char scancode = inb(KEYBOARD_DATA_PORT);
-    if (scancode & 0x80) {
-        return;
-    }
+    if (scancode & 0x80) return;
 
-    if (scancode == 0x0E) {
-        if (kb_buffer_end != (kb_buffer_start - 1) % 256) {
-            kb_buffer[kb_buffer_end] = '\b';
-            kb_buffer_end = (kb_buffer_end + 1) % 256;
-        }
-    } else if (scancode == 0x0F) {
-        if (kb_buffer_end != (kb_buffer_start - 1) % 256) {
-            kb_buffer[kb_buffer_end] = '\t';
-            kb_buffer_end = (kb_buffer_end + 1) % 256;
-        }
-    } else if (scancode >= 0x3B && scancode <= 0x3E) {
-        unsigned char key = KEY_F1 + (scancode - 0x3B);
-        if (kb_buffer_end != (kb_buffer_start - 1) % 256) {
-            kb_buffer[kb_buffer_end] = key;
-            kb_buffer_end = (kb_buffer_end + 1) % 256;
-        }
-    } else {
-        static const unsigned char keymap[] = {
+    char c = 0;
+    if (scancode < 0x3A) {
+        static char keymap[] = {
             0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
             '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
             0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,
-            '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ', 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-', 0, 0, 0, '+', 0, 0, 0, 0, 0, 0, 0, 0, 0
+            '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' '
         };
-        unsigned char c = keymap[scancode];
-        if (c && kb_buffer_end != (kb_buffer_start - 1) % 256) {
-            kb_buffer[kb_buffer_end] = c;
-            kb_buffer_end = (kb_buffer_end + 1) % 256;
+        c = keymap[scancode];
+    }
+
+    if (c) {
+        if (buffer_pos < sizeof(keyboard_buffer)) {
+            keyboard_buffer[buffer_pos++] = c;
         }
     }
+
     outb(0x20, 0x20);
 }

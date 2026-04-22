@@ -1,4 +1,4 @@
-#include "kernel/memory.h"
+#include "memory.h"
 
 #define MAX_PAGES 32768
 #define PAGE_SIZE 4096
@@ -6,7 +6,7 @@
 
 static unsigned int bitmap[MAX_PAGES / 32];
 static unsigned int total_pages = 0;
-static unsigned int used_pages  = 0;
+static unsigned int used_pages = 0;
 
 static void bitmap_set(unsigned int page) {
     bitmap[page / 32] |= (1 << (page % 32));
