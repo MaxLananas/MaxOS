@@ -1,19 +1,19 @@
-#include "timer.h"
-#include "io.h"
-#include "irq.h"
+#include "kernel/idt.h"
+#include "kernel/io.h"
 
-unsigned int ticks = 0;
+static unsigned int ticks = 0;
 
-void timer_callback(registers_t regs) {
+static void timer_callback(void) {
     ticks++;
 }
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
     outb(0x43, 0x36);
-    outb(0x40, divisor & 0xFF);
-    outb(0x40, (divisor >> 8) & 0xFF);
-    irq_install_handler(0, timer_callback);
+    outb(0x40, (unsigned char)(divisor & 0xFF));
+    outb(0x40, (unsigned char)((divisor >> 8) & 0xFF));
+    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
+    outb(0x21, inb(0x21) & ~0x01);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -21,8 +21,6 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
-    unsigned int end = start + (ms * 1000) / 1000;
-    while (ticks < end)
-        asm volatile("hlt");
+    unsigned int end = ticks + ms;
+    while (ticks < end) {}
 }
