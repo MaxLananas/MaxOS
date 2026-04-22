@@ -35,13 +35,13 @@ SRCS_C = \
 	$(SRC_DIR)/kernel/pmm.c \
 	$(SRC_DIR)/kernel/kmain.c \
 	$(SRC_DIR)/drivers/screen.c \
-	$(SRC_DIR)/drivers/keyboard.c \
-	$(SRC_DIR)/apps/terminal.c
+	$(SRC_DIR)/drivers/keyboard.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/idt.o \
+	$(BUILD)/isr_c.o \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
 	$(BUILD)/fault_handler.o \
@@ -50,8 +50,7 @@ OBJS = \
 	$(BUILD)/pmm.o \
 	$(BUILD)/kmain.o \
 	$(BUILD)/screen.o \
-	$(BUILD)/keyboard.o \
-	$(BUILD)/terminal.o
+	$(BUILD)/keyboard.o
 
 $(BUILD)/idt.o: $(SRC_DIR)/kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -84,9 +83,6 @@ $(BUILD)/screen.o: $(SRC_DIR)/drivers/screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/keyboard.o: $(SRC_DIR)/drivers/keyboard.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/terminal.o: $(SRC_DIR)/apps/terminal.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)

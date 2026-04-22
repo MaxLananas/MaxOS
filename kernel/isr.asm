@@ -92,6 +92,7 @@ isr4:
     jmp isr_common_stub
 
 isr5:
+    push dword 0
     push dword 5
     jmp isr_common_stub
 
@@ -170,3 +171,130 @@ isr21:
 
 isr22:
     push dword 0
+    push dword 22
+    jmp isr_common_stub
+
+isr23:
+    push dword 0
+    push dword 23
+    jmp isr_common_stub
+
+isr24:
+    push dword 0
+    push dword 24
+    jmp isr_common_stub
+
+isr25:
+    push dword 0
+    push dword 25
+    jmp isr_common_stub
+
+isr26:
+    push dword 0
+    push dword 26
+    jmp isr_common_stub
+
+isr27:
+    push dword 0
+    push dword 27
+    jmp isr_common_stub
+
+isr28:
+    push dword 0
+    push dword 28
+    jmp isr_common_stub
+
+isr29:
+    push dword 0
+    push dword 29
+    jmp isr_common_stub
+
+isr30:
+    push dword 0
+    push dword 30
+    jmp isr_common_stub
+
+isr31:
+    push dword 0
+    push dword 31
+    jmp isr_common_stub
+
+isr32:
+    push dword 0
+    push dword 32
+    jmp isr_common_stub
+
+isr33:
+    push dword 0
+    push dword 33
+    jmp isr_common_stub
+
+isr34:
+    push dword 0
+    push dword 34
+    jmp isr_common_stub
+
+isr35:
+    push dword 0
+    push dword 35
+    jmp isr_common_stub
+
+isr36:
+    push dword 0
+    push dword 36
+    jmp isr_common_stub
+
+isr37:
+    push dword 0
+    push dword 37
+    jmp isr_common_stub
+
+isr38:
+    push dword 0
+    push dword 38
+    jmp isr_common_stub
+
+isr39:
+    push dword 0
+    push dword 39
+    jmp isr_common_stub
+
+isr40:
+    push dword 0
+    push dword 40
+    jmp isr_common_stub
+
+isr41:
+    push dword 0
+    push dword 41
+    jmp isr_common_stub
+
+isr42:
+    push dword 0
+    push dword 42
+    jmp isr_common_stub
+
+isr43:
+    push dword 0
+    push dword 43
+    jmp isr_common_stub
+
+isr44:
+    push dword 0
+    push dword 44
+    jmp isr_common_stub
+
+isr45:
+    push dword 0
+    push dword 45
+    jmp isr_common_stub
+
+isr46:
+    push dword 0
+    push dword 46
+    jmp isr_common_stub
+
+isr47:
+    push dword 0
+    push dword 47
+    jmp isr_common_stub

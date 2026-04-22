@@ -1,11 +1,11 @@
-#include "idt.h"
-#include "io.h"
+#include "kernel/idt.h"
+#include "kernel/io.h"
 
 struct IDTEntry idt[256];
 struct IDTPtr idtp;
 
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
-    idt[num].base_lo = base & 0xFFFF;
+    idt[num].base_lo = (base & 0xFFFF);
     idt[num].base_hi = (base >> 16) & 0xFFFF;
     idt[num].sel = sel;
     idt[num].always0 = 0;
@@ -13,12 +13,8 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
 }
 
 void idt_init(void) {
-    idtp.limit = sizeof(struct IDTEntry) * 256 - 1;
+    idtp.limit = (sizeof(struct IDTEntry) * 256) - 1;
     idtp.base = (unsigned int)&idt;
-
-    for (unsigned int i = 0; i < 256; i++) {
-        idt_set_gate(i, 0, 0, 0);
-    }
 
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
@@ -52,7 +48,6 @@ void idt_init(void) {
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
     idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
-
     idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
     idt_set_gate(33, (unsigned int)isr33, 0x08, 0x8E);
     idt_set_gate(34, (unsigned int)isr34, 0x08, 0x8E);
@@ -70,5 +65,5 @@ void idt_init(void) {
     idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
 
-    __asm__ volatile("lidt %0" :: "m"(idtp));
+    __asm__ __volatile__("lidt %0" : : "m"(idtp));
 }
