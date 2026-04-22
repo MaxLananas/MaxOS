@@ -2,10 +2,10 @@
 #include "idt.h"
 #include "io.h"
 
-static unsigned int timer_ticks = 0;
+unsigned int ticks = 0;
 
-void timer_callback() {
-    timer_ticks++;
+void timer_handler(void) {
+    ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -17,11 +17,12 @@ void timer_init(unsigned int hz) {
 }
 
 unsigned int timer_get_ticks(void) {
-    return timer_ticks;
+    return ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_ticks;
-    unsigned int wait = ms / 10;
-    while ((timer_ticks - start) < wait);
+    unsigned int start = ticks;
+    unsigned int end = start + (ms * 1000) / 1000;
+    while (ticks < end)
+        asm volatile("hlt");
 }
