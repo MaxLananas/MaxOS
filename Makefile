@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
+VPATH = $(SRC_DIR)/kernel:$(SRC_DIR)/drivers
+
 .PHONY: all clean
 
 all: os.img
@@ -21,26 +23,26 @@ $(BUILD)/boot.bin: $(SRC_DIR)/boot/boot.asm | $(BUILD)
 $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)
+$(BUILD)/isr.o: isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
+$(BUILD)/irq.o: irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
-	$(SRC_DIR)/kernel/idt.c \
-	$(SRC_DIR)/kernel/isr.c \
-	$(SRC_DIR)/kernel/irq.c \
-	$(SRC_DIR)/kernel/irq_handler.c \
-	$(SRC_DIR)/kernel/timer.c \
-	$(SRC_DIR)/kernel/memory.c \
-	$(SRC_DIR)/kernel/fault_handler.c \
-	$(SRC_DIR)/kernel/page_fault.c \
-	$(SRC_DIR)/kernel/paging.c \
-	$(SRC_DIR)/kernel/pmm.c \
-	$(SRC_DIR)/kernel/kmain.c \
-	$(SRC_DIR)/drivers/screen.c \
-	$(SRC_DIR)/drivers/keyboard.c
+	idt.c \
+	isr.c \
+	irq.c \
+	irq_handler.c \
+	timer.c \
+	memory.c \
+	fault_handler.c \
+	page_fault.c \
+	paging.c \
+	pmm.c \
+	kmain.c \
+	screen.c \
+	keyboard.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -59,40 +61,40 @@ OBJS = \
 	$(BUILD)/screen.o \
 	$(BUILD)/keyboard.o
 
-$(BUILD)/idt.o: $(SRC_DIR)/kernel/idt.c | $(BUILD)
+$(BUILD)/idt.o: idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/isr_c.o: $(SRC_DIR)/kernel/isr.c | $(BUILD)
+$(BUILD)/isr_c.o: isr.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/irq_handler.o: $(SRC_DIR)/kernel/irq_handler.c | $(BUILD)
+$(BUILD)/irq_handler.o: irq_handler.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/timer.o: $(SRC_DIR)/kernel/timer.c | $(BUILD)
+$(BUILD)/timer.o: timer.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/memory.o: $(SRC_DIR)/kernel/memory.c | $(BUILD)
+$(BUILD)/memory.o: memory.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/fault_handler.o: $(SRC_DIR)/kernel/fault_handler.c | $(BUILD)
+$(BUILD)/fault_handler.o: fault_handler.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/page_fault.o: $(SRC_DIR)/kernel/page_fault.c | $(BUILD)
+$(BUILD)/page_fault.o: page_fault.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/paging.o: $(SRC_DIR)/kernel/paging.c | $(BUILD)
+$(BUILD)/paging.o: paging.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/pmm.o: $(SRC_DIR)/kernel/pmm.c | $(BUILD)
+$(BUILD)/pmm.o: pmm.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/kmain.o: $(SRC_DIR)/kernel/kmain.c | $(BUILD)
+$(BUILD)/kmain.o: kmain.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/screen.o: $(SRC_DIR)/drivers/screen.c | $(BUILD)
+$(BUILD)/screen.o: screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/keyboard.o: $(SRC_DIR)/drivers/keyboard.c | $(BUILD)
+$(BUILD)/keyboard.o: keyboard.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
