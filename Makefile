@@ -44,7 +44,7 @@ SRCS_C = \
 	kernel/heap.c \
 	kernel/kmain.c \
 	kernel/screen.c \
-	drivers/keyboard.c \
+	kernel/keyboard.c \
 	drivers/ata.c \
 	drivers/usb.c \
 	drivers/pci.c \
@@ -112,7 +112,7 @@ $(BUILD)/kmain.o: kernel/kmain.c | $(BUILD)
 $(BUILD)/screen.o: kernel/screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/keyboard.o: drivers/keyboard.c | $(BUILD)
+$(BUILD)/keyboard.o: kernel/keyboard.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/ata.o: drivers/ata.c | $(BUILD)
