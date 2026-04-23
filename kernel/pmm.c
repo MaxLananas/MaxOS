@@ -37,11 +37,11 @@ static unsigned int pmm_find_first_bit() {
 }
 
 static void pmm_set_region(unsigned int base, unsigned int size) {
-    unsigned int start_bit = base / PMM_BLOCK_SIZE;
+    unsigned int start_bit = (base - mem_start) / PMM_BLOCK_SIZE;
     unsigned int num_bits = size / PMM_BLOCK_SIZE;
 
     for (unsigned int i = 0; i < num_bits; i++) {
-        pmm_clear_bit(start_bit + i);
+        pmm_set_bit(start_bit + i);
     }
 }
 

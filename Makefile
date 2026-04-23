@@ -40,6 +40,8 @@ SRCS_C = \
 	page_fault.c \
 	paging.c \
 	pmm.c \
+	vmm.c \
+	heap.c \
 	kmain.c \
 	screen.c \
 	keyboard.c
@@ -57,6 +59,8 @@ OBJS = \
 	$(BUILD)/page_fault.o \
 	$(BUILD)/paging.o \
 	$(BUILD)/pmm.o \
+	$(BUILD)/vmm.o \
+	$(BUILD)/heap.o \
 	$(BUILD)/kmain.o \
 	$(BUILD)/screen.o \
 	$(BUILD)/keyboard.o
@@ -86,6 +90,12 @@ $(BUILD)/paging.o: paging.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/pmm.o: pmm.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/vmm.o: vmm.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/heap.o: heap.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kmain.o: kmain.c | $(BUILD)

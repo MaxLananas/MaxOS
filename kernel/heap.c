@@ -1,4 +1,6 @@
-#include "kernel/io.h"
+#include "heap.h"
+#include "pmm.h"
+#include "vmm.h"
 
 typedef struct block {
     unsigned int size;
@@ -6,7 +8,7 @@ typedef struct block {
     struct block *next;
 } block_t;
 
-#define HEAP_START 0xC0000000
+#define HEAP_START 0xC0400000
 #define HEAP_SIZE 0x100000
 
 static block_t *heap = (block_t*)HEAP_START;
@@ -49,9 +51,10 @@ void heap_free(void *ptr) {
     if (!ptr) return;
 
     block_t *block = (block_t*)((unsigned int)ptr - sizeof(block_t));
+    block_t *next = block->next;
+
     block->free = 1;
 
-    block_t *next = block->next;
     if (next && next->free) {
         block->size += sizeof(block_t) + next->size;
         block->next = next->next;
