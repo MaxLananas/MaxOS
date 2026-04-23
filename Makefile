@@ -23,28 +23,32 @@ $(BUILD)/boot.bin: $(SRC_DIR)/boot/boot.asm | $(BUILD)
 $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: isr.asm | $(BUILD)
+$(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: irq.asm | $(BUILD)
+$(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
-	idt.c \
-	isr.c \
-	irq.c \
-	irq_handler.c \
-	timer.c \
-	memory.c \
-	fault_handler.c \
-	page_fault.c \
-	paging.c \
-	pmm.c \
-	vmm.c \
-	heap.c \
-	kmain.c \
-	screen.c \
-	keyboard.c
+	kernel/idt.c \
+	kernel/isr.c \
+	kernel/irq.c \
+	kernel/irq_handler.c \
+	kernel/timer.c \
+	kernel/memory.c \
+	kernel/fault_handler.c \
+	kernel/page_fault.c \
+	kernel/paging.c \
+	kernel/pmm.c \
+	kernel/vmm.c \
+	kernel/heap.c \
+	kernel/kmain.c \
+	kernel/screen.c \
+	drivers/keyboard.c \
+	drivers/ata.c \
+	drivers/usb.c \
+	drivers/pci.c \
+	drivers/mouse.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -63,48 +67,64 @@ OBJS = \
 	$(BUILD)/heap.o \
 	$(BUILD)/kmain.o \
 	$(BUILD)/screen.o \
-	$(BUILD)/keyboard.o
+	$(BUILD)/keyboard.o \
+	$(BUILD)/ata.o \
+	$(BUILD)/usb.o \
+	$(BUILD)/pci.o \
+	$(BUILD)/mouse.o
 
-$(BUILD)/idt.o: idt.c | $(BUILD)
+$(BUILD)/idt.o: kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/isr_c.o: isr.c | $(BUILD)
+$(BUILD)/isr_c.o: kernel/isr.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/irq_handler.o: irq_handler.c | $(BUILD)
+$(BUILD)/irq_handler.o: kernel/irq_handler.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/timer.o: timer.c | $(BUILD)
+$(BUILD)/timer.o: kernel/timer.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/memory.o: memory.c | $(BUILD)
+$(BUILD)/memory.o: kernel/memory.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/fault_handler.o: fault_handler.c | $(BUILD)
+$(BUILD)/fault_handler.o: kernel/fault_handler.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/page_fault.o: page_fault.c | $(BUILD)
+$(BUILD)/page_fault.o: kernel/page_fault.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/paging.o: paging.c | $(BUILD)
+$(BUILD)/paging.o: kernel/paging.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/pmm.o: pmm.c | $(BUILD)
+$(BUILD)/pmm.o: kernel/pmm.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/vmm.o: vmm.c | $(BUILD)
+$(BUILD)/vmm.o: kernel/vmm.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/heap.o: heap.c | $(BUILD)
+$(BUILD)/heap.o: kernel/heap.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/kmain.o: kmain.c | $(BUILD)
+$(BUILD)/kmain.o: kernel/kmain.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/screen.o: screen.c | $(BUILD)
+$(BUILD)/screen.o: kernel/screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/keyboard.o: keyboard.c | $(BUILD)
+$(BUILD)/keyboard.o: drivers/keyboard.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/ata.o: drivers/ata.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/usb.o: drivers/usb.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/pci.o: drivers/pci.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/mouse.o: drivers/mouse.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)

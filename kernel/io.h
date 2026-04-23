@@ -21,6 +21,16 @@ static inline unsigned short inw(unsigned short port) {
     return val;
 }
 
+static inline void outl(unsigned short port, unsigned int val) {
+    __asm__ volatile("outl %0, %1" :: "a"(val), "Nd"(port));
+}
+
+static inline unsigned int inl(unsigned short port) {
+    unsigned int val;
+    __asm__ volatile("inl %1, %0" : "=a"(val) : "Nd"(port));
+    return val;
+}
+
 static inline void io_wait(void) {
     outb(0x80, 0x00);
 }
