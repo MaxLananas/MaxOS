@@ -4,7 +4,7 @@
     "last_fail": 0
   },
   "kernel/io.h + IDT + ISR complet": {
-    "consecutive_fails": 0,
-    "last_fail": 1776914454
+    "consecutive_fails": 1,
+    "last_fail": 1776999176
   }
 }
