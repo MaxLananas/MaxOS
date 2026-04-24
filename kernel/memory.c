@@ -1,6 +1,11 @@
 #include "memory.h"
-#include "paging.h"
 
 void mem_init(unsigned int mem_size_kb) {
-    paging_init();
+}
+
+void mem_free_page(void *addr) {
+}
+
+unsigned int mem_used_pages(void) {
+    return 0;
 }

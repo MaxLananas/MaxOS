@@ -16,18 +16,14 @@ global irq12
 global irq13
 global irq14
 global irq15
+
 extern irq_handler
 
 irq_common_stub:
     pusha
     push esp
-    push eax
-    mov eax, [esp + 12]
-    push eax
     call irq_handler
     add esp, 4
-    pop eax
-    pop esp
     popa
     add esp, 8
     iret
@@ -105,9 +101,4 @@ irq13:
 irq14:
     push dword 0
     push dword 46
-    jmp irq_common_stub
-
-irq15:
-    push dword 0
-    push dword 47
-    jmp irq_common_stub
+    j

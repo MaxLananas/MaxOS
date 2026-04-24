@@ -1,22 +1,15 @@
 #include "terminal.h"
-#include "../drivers/screen.h"
-#include "../drivers/keyboard.h"
+#include "screen.h"
+#include "keyboard.h"
 
 void terminal_init(void) {
     screen_clear();
-    screen_writeln("Terminal initialized", 0x0A);
 }
 
 void terminal_run(void) {
-    screen_writeln("Terminal running...", 0x0F);
-    while (1) {
-        char c = keyboard_getchar();
-        if (c) {
-            screen_putchar(c, 0x0F);
-        }
-    }
+    screen_writeln("Terminal ready", 0x0A);
 }
 
 void terminal_process(const char *cmd) {
-    (void)cmd;
+    screen_writeln(cmd, 0x0F);
 }

@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = $(SRC_DIR)/kernel:$(SRC_DIR)/drivers
+VPATH = $(SRC_DIR)
 
 .PHONY: all clean
 
@@ -45,11 +45,7 @@ SRCS_C = \
 	kernel/kmain.c \
 	kernel/screen.c \
 	kernel/keyboard.c \
-	kernel/terminal.c \
-	drivers/ata.c \
-	drivers/usb.c \
-	drivers/pci.c \
-	drivers/mouse.c
+	kernel/terminal.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -69,11 +65,7 @@ OBJS = \
 	$(BUILD)/kmain.o \
 	$(BUILD)/screen.o \
 	$(BUILD)/keyboard.o \
-	$(BUILD)/terminal.o \
-	$(BUILD)/ata.o \
-	$(BUILD)/usb.o \
-	$(BUILD)/pci.o \
-	$(BUILD)/mouse.o
+	$(BUILD)/terminal.o
 
 $(BUILD)/idt.o: kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -82,6 +74,9 @@ $(BUILD)/isr_c.o: kernel/isr.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/irq_handler.o: kernel/irq_handler.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/irq.o: kernel/irq.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/timer.o: kernel/timer.c | $(BUILD)
@@ -118,19 +113,7 @@ $(BUILD)/keyboard.o: kernel/keyboard.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/ata.o: drivers/ata.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/usb.o: drivers/usb.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/pci.o: drivers/pci.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/mouse.o: drivers/mouse.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
 	$(LD) $(LFLAGS) $^ -o $@

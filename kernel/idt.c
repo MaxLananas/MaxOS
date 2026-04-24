@@ -1,11 +1,60 @@
-#include "idt.h"
-#include "io.h"
+#include "kernel/idt.h"
+#include "kernel/io.h"
 
 struct IDTEntry idt[256];
 struct IDTPtr idtp;
 
+extern void isr0(void);
+extern void isr1(void);
+extern void isr2(void);
+extern void isr3(void);
+extern void isr4(void);
+extern void isr5(void);
+extern void isr6(void);
+extern void isr7(void);
+extern void isr8(void);
+extern void isr9(void);
+extern void isr10(void);
+extern void isr11(void);
+extern void isr12(void);
+extern void isr13(void);
+extern void isr14(void);
+extern void isr15(void);
+extern void isr16(void);
+extern void isr17(void);
+extern void isr18(void);
+extern void isr19(void);
+extern void isr20(void);
+extern void isr21(void);
+extern void isr22(void);
+extern void isr23(void);
+extern void isr24(void);
+extern void isr25(void);
+extern void isr26(void);
+extern void isr27(void);
+extern void isr28(void);
+extern void isr29(void);
+extern void isr30(void);
+extern void isr31(void);
+extern void isr32(void);
+extern void isr33(void);
+extern void isr34(void);
+extern void isr35(void);
+extern void isr36(void);
+extern void isr37(void);
+extern void isr38(void);
+extern void isr39(void);
+extern void isr40(void);
+extern void isr41(void);
+extern void isr42(void);
+extern void isr43(void);
+extern void isr44(void);
+extern void isr45(void);
+extern void isr46(void);
+extern void isr47(void);
+
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
-    idt[num].base_lo = (base & 0xFFFF);
+    idt[num].base_lo = base & 0xFFFF;
     idt[num].base_hi = (base >> 16) & 0xFFFF;
     idt[num].sel = sel;
     idt[num].always0 = 0;
@@ -16,20 +65,9 @@ void idt_init(void) {
     idtp.limit = (sizeof(struct IDTEntry) * 256) - 1;
     idtp.base = (unsigned int)&idt;
 
-    for (int i = 0; i < 256; i++) {
+    for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
-
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
-    outb(0x21, 0x00);
-    outb(0xA1, 0x00);
 
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
@@ -80,5 +118,5 @@ void idt_init(void) {
     idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
 
-    __asm__ __volatile__("lidt %0" : : "m"(idtp));
+    __asm__ volatile("lidt %0" : : "m"(idtp));
 }
