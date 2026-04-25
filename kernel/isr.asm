@@ -26,7 +26,7 @@ global isr22
 global isr23
 global isr24
 global isr25
-global isir26
+global isr26
 global isr27
 global isr28
 global isr29
@@ -268,7 +268,7 @@ isr41:
     push dword 41
     jmp isr_common_stub
 
-isisr42:
+isr42:
     push dword 0
     push dword 42
     jmp isr_common_stub

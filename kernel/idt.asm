@@ -1,9 +1,7 @@
-bits 32
+BITS 32
+global idt_load
 
-section .text
-
-global idt_flush
-idt_flush:
+idt_load:
     mov eax, [esp + 4]
     lidt [eax]
     ret

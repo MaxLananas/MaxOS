@@ -1,16 +1,24 @@
+#include "irq.h"
 #include "io.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "timer.h"
+
+void irq_send_eoi(void) {
+    outb(0x20, 0x20);
+    if (inb(0xA0) & 0x80) {
+        outb(0xA0, 0x20);
+    }
+}
 
 void irq_handler(unsigned int num) {
-    if (num >= 32 && num <= 47) {
-        if (num == 32) {
-            timer_handler();
-        } else if (num == 33) {
-            keyboard_handler();
-        } else if (num == 44) {
-            mouse_handler();
-        }
+    if (num >= 40) {
+        irq_send_eoi();
+    }
+
+    if (irq_routines[num] != 0) {
+        void (*handler)(void) = irq_routines[num];
+        handler();
+    }
+
+    if (num < 40) {
+        irq_send_eoi();
     }
 }

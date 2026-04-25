@@ -1,5 +1,9 @@
 #include "heap.h"
 
-void *heap_alloc(unsigned int size) {
-    return 0;
+void heap_init(void *start, unsigned int size) {
+    // Implementation of heap initialization
+}
+
+void heap_free(void *ptr) {
+    // Implementation of heap freeing
 }
