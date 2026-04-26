@@ -28,7 +28,7 @@ irq_common_stub:
     call irq_handler
     add esp, 8
     popa
-    add esp, 8
+    add esp, 4
     iret
 
 irq0:

@@ -102,7 +102,7 @@ $(BUILD)/paging.o: kernel/paging.c | $(BUILD)
 $(BUILD)/pmm.o: kernel/pmm.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/vmm.o: kernel/vmm.c | $(BUILD)
+$(BVAIL)/vmm.o: kernel/vmm.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/heap.o: kernel/heap.c | $(BUILD)

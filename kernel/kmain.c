@@ -1,12 +1,18 @@
 #include "screen.h"
 #include "keyboard.h"
-#include "terminal.h"
+#include "mouse.h"
+#include "timer.h"
+#include "idt.h"
+#include "irq.h"
 
 void kmain(void) {
     screen_init();
-    screen_clear();
     screen_writeln("Kernel started", 0x0A);
+    idt_init();
+    irq_init();
     keyboard_init();
-    terminal_init();
-    terminal_run();
+    mouse_init();
+    timer_init(100);
+    screen_writeln("IDT and IRQ initialized", 0x0A);
+    while (1);
 }
