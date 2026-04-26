@@ -1,18 +1,24 @@
 #include "screen.h"
 #include "keyboard.h"
-#include "mouse.h"
-#include "timer.h"
+#include "terminal.h"
 #include "idt.h"
+#include "isr.h"
 #include "irq.h"
+#include "timer.h"
+#include "memory.h"
+#include "paging.h"
 
 void kmain(void) {
     screen_init();
-    screen_writeln("Kernel started", 0x0A);
     idt_init();
-    irq_init();
-    keyboard_init();
-    mouse_init();
+    isr_install();
+    irq_install();
     timer_init(100);
-    screen_writeln("IDT and IRQ initialized", 0x0A);
-    while (1);
+    keyboard_init();
+    terminal_init();
+    paging_init();
+    mem_init(1024 * 1024);
+
+    screen_writeln("Kernel initialized", 0x0A);
+    terminal_run();
 }

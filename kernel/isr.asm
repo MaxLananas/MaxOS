@@ -279,4 +279,21 @@ isr43:
     jmp isr_common_stub
 
 isr44:
-    push d
+    push dword 0
+    push dword 44
+    jmp isr_common_stub
+
+isr45:
+    push dword 0
+    push dword 45
+    jmp isr_common_stub
+
+isr46:
+    push dword 0
+    push dword 46
+    jmp isr_common_stub
+
+isr47:
+    push dword 0
+    push dword 47
+    jmp isr_common_stub
