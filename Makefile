@@ -103,7 +103,9 @@ $(BUILD)/pmm.o: kernel/pmm.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/vmm.o: kernel/vmm.c | $(BUILD)
-	$(BUILD)/heap.o: kernel/heap.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/heap.o: kernel/heap.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kmain.o: kernel/kmain.c | $(BUILD)

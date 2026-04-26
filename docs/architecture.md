@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (115)
+## Fonctions implémentées (113)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -61,7 +61,7 @@
 | `ata_write` | — | `;` |
 | `keyboard_init` | — | `void keyboard_init(void);` |
 | `keyboard_getchar` | — | `;` |
-| `keyboard_handler` | — | `;` |
+| `keyboard_handler` | — | `void keyboard_handler(void) {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_read_config` | — | `static unsigned int pci_read_config(unsigned char bus, unsig` |

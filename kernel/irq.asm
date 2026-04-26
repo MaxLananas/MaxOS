@@ -26,7 +26,7 @@ irq_common_stub:
     mov eax, [esp + 12]
     push eax
     call irq_handler
-    add esp, 4
+    add esp, 8
     popa
     add esp, 8
     iret
