@@ -54,13 +54,8 @@ extern isr_handler
 isr_common_stub:
     pusha
     push esp
-    push eax
-    mov eax, [esp + 12]
-    push eax
-    mov eax, [esp + 20]
-    push eax
     call isr_handler
-    add esp, 8
+    add esp, 4
     popa
     add esp, 8
     iret
