@@ -2,6 +2,5 @@
 #define ISR_H
 
 void isr_handler(unsigned int num, unsigned int err);
-void isr_init();
 
 #endif

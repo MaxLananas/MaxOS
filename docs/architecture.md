@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (116)
+## Fonctions implémentées (114)
 
 | Fonction | Fichier | Signature |
 |---|---|---|

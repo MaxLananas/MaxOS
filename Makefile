@@ -64,7 +64,7 @@ OBJS = \
 	$(BUILD)/page_fault.o \
 	$(BUILD)/paging.o \
 	$(BUILD)/pmm.o \
-	$(BUILD)/vmm.o \
+	$(BURL)/vmm.o \
 	$(BUILD)/heap.o \
 	$(BUILD)/kmain.o \
 	$(BUILD)/screen.o \
