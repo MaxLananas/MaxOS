@@ -1,36 +1,43 @@
-#include "kernel/screen.h"
+#include "drivers/screen.h"
 #include "kernel/io.h"
 
-unsigned char color = 0x0F;
-unsigned short *video_memory = (unsigned short*)0xB8000;
-unsigned int row = 0;
-unsigned int column = 0;
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+#define VGA_MEMORY 0xB8000
+
+static unsigned short *video_memory = (unsigned short *)VGA_MEMORY;
+static unsigned char screen_color = 0x0F;
+static unsigned int row = 0;
+static unsigned int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    for (int i = 0; i < 80 * 25; i++) {
-        video_memory[i] = (color << 8) | ' ';
+    for (unsigned int i = 0; i < VGA_HEIGHT; i++) {
+        for (unsigned int j = 0; j < VGA_WIDTH; j++) {
+            video_memory[i * VGA_WIDTH + j] = (screen_color << 8) | ' ';
+        }
     }
     row = 0;
-    column = 0;
+    col = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
+        col = 0;
         row++;
-        column = 0;
     } else {
-        video_memory[row * 80 + column] = (color << 8) | c;
-        column++;
-        if (column >= 80) {
+        video_memory[row * VGA_WIDTH + col] = (color << 8) | c;
+        col++;
+        if (col >= VGA_WIDTH) {
+            col = 0;
             row++;
-            column = 0;
         }
     }
-    if (row >= 25) {
+
+    if (row >= VGA_HEIGHT) {
         screen_scroll();
     }
 }
@@ -55,11 +62,17 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (int i = 0; i < 24 * 80; i++) {
-        video_memory[i] = video_memory[i + 80];
+    for (unsigned int i = 1; i < VGA_HEIGHT; i++) {
+        for (unsigned int j = 0; j < VGA_WIDTH; j++) {
+            video_memory[(i - 1) * VGA_WIDTH + j] = video_memory[i * VGA_WIDTH + j];
+        }
     }
-    for (int i = 24 * 80; i < 25 * 80; i++) {
-        video_memory[i] = (color << 8) | ' ';
+
+    for (unsigned int j = 0; j < VGA_WIDTH; j++) {
+        video_memory[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (screen_color << 8) | ' ';
     }
-    row = 24;
+
+    if (row > 0) {
+        row--;
+    }
 }

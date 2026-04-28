@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (106)
+## Fonctions implémentées (112)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -59,6 +59,9 @@
 | `keyboard_init` | — | `void keyboard_init(void);` |
 | `keyboard_getchar` | — | `;` |
 | `keyboard_handler` | — | `;` |
+| `mouse_wait` | — | `void mouse_wait(unsigned char a_type) {` |
+| `mouse_write` | — | `void mouse_write(unsigned char a_write) {` |
+| `mouse_read` | — | `unsigned char mouse_read() {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_init` | — | `void pci_init();` |
@@ -70,9 +73,6 @@
 | `screen_set_color` | — | `;` |
 | `screen_get_row` | — | `;` |
 | `screen_scroll` | — | `;` |
-| `usb_init` | — | `void usb_init();` |
-| `usb_hid_init` | — | `;` |
-| `vga_init` | — | `void vga_init(void);` |
 
 ## Règles bare metal
 

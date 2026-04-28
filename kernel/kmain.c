@@ -1,17 +1,8 @@
-#include "kernel/screen.h"
-#include "kernel/keyboard.h"
-#include "kernel/terminal.h"
-#include "kernel/idt.h"
-#include "kernel/timer.h"
-#include "kernel/memory.h"
+#include "kernel/kmain.h"
+#include "drivers/screen.h"
 
 void kmain(void) {
     screen_init();
-    screen_clear();
-    idt_init();
-    keyboard_init();
-    timer_init(100);
-    mem_init(1024 * 1024);
-    terminal_init();
-    terminal_run();
+    screen_set_color(0x0F);
+    screen_writeln("Kernel started successfully", 0x0A);
 }

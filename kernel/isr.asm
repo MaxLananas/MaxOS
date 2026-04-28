@@ -19,7 +19,7 @@ global isr15
 global isr16
 global isr17
 global isr18
-global isis19
+global isr19
 global isr20
 global isr21
 global isr22
@@ -57,7 +57,6 @@ isr_common_stub:
     call isr_handler
     add esp, 8
     popa
-    add esp, 8
     iret
 
 isr0:

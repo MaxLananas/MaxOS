@@ -2,6 +2,6 @@
 #define MOUSE_H
 
 void mouse_init(void);
-void mouse_handler(void);
+void mouse_handler(struct regs *r);
 
 #endif
