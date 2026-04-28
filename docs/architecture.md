@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (114)
+## Fonctions implémentées (106)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -53,9 +53,6 @@
 | `terminal_init` | — | `void terminal_init(void);` |
 | `terminal_run` | — | `;` |
 | `terminal_process` | — | `;` |
-| `ata_wait_busy` | — | `static void ata_wait_busy(unsigned short base) {` |
-| `ata_wait_drq` | — | `static void ata_wait_drq(unsigned short base) {` |
-| `ata_identify` | — | `static unsigned char ata_identify(unsigned short base) {` |
 | `ata_init` | — | `void ata_init();` |
 | `ata_read` | — | `;` |
 | `ata_write` | — | `;` |
@@ -64,8 +61,6 @@
 | `keyboard_handler` | — | `;` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
-| `pci_read_config` | — | `static unsigned int pci_read_config(unsigned char bus, unsig` |
-| `pci_write_config` | — | `static void pci_write_config(unsigned char bus, unsigned cha` |
 | `pci_init` | — | `void pci_init();` |
 | `screen_init` | — | `void screen_init(void);` |
 | `screen_clear` | — | `;` |
@@ -73,6 +68,11 @@
 | `screen_write` | — | `;` |
 | `screen_writeln` | — | `;` |
 | `screen_set_color` | — | `;` |
+| `screen_get_row` | — | `;` |
+| `screen_scroll` | — | `;` |
+| `usb_init` | — | `void usb_init();` |
+| `usb_hid_init` | — | `;` |
+| `vga_init` | — | `void vga_init(void);` |
 
 ## Règles bare metal
 

@@ -1,7 +1,6 @@
-#include "idt.h"
-#include "isr.h"
-#include "fault_handler.h"
+#include "kernel/isr.h"
+#include "kernel/screen.h"
 
 void isr_handler(unsigned int num, unsigned int err) {
-    fault_handler(num, err);
+    screen_writeln("Received interrupt", 0x0F);
 }

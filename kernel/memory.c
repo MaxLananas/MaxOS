@@ -1,11 +1,10 @@
-#include "memory.h"
+#include "kernel/memory.h"
+#include "kernel/pmm.h"
+#include "kernel/vmm.h"
+#include "kernel/heap.h"
 
 void mem_init(unsigned int mem_size_kb) {
-}
-
-void mem_free_page(void *addr) {
-}
-
-unsigned int mem_used_pages(void) {
-    return 0;
+    pmm_init(mem_size_kb);
+    vmm_init();
+    heap_init((void*)0xC0000000, 1024 * 1024);
 }

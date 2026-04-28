@@ -1,8 +1,7 @@
-#include "irq.h"
+#include "irq_handler.h"
 #include "io.h"
 #include "timer.h"
 #include "keyboard.h"
-#include "mouse.h"
 
 void irq_handler(unsigned int num) {
     if (num >= 40) {
@@ -10,8 +9,9 @@ void irq_handler(unsigned int num) {
     }
     outb(0x20, 0x20);
 
-    if (interrupt_handlers[num] != 0) {
-        isr_t handler = interrupt_handlers[num];
-        handler(0);
+    if (num == 32) {
+        timer_callback(0);
+    } else if (num == 33) {
+        keyboard_handler();
     }
 }

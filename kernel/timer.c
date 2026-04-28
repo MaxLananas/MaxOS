@@ -1,26 +1,26 @@
-#include "timer.h"
-#include "io.h"
-#include "irq.h"
+#include "kernel/io.h"
+#include "kernel/timer.h"
+#include "kernel/irq.h"
 
-unsigned int tick = 0;
+unsigned int timer_ticks = 0;
 
 void timer_callback(struct regs *r) {
-    tick++;
+    timer_ticks++;
 }
 
 void timer_init(unsigned int hz) {
-    register_interrupt_handler(IRQ0, &timer_callback);
     unsigned int divisor = 1193180 / hz;
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
+    register_interrupt_handler(32, timer_callback);
 }
 
 unsigned int timer_get_ticks(void) {
-    return tick;
+    return timer_ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = tick;
-    while ((tick - start) * 1000 / 100 < ms);
+    unsigned int start = timer_ticks;
+    while ((timer_ticks - start) * 1000 / 100 < ms);
 }

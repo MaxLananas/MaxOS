@@ -115,7 +115,7 @@ $(BUILD)/screen.o: kernel/screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/keyboard.o: kernel/keyboard.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) #CFLAGS) -c $< -o $@
 
 $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
