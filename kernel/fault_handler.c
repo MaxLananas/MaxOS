@@ -2,5 +2,5 @@
 #include "screen.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_writeln("Fault occurred", 0x0C);
+    screen_writeln("Fault handler called", 0x0F);
 }

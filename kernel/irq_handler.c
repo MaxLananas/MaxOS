@@ -1,19 +1,11 @@
 #include "irq_handler.h"
-#include "timer.h"
-#include "keyboard.h"
-#include "mouse.h"
+#include "screen.h"
 
 void irq_handler(unsigned int num) {
-    if (num >= 32 && num < 40) {
-        timer_handler();
-    } else if (num == 33) {
-        keyboard_handler();
-    } else if (num == 44) {
-        mouse_handler();
-    }
-
-    if (num >= 40) {
-        outb(0xA0, 0x20);
-    }
-    outb(0x20, 0x20);
+    screen_putchar('I', 0x0E);
+    screen_putchar('R', 0x0E);
+    screen_putchar('Q', 0x0E);
+    screen_putchar(' ', 0x0E);
+    screen_putchar('0' + num / 10, 0x0E);
+    screen_putchar('0' + num % 10, 0x0E);
 }

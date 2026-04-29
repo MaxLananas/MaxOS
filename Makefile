@@ -32,7 +32,6 @@ $(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 SRCS_C = \
 	kernel/idt.c \
 	kernel/isr.c \
-	kernel/irq.c \
 	kernel/irq_handler.c \
 	kernel/timer.c \
 	kernel/memory.c \
@@ -79,9 +78,6 @@ $(BUILD)/idt.o: kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/isr_c.o: kernel/isr.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/irq.o: kernel/irq.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/irq_handler.o: kernel/irq_handler.c | $(BUILD)

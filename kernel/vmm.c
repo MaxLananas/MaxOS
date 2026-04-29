@@ -1,11 +1,6 @@
-#include "kernel/vmm.h"
-#include "kernel/pmm.h"
+#include "vmm.h"
+#include "screen.h"
 
 void vmm_init(void) {
-}
-
-void paging_init(void) {
-}
-
-void paging_map(unsigned int virt, unsigned int phys, unsigned int flags) {
+    screen_writeln("VMM initialized", 0x0A);
 }
