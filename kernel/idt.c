@@ -1,8 +1,10 @@
-#include "kernel/idt.h"
-#include "kernel/io.h"
+#include "idt.h"
+#include "io.h"
 
 struct IDTEntry idt[256];
 struct IDTPtr idtp;
+
+extern void idt_load(void);
 
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
     idt[num].base_lo = base & 0xFFFF;
@@ -16,20 +18,9 @@ void idt_init(void) {
     idtp.limit = (sizeof(struct IDTEntry) * 256) - 1;
     idtp.base = (unsigned int)&idt;
 
-    for (int i = 0; i < 256; i++) {
+    for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
-
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
-    outb(0x21, 0x0);
-    outb(0xA1, 0x0);
 
     idt_load();
 }

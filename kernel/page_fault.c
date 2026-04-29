@@ -1,6 +1,7 @@
-#include "kernel/page_fault.h"
-#include "kernel/fault_handler.h"
+#include "page_fault.h"
+#include "screen.h"
 
 void page_fault_handler(unsigned int err) {
-    fault_handler(14, err);
+    screen_writeln("Page fault", 0x0F);
+    for(;;);
 }

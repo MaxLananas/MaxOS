@@ -1,5 +1,3 @@
-#include "kernel/heap.h"
-
 void heap_init(void *start, unsigned int size) {
 }
 

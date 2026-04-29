@@ -46,10 +46,10 @@ SRCS_C = \
 	kernel/screen.c \
 	kernel/keyboard.c \
 	kernel/terminal.c \
+	kernel/mouse.c \
 	drivers/ata.c \
 	drivers/usb.c \
-	drivers/pci.c \
-	drivers/mouse.c
+	drivers/pci.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -70,15 +70,18 @@ OBJS = \
 	$(BUILD)/screen.o \
 	$(BUILD)/keyboard.o \
 	$(BUILD)/terminal.o \
+	$(BUILD)/mouse.o \
 	$(BUILD)/ata.o \
-	$(BUF)/usb.o \
-	$(BUILD)/pci.o \
-	$(BUILD)/mouse.o
+	$(BUILD)/usb.o \
+	$(BUILD)/pci.o
 
 $(BUILD)/idt.o: kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/isr_c.o: kernel/isr.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/irq.o: kernel/irq.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/irq_handler.o: kernel/irq_handler.c | $(BUILD)
@@ -120,6 +123,9 @@ $(BUILD)/keyboard.o: kernel/keyboard.c | $(BUILD)
 $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(BUILD)/ata.o: drivers/ata.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -127,9 +133,6 @@ $(BUILD)/usb.o: drivers/usb.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/pci.o: drivers/pci.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/mouse.o: drivers/mouse.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)

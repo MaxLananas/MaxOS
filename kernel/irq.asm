@@ -25,7 +25,6 @@ irq_common_stub:
     call irq_handler
     add esp, 8
     popa
-    add esp, 8
     iret
 
 irq0:
@@ -101,14 +100,9 @@ irq13:
 irq14:
     push dword 0
     push dword 46
-    jmp irq_common_stub
+    jmap irq_common_stub
 
 irq15:
     push dword 0
     push dword 47
     jmp irq_common_stub
-
-section .data
-irq_stub_table:
-    dd irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7
-    dd irq8, irq9, irq10, irq11, irq12, irq13, irq14, irq15
