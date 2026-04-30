@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (109)
+## Fonctions implémentées (120)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -53,9 +53,7 @@
 | `terminal_init` | — | `void terminal_init(void);` |
 | `terminal_run` | — | `;` |
 | `terminal_process` | — | `;` |
-| `ata_init` | — | `void ata_init();` |
-| `ata_read` | — | `;` |
-| `ata_write` | — | `;` |
+| `ata_init` | — | `void ata_init(void);` |
 | `keyboard_init` | — | `void keyboard_init(void);` |
 | `keyboard_getchar` | — | `;` |
 | `keyboard_handler` | — | `;` |
@@ -64,7 +62,7 @@
 | `mouse_read` | — | `unsigned char mouse_read() {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
-| `pci_init` | — | `void pci_init();` |
+| `pci_init` | — | `void pci_init(void);` |
 | `screen_init` | — | `void screen_init(void);` |
 | `screen_clear` | — | `;` |
 | `screen_putchar` | — | `;` |
@@ -73,6 +71,8 @@
 | `screen_set_color` | — | `;` |
 | `screen_get_row` | — | `;` |
 | `screen_scroll` | — | `;` |
+| `usb_init` | — | `void usb_init(void);` |
+| `vga_init` | — | `void vga_init(void);` |
 
 ## Règles bare metal
 

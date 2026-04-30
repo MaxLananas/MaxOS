@@ -1,15 +1,15 @@
 #include "timer.h"
 #include "io.h"
-#include "screen.h"
+#include "irq_handler.h"
 
-static unsigned int ticks = 0;
+unsigned int ticks = 0;
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-    screen_writeln("Timer initialized", 0x0A);
+    irq_set_mask(0, 0);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -18,5 +18,5 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
-    while ((ticks - start) * 1000 / 1193180 < ms);
+    while ((ticks - start) * 1000 / 1193 < ms);
 }

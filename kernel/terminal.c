@@ -3,11 +3,12 @@
 #include "keyboard.h"
 
 void terminal_init(void) {
-    screen_writeln("Terminal initialized", 0x0B);
+    screen_init();
+    keyboard_init();
 }
 
 void terminal_run(void) {
-    screen_writeln("Terminal running", 0x0C);
+    screen_writeln("Terminal ready", 0x0A);
 }
 
 void terminal_process(const char *cmd) {

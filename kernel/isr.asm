@@ -162,7 +162,7 @@ isr21:
     push dword 21
     jmp isr_common_stub
 
-is22:
+isr22:
     push dword 0
     push dword 22
     jmp isr_common_stub
