@@ -1,6 +1,6 @@
 #ifndef PAGE_FAULT_H
 #define PAGE_FAULT_H
 
-void page_fault_handler(unsigned int err);
+void page_fault_handler(unsigned int addr);
 
 #endif

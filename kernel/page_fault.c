@@ -1,20 +1,12 @@
 #include "page_fault.h"
-#include "fault_handler.h"
 #include "screen.h"
 
-void page_fault_handler(unsigned int err) {
-    unsigned int fault_addr;
-    __asm__ volatile("mov %%cr2, %0" : "=r"(fault_addr));
+void page_fault_handler(unsigned int addr) {
+    screen_clear();
+    screen_writeln("PAGE FAULT OCCURRED!", 0x0C);
+    screen_writeln("Address: ", 0x0F);
+    screen_putchar('0' + addr, 0x0F);
+    screen_putchar('\n', 0x0F);
 
-    screen_set_color(0x0C);
-    screen_writeln("Page fault at address: ", 0x0C);
-    screen_putchar('0' + (fault_addr >> 24) & 0xFF, 0x0C);
-    screen_putchar('0' + (fault_addr >> 16) & 0xFF, 0x0C);
-    screen_putchar('0' + (fault_addr >> 8) & 0xFF, 0x0C);
-    screen_putchar('0' + fault_addr & 0xFF, 0x0C);
-    screen_writeln("", 0x0C);
-
-    while (1) {
-        __asm__ volatile("hlt");
-    }
+    while(1);
 }

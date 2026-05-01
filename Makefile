@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = $(SRC_DIR)/kernel:$(SRC_DIR)/drivers
+VPATH = $(SRC_DIR)/kernel
 
 .PHONY: all clean
 
@@ -32,6 +32,7 @@ $(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 SRCS_C = \
 	kernel/idt.c \
 	kernel/isr.c \
+	kernel/irq.c \
 	kernel/irq_handler.c \
 	kernel/timer.c \
 	kernel/memory.c \
@@ -41,21 +42,17 @@ SRCS_C = \
 	kernel/pmm.c \
 	kernel/vmm.c \
 	kernel/heap.c \
-	kernel/kmain.c \
 	kernel/screen.c \
 	kernel/keyboard.c \
 	kernel/terminal.c \
 	kernel/mouse.c \
-	drivers/ata.c \
-	drivers/usb.c \
-	drivers/pci.c
+	kernel/kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt.o \
-	$(BUILD)/isr_c.o \
 	$(BUILD)/irq_handler.o \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
@@ -65,19 +62,16 @@ OBJS = \
 	$(BUILD)/pmm.o \
 	$(BUILD)/vmm.o \
 	$(BUILD)/heap.o \
-	$(BUILD)/kmain.o \
 	$(BUILD)/screen.o \
 	$(BUILD)/keyboard.o \
 	$(BUILD)/terminal.o \
 	$(BUILD)/mouse.o \
-	$(BUILD)/ata.o \
-	$(BUILD)/usb.o \
-	$(BUILD)/pci.o
+	$(BUILD)/kmain.o
 
 $(BUILD)/idt.o: kernel/idt.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/isr_c.o: kernel/isr.c | $(BUILD)
+$(BUILD)/irq.o: kernel/irq.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/irq_handler.o: kernel/irq_handler.c | $(BUILD)
@@ -107,9 +101,6 @@ $(BUILD)/vmm.o: kernel/vmm.c | $(BUILD)
 $(BUILD)/heap.o: kernel/heap.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/kmain.o: kernel/kmain.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
 $(BUILD)/screen.o: kernel/screen.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -122,13 +113,7 @@ $(BUILD)/terminal.o: kernel/terminal.c | $(BUILD)
 $(BUILD)/mouse.o: kernel/mouse.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/ata.o: drivers/ata.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/usb.o: drivers/usb.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/pci.o: drivers/pci.c | $(BUILD)
+$(BUILD)/kmain.o: kernel/kmain.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
