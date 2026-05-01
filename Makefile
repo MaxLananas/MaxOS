@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = $(SRC_DIR)/kernel:$(SRC_DIR)/drivers
+VPATH = $(SRC_DIR)/kernel
 
 .PHONY: all clean
 
@@ -31,17 +31,12 @@ $(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 
 SRCS_C = \
 	kernel/idt.c \
-	kernel/isr.c \
 	kernel/irq.c \
 	kernel/irq_handler.c \
 	kernel/timer.c \
 	kernel/memory.c \
 	kernel/fault_handler.c \
-	kernel/page_fault.c \
 	kernel/paging.c \
-	kernel/pmm.c \
-	kernel/vmm.c \
-	kernel/heap.c \
 	kernel/screen.c \
 	kernel/keyboard.c \
 	kernel/terminal.c \
@@ -57,11 +52,7 @@ OBJS = \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
 	$(BUILD)/fault_handler.o \
-	$(BUILD)/page_fault.o \
 	$(BUILD)/paging.o \
-	$(BUILD)/pmm.o \
-	$(BUILD)/vmm.o \
-	$(BUILD)/heap.o \
 	$(BUILD)/screen.o \
 	$(BUILD)/keyboard.o \
 	$(BUILD)/terminal.o \
