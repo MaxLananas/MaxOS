@@ -1,5 +1,4 @@
 BITS 32
-
 global irq0
 global irq1
 global irq2
@@ -27,82 +26,26 @@ irq_common_stub:
     popa
     iret
 
-irq0:
+%macro IRQ 2
+irq%1:
     push dword 0
-    push dword 32
+    push dword %2
     jmp irq_common_stub
+%endmacro
 
-irq1:
-    push dword 0
-    push dword 33
-    jmp irq_common_stub
-
-irq2:
-    push dword 0
-    push dword 34
-    jmp irq_common_stub
-
-irq3:
-    push dword 0
-    push dword 35
-    jmp irq_common_stub
-
-irq4:
-    push dword 0
-    push dword 36
-    jmp irq_common_stub
-
-irq5:
-    push dword 0
-    push dword 37
-    jmp irq_common_stub
-
-irq6:
-    push dword 0
-    push dword 38
-    jmp irq_common_stub
-
-irq7:
-    push dword 0
-    push dword 39
-    jmp irq_common_stub
-
-irq8:
-    push dword 0
-    push dword 40
-    jmp irq_common_stub
-
-irq9:
-    push dword 0
-    push dword 41
-    jmp irq_common_stub
-
-irq10:
-    push dword 0
-    push dword 42
-    jmp irq_common_stub
-
-irq11:
-    push dword 0
-    push dword 43
-    jmp irq_common_stub
-
-irq12:
-    push dword 0
-    push dword 44
-    jmp irq_common_stub
-
-irq13:
-    push dword 0
-    push dword 45
-    jmp irq_common_stub
-
-irq14:
-    push dword 0
-    push dword 46
-    jmp irq_common_stub
-
-irq15:
-    push dword 0
-    push dword 47
-    jmp irq_common_stub
+IRQ 0, 32
+IRQ 1, 33
+IRQ 2, 34
+IRQ 3, 35
+IRQ 4, 36
+IRQ 5, 37
+IRQ 6, 38
+IRQ 7, 39
+IRQ 8, 40
+IRQ 9, 41
+IRQ 10, 42
+IRQ 11, 43
+IRQ 12, 44
+IRQ 13, 45
+IRQ 14, 46
+IRQ 15, 47

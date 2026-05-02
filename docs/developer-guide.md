@@ -2,17 +2,11 @@
 
 > Généré par MaxOS AI v18.0
 
-Voici une documentation technique complète pour MaxOS, rédigée en Markdown, avec un guide développeur détaillé.
-
----
-
 # Documentation Technique MaxOS
 
-## Table des Matières
+## Introduction
 
-1.  [Introduction](#1-introduction)
-2.  [Caractéristiques Techniques](#2-caractéristiques-techniques)
-3.  [Architecture du Système](#3-architecture-du-système)
+MaxOS est un système d'exploitation bare-metal en cours de développement, ciblant l'architecture x86. Actuellement à l'état de prototype (score 35/100), il est capable de démarrer sur une machine virtuelle ou physique et d'afficher du texte via le mode VGA 80x25
 
 ---
 *MaxOS AI v18.0*

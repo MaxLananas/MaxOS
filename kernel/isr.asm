@@ -48,6 +48,7 @@ global isr44
 global isr45
 global isr46
 global isr47
+global isr_stub_table
 
 extern isr_handler
 
@@ -59,235 +60,114 @@ isr_common_stub:
     popa
     iret
 
-isr0:
+%macro ISR_NOERRCODE 1
+isr%1:
     push dword 0
-    push dword 0
+    push dword %1
     jmp isr_common_stub
+%endmacro
 
-isr1:
-    push dword 0
-    push dword 1
+%macro ISR_ERRCODE 1
+isr%1:
+    push dword %1
     jmp isr_common_stub
+%endmacro
 
-isr2:
-    push dword 0
-    push dword 2
-    jmp isr_common_stub
+ISR_NOERRCODE 0
+ISR_NOERRCODE 1
+ISR_NOERRCODE 2
+ISR_NOERRCODE 3
+ISR_NOERRCODE 4
+ISR_NOERRCODE 5
+ISR_NOERRCODE 6
+ISR_NOERRCODE 7
+ISR_ERRCODE 8
+ISR_NOERRCODE 9
+ISR_ERRCODE 10
+ISR_ERRCODE 11
+ISR_ERRCODE 12
+ISR_ERRCODE 13
+ISR_ERRCODE 14
+ISR_NOERRCODE 15
+ISR_NOERRCODE 16
+ISR_ERRCODE 17
+ISR_NOERRCODE 18
+ISR_NOERRCODE 19
+ISR_NOERRCODE 20
+ISR_NOERRCODE 21
+ISR_NOERRCODE 22
+ISR_NOERRCODE 23
+ISR_NOERRCODE 24
+ISR_NOERRCODE 25
+ISR_NOERRCODE 26
+ISR_NOERRCODE 27
+ISR_NOERRCODE 28
+ISR_NOERRCODE 29
+ISR_NOERRCODE 30
+ISR_NOERRCODE 31
+ISR_NOERRCODE 32
+ISR_NOERRCODE 33
+ISR_NOERRCODE 34
+ISR_NOERRCODE 35
+ISR_NOERRCODE 36
+ISR_NOERRCODE 37
+ISR_NOERRCODE 38
+ISR_NOERRCODE 39
+ISR_NOERRCODE 40
+ISR_NOERRCODE 41
+ISR_NOERRCODE 42
+ISR_NOERRCODE 43
+ISR_NOERRCODE 44
+ISR_NOERRCODE 45
+ISR_NOERRCODE 46
+ISR_NOERRCODE 47
 
-isr3:
-    push dword 0
-    push dword 3
-    jmp isr_common_stub
-
-isr4:
-    push dword 0
-    push dword 4
-    jmp isr_common_stub
-
-isr5:
-    push dword 0
-    push dword 5
-    jmp isr_common_stub
-
-isr6:
-    push dword 0
-    push dword 6
-    jmp isr_common_stub
-
-isr7:
-    push dword 0
-    push dword 7
-    jmp isr_common_stub
-
-isr8:
-    push dword 8
-    jmp isr_common_stub
-
-isr9:
-    push dword 0
-    push dword 9
-    jmp isr_common_stub
-
-isr10:
-    push dword 10
-    jmp isr_common_stub
-
-isr11:
-    push dword 11
-    jmp isr_common_stub
-
-isr12:
-    push dword 12
-    jmp isr_common_stub
-
-isr13:
-    push dword 13
-    jmp isr_common_stub
-
-isr14:
-    push dword 14
-    jmp isr_common_stub
-
-isr15:
-    push dword 0
-    push dword 15
-    jmp isr_common_stub
-
-isr16:
-    push dword 0
-    push dword 16
-    jmp isr_common_stub
-
-isr17:
-    push dword 17
-    jmp isr_common_stub
-
-isr18:
-    push dword 0
-    push dword 18
-    jmp isr_common_stub
-
-isr19:
-    push dword 0
-    push dword 19
-    jmp isr_common_stub
-
-isr20:
-    push dword 0
-    push dword 20
-    jmp isr_common_stub
-
-isr21:
-    push dword 0
-    push dword 21
-    jmp isr_common_stub
-
-isr22:
-    push dword 0
-    push dword 22
-    jmp isr_common_stub
-
-isr23:
-    push dword 0
-    push dword 23
-    jmp isr_common_stub
-
-isr24:
-    push dword 0
-    push dword 24
-    jmp isr_common_stub
-
-isr25:
-    push dword 0
-    push dword 25
-    jmp isr_common_stub
-
-isr26:
-    push dword 0
-    push dword 26
-    jmp isr_common_stub
-
-isr27:
-    push dword 0
-    push dword 27
-    jmp isr_common_stub
-
-isr28:
-    push dword 0
-    push dword 28
-    jmp isr_common_stub
-
-isr29:
-    push dword 0
-    push dword 29
-    jmp isr_common_stub
-
-isr30:
-    push dword 0
-    push dword 30
-    jmp isr_common_stub
-
-isr31:
-    push dword 0
-    push dword 31
-    jmp isr_common_stub
-
-isr32:
-    push dword 0
-    push dword 32
-    jmp isr_common_stub
-
-isr33:
-    push dword 0
-    push dword 33
-    jmp isr_common_stub
-
-isr34:
-    push dword 0
-    push dword 34
-    jmp isr_common_stub
-
-isr35:
-    push dword 0
-    push dword 35
-    jmp isr_common_stub
-
-isr36:
-    push dword 0
-    push dword 36
-    jmp isr_common_stub
-
-isr37:
-    push dword 0
-    push dword 37
-    jmp isr_common_stub
-
-isr38:
-    push dword 0
-    push dword 38
-    jmp isr_common_stub
-
-isr39:
-    push dword 0
-    push dword 39
-    jmp isr_common_stub
-
-isr40:
-    push dword 0
-    push dword 40
-    jmp isr_common_stub
-
-isr41:
-    push dword 0
-    push dword 41
-    jmp isr_common_stub
-
-isr42:
-    push dword 0
-    push dword 42
-    jmp isr_common_stub
-
-isr43:
-    push dword 0
-    push dword 43
-    jmp isr_common_stub
-
-isr44:
-    push dword 0
-    push dword 44
-    jmp isr_common_stub
-
-isr45:
-    push dword 0
-    push dword 45
-    jmp isr_common_stub
-
-isr46:
-    push dword 0
-    push dword 46
-    jmp isr_common_stub
-
-isr47:
-    push dword 0
-    push dword 47
-    jmp isr_common_stub
+isr_stub_table:
+    dd isr0
+    dd isr1
+    dd isr2
+    dd isr3
+    dd isr4
+    dd isr5
+    dd isr6
+    dd isr7
+    dd isr8
+    dd isr9
+    dd isr10
+    dd isr11
+    dd isr12
+    dd isr13
+    dd isr14
+    dd isr15
+    dd isr16
+    dd isr17
+    dd isr18
+    dd isr19
+    dd isr20
+    dd isr21
+    dd isr22
+    dd isr23
+    dd isr24
+    dd isr25
+    dd isr26
+    dd isr27
+    dd isr28
+    dd isr29
+    dd isr30
+    dd isr31
+    dd isr32
+    dd isr33
+    dd isr34
+    dd isr35
+    dd isr36
+    dd isr37
+    dd isr38
+    dd isr39
+    dd isr40
+    dd isr41
+    dd isr42
+    dd isr43
+    dd isr44
+    dd isr45
+    dd isr46
+    dd isr47
