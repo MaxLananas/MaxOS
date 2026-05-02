@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = $(SRC_DIR)/kernel
-
 .PHONY: all clean
 
 all: os.img
@@ -47,7 +45,6 @@ OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
-	$(BUILD)/idt.o \
 	$(BUILD)/irq_handler.o \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
