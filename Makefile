@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
+VPATH = kernel drivers
+
 .PHONY: all clean
 
 all: os.img
@@ -39,12 +41,14 @@ SRCS_C = \
 	kernel/keyboard.c \
 	kernel/terminal.c \
 	kernel/mouse.c \
-	kernel/kmain.c
+	kernel/kmain.c \
+	kernel/string.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
+	$(BUILD)/idt.o \
 	$(BUILD)/irq_handler.o \
 	$(BUILD)/timer.o \
 	$(BUILD)/memory.o \
@@ -54,7 +58,8 @@ OBJS = \
 	$(BUILD)/keyboard.o \
 	$(BUILD)/terminal.o \
 	$(BUILD)/mouse.o \
-	$(BUILD)/kmain.o
+	$(BUILD)/kmain.o \
+	$(BUILD)/string.o
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
