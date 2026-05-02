@@ -1,9 +1,13 @@
 #include "fault_handler.h"
 #include "screen.h"
-#include "idt.h"
+#include "io.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    const char *exceptions[] = {
+    screen_clear();
+    screen_writeln("EXCEPTION OCCURRED", 0x0C);
+    screen_writeln("", 0x0C);
+
+    static const char *exception_messages[] = {
         "Division By Zero",
         "Debug",
         "Non Maskable Interrupt",
@@ -37,9 +41,15 @@ void fault_handler(unsigned int num, unsigned int err) {
         "Reserved"
     };
 
-    screen_clear();
-    screen_writeln("EXCEPTION OCCURRED", 0x0C);
-    screen_writeln(exceptions[num], 0x0C);
+    if (num < 32) {
+        screen_writeln(exception_messages[num], 0x0C);
+    } else {
+        screen_writeln("Unknown Exception", 0x0C);
+    }
+
+    screen_writeln("", 0x0C);
     screen_writeln("System Halted", 0x0C);
-    for (;;);
+    while (1) {
+        asm volatile("hlt");
+    }
 }

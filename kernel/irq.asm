@@ -5,6 +5,18 @@ global irq1
 global irq2
 global irq3
 global irq4
+global irq5
+global irq6
+global irq7
+global irq8
+global irq9
+global irq10
+global irq11
+global irq12
+global irq13
+global irq14
+global irq15
+
 extern irq_handler
 
 irq_common_stub:
@@ -88,7 +100,7 @@ irq13:
 irq14:
     push dword 0
     push dword 46
-    jmp irq_common_st
+    jmp irq_common_stub
 
 irq15:
     push dword 0

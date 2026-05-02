@@ -1,9 +1,13 @@
 #include "mouse.h"
 #include "io.h"
 #include "screen.h"
+#include "irq.h"
 
 #define MOUSE_DATA_PORT 0x60
-#define MOUSE_STATUS_PORT 0x64
+#define MOUSE_COMMAND_PORT 0x64
+
+static int mouse_x = 40;
+static int mouse_y = 12;
 
 void mouse_init(void) {
     outb(0x64, 0xA8);
@@ -13,36 +17,36 @@ void mouse_init(void) {
     outb(0x60, status);
     outb(0x64, 0xD4);
     outb(0x60, 0xF4);
+    outb(0x64, 0x20);
     inb(0x60);
+    screen_writeln("Mouse initialized", 0x0A);
 }
 
 void mouse_handler(void) {
-    unsigned char status = inb(MOUSE_STATUS_PORT);
-    if (!(status & 0x20)) return;
+    static unsigned char cycle = 0;
+    static char mouse_bytes[3];
+    unsigned char data = inb(MOUSE_DATA_PORT);
 
-    unsigned char mouse_data = inb(MOUSE_DATA_PORT);
-    static int x = 40, y = 12;
-    static unsigned char buttons = 0;
+    mouse_bytes[cycle++] = data;
+    if (cycle == 3) {
+        cycle = 0;
+        int x = mouse_bytes[1];
+        int y = mouse_bytes[2];
 
-    if (mouse_data & 0x01) buttons |= 1;
-    else buttons &= ~1;
-    if (mouse_data & 0x02) buttons |= 2;
-    else buttons &= ~2;
-    if (mouse_data & 0x04) buttons |= 4;
-    else buttons &= ~4;
+        if (mouse_bytes[0] & 0x10) x |= 0xFFFFFF00;
+        if (mouse_bytes[0] & 0x20) y |= 0xFFFFFF00;
+        if (mouse_bytes[0] & 0x40) x = 0;
+        if (mouse_bytes[0] & 0x80) y = 0;
 
-    int dx = (mouse_data & 0x10) ? (mouse_data | 0xFFFFFF00) : (mouse_data & 0x0F);
-    int dy = (inb(MOUSE_DATA_PORT) & 0x10) ? (inb(MOUSE_DATA_PORT) | 0xFFFFFF00) : (inb(MOUSE_DATA_PORT) & 0x0F);
-    dy = -dy;
+        mouse_x += x;
+        mouse_y -= y;
 
-    x += dx;
-    y += dy;
+        if (mouse_x < 0) mouse_x = 0;
+        if (mouse_y < 0) mouse_y = 0;
+        if (mouse_x >= 80) mouse_x = 79;
+        if (mouse_y >= 25) mouse_y = 24;
 
-    if (x < 0) x = 0;
-    if (x >= 80) x = 79;
-    if (y < 0) y = 0;
-    if (y >= 25) y = 24;
-
-    unsigned short *video = (unsigned short*)0xB8000;
-    video[y * 80 + x] = 0x0F << 8 | 'M';
+        unsigned short *vga = (unsigned short*)0xB8000;
+        vga[mouse_y * 80 + mouse_x] = 0x0F00 | 'M';
+    }
 }

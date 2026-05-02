@@ -7,12 +7,13 @@ unsigned int strlen(const char *str) {
 }
 
 void strcpy(char *dest, const char *src) {
-    unsigned int i = 0;
-    while ((dest[i] = src[i])) i++;
+    while ((*dest++ = *src++));
 }
 
-void strcat(char *dest, const char *src) {
-    unsigned int i = strlen(dest);
-    unsigned int j = 0;
-    while ((dest[i++] = src[j++]));
+int strcmp(const char *s1, const char *s2) {
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *(unsigned char*)s1 - *(unsigned char*)s2;
 }
