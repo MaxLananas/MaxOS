@@ -16,6 +16,6 @@ struct IDTPtr {
 
 void idt_init(void);
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags);
-void idt_load(void);
+void idt_load(struct IDTPtr *idtp);
 
 #endif

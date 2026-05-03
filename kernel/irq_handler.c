@@ -1,14 +1,11 @@
-#include "irq_handler.h"
-#include "io.h"
-
-void irq_install_handler(int irq, void (*handler)(void)) {
-    // Install IRQ handler
-}
-
-void irq_uninstall_handler(int irq) {
-    // Uninstall IRQ handler
-}
+#include "irq.h"
+#include "timer.h"
+#include "keyboard.h"
 
 void irq_handler(unsigned int num) {
-    // Common IRQ handler
+    if (num == 32) {
+        timer_handler();
+    } else if (num == 33) {
+        keyboard_handler();
+    }
 }
