@@ -4,16 +4,9 @@
 
 # Documentation Technique MaxOS
 
-## Table des Matières
+## Introduction
 
-1.  [Introduction](#1-introduction)
-2.  [Caractéristiques Actuelles](#2-caractéristiques-actuelles)
-3.  [Architecture Générale](#3-architecture-générale)
-4.  [Prérequis de Développement](#4-prérequis-de-développement)
-5.  [Guide du Développeur](#5-guide-du-développeur)
-    *   [5.1. Comment Compiler MaxOS](#51-comment-compiler-maxos)
-    *   [5.2. Comment Tester MaxOS dans QEMU](#52-comment-tester-maxos-dans-qemu)
-    *   [5.3. Structure des Fichiers](#53-structure-
+MaxOS est un système d'exploitation bare-metal en phase de prototype, conçu pour fonctionner sur l'architecture x86. Actuellement, il offre des fonctionnalités fondamentales telles que le démarrage via GRUB et l'affichage texte VGA 80x25. Ce document sert de guide technique complet pour les développeurs souhaitant
 
 ---
 *MaxOS AI v18.0*

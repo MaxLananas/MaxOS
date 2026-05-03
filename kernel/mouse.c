@@ -1,29 +1,25 @@
-#include "io.h"
 #include "mouse.h"
-#include "irq.h"
+#include "io.h"
+#include "screen.h"
+#include "irq_handler.h"
 
-void mouse_wait(unsigned char type) {
+unsigned char mouse_cycle = 0;
+char mouse_byte[3];
+
+void mouse_wait(unsigned char a_type) {
     unsigned int timeout = 100000;
-    if (type == 0) {
-        while (timeout--) {
-            if ((inb(0x64) & 1) == 1) {
-                return;
-            }
-        }
+    if (!a_type) {
+        while (--timeout && (inb(0x64) & 0x01));
     } else {
-        while (timeout--) {
-            if ((inb(0x64) & 2) == 0) {
-                return;
-            }
-        }
+        while (--timeout && (inb(0x64) & 0x02));
     }
 }
 
-void mouse_write(unsigned char data) {
+void mouse_write(unsigned char a_write) {
     mouse_wait(1);
     outb(0x64, 0xD4);
     mouse_wait(1);
-    outb(0x60, data);
+    outb(0x60, a_write);
 }
 
 unsigned char mouse_read(void) {
@@ -46,10 +42,17 @@ void mouse_init(void) {
     mouse_read();
     mouse_write(0xF4);
     mouse_read();
-    irq_install_handler(12, mouse_handler);
+    irq_init();
+    idt_set_gate(44, (unsigned int)irq12, 0x08, 0x8E);
 }
 
 void mouse_handler(void) {
-    unsigned char data = inb(0x60);
-    (void)data;
+    unsigned char status = inb(0x64);
+    if (status & 0x20) {
+        mouse_byte[mouse_cycle++] = inb(0x60);
+        if (mouse_cycle == 3) {
+            mouse_cycle = 0;
+            screen_putchar('M', 0x07);
+        }
+    }
 }
