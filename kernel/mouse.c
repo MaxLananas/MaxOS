@@ -1,6 +1,5 @@
-#include "mouse.h"
 #include "io.h"
-#include "screen.h"
+#include "mouse.h"
 #include "irq.h"
 
 void mouse_wait(unsigned char type) {
@@ -32,14 +31,6 @@ unsigned char mouse_read(void) {
     return inb(0x60);
 }
 
-void mouse_handler(void) {
-    unsigned char status = inb(0x64);
-    if (status & 0x20) {
-        unsigned char data = inb(0x60);
-        screen_putchar('M', 0x0A);
-    }
-}
-
 void mouse_init(void) {
     mouse_wait(1);
     outb(0x64, 0xA8);
@@ -56,4 +47,9 @@ void mouse_init(void) {
     mouse_write(0xF4);
     mouse_read();
     irq_install_handler(12, mouse_handler);
+}
+
+void mouse_handler(void) {
+    unsigned char data = inb(0x60);
+    (void)data;
 }

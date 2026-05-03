@@ -4,9 +4,16 @@
 
 # Documentation Technique MaxOS
 
-## Introduction
+## Table des Matières
 
-MaxOS est un système d'exploitation minimaliste et expérimental, conçu pour l'apprentissage des concepts fondamentaux des systèmes d'exploitation et le développement bare metal sur l'architecture x86. Actuellement au stade de **prototype bare metal (Score: 35/100)**, MaxOS offre une base solide pour explorer le démarrage système, la gestion matérielle
+1.  [Introduction](#1-introduction)
+2.  [Caractéristiques Actuelles](#2-caractéristiques-actuelles)
+3.  [Architecture Générale](#3-architecture-générale)
+4.  [Prérequis de Développement](#4-prérequis-de-développement)
+5.  [Guide du Développeur](#5-guide-du-développeur)
+    *   [5.1. Comment Compiler MaxOS](#51-comment-compiler-maxos)
+    *   [5.2. Comment Tester MaxOS dans QEMU](#52-comment-tester-maxos-dans-qemu)
+    *   [5.3. Structure des Fichiers](#53-structure-
 
 ---
 *MaxOS AI v18.0*

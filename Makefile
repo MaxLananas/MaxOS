@@ -29,12 +29,6 @@ $(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)
 $(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt.o: $(SRC_DIR)/kernel/idt.c $(SRC_DIR)/kernel/idt.asm | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(BUILD)/irq_handler.o: $(SRC_DIR)/kernel/irq_handler.c | $(BUILD)
-	$(CC) $(CFLAGS) -c $< -o $@
-
 SRCS_C = \
 	kernel/idt.c \
 	kernel/irq.c \
