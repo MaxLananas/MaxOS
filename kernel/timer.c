@@ -3,10 +3,10 @@
 #include "irq.h"
 #include "idt.h"
 
-static unsigned int timer_ticks = 0;
+static unsigned int ticks = 0;
 
 void timer_callback(struct regs *r) {
-    timer_ticks++;
+    ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -19,11 +19,12 @@ void timer_init(unsigned int hz) {
 }
 
 unsigned int timer_get_ticks(void) {
-    return timer_ticks;
+    return ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int end = timer_ticks + ms;
-    while (timer_ticks < end)
-        asm volatile("pause");
+    unsigned int start = ticks;
+    unsigned int end = start + (ms * 1000) / 1193180;
+    while (ticks < end)
+        asm volatile("hlt");
 }

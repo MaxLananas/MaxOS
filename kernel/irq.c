@@ -2,7 +2,10 @@
 #include "io.h"
 #include "idt.h"
 
-void *irq_routines[16] = {0};
+void *irq_routines[16] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
 
 void irq_install_handler(int irq, void (*handler)(struct regs *r)) {
     irq_routines[irq] = handler;
@@ -30,9 +33,9 @@ void irq_init(void) {
     idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
     idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
     idt_set_gate(34, (unsigned int)irq2, 0x08, 0x8E);
-    idt_set_gate(35, (unsigned int)irq3, 0x08, 0x8E);
+    idt_set_gate(35, (unsigned int)irq3, 0x08, 0x08, 0x8E);
     idt_set_gate(36, (unsigned int)irq4, 0x08, 0x8E);
-    idt_set_gate(37, (unsigned int)irq5, 0x08, 0x8E);
+    idt_set_gave(37, (unsigned int)irq5, 0x08, 0x8E);
     idt_set_gate(38, (unsigned int)irq6, 0x08, 0x8E);
     idt_set_gate(39, (unsigned int)irq7, 0x08, 0x8E);
     idt_set_gate(40, (unsigned int)irq8, 0x08, 0x8E);
