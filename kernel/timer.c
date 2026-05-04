@@ -1,30 +1,32 @@
 #include "timer.h"
 #include "io.h"
-#include "irq.h"
-#include "idt.h"
+#include "screen.h"
 
-static unsigned int ticks = 0;
+#define PIT_CMD_PORT 0x43
+#define PIT_DATA_PORT 0x40
 
-void timer_callback(struct regs *r) {
-    ticks++;
+static unsigned int timer_ticks = 0;
+
+void timer_handler(void) {
+    timer_ticks++;
+    outb(0x20, 0x20);
 }
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
-    outb(0x43, 0x36);
-    outb(0x40, divisor & 0xFF);
-    outb(0x40, (divisor >> 8) & 0xFF);
-    idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
-    irq_install_handler(0, timer_callback);
+
+    outb(PIT_CMD_PORT, 0x36);
+    outb(PIT_DATA_PORT, divisor & 0xFF);
+    outb(PIT_DATA_PORT, (divisor >> 8) & 0xFF);
+
+    screen_writeln("Timer initialized", 0x0A);
 }
 
 unsigned int timer_get_ticks(void) {
-    return ticks;
+    return timer_ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
-    unsigned int end = start + (ms * 1000) / 1193180;
-    while (ticks < end)
-        asm volatile("hlt");
+    unsigned int start_ticks = timer_ticks;
+    while ((timer_ticks - start_ticks) * 1000 / 100 < ms);
 }

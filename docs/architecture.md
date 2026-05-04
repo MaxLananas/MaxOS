@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (125)
+## Fonctions implémentées (124)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -58,8 +58,8 @@
 | `keyboard_getchar` | — | `;` |
 | `keyboard_handler` | — | `;` |
 | `mouse_wait` | — | `void mouse_wait(unsigned char type) {` |
-| `mouse_write` | — | `void mouse_write(unsigned char data) {` |
-| `mouse_read` | — | `unsigned char mouse_read(void) {` |
+| `mouse_write` | — | `void mouse_write(unsigned char val) {` |
+| `mouse_read` | — | `unsigned char mouse_read() {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_init` | — | `void pci_init(void);` |
