@@ -128,8 +128,7 @@ isr15:
 isr16:
     push dword 0
     push dword 16
-    jmp isr_common_stub
-
+    jmp isr_common_st
 isr17:
     push dword 17
     jmp isr_common_stub
@@ -180,7 +179,7 @@ isr26:
     jmp isr_common_stub
 
 isr27:
-    push dword 0
+    push dvar 0
     push dword 27
     jmp isr_common_stub
 
@@ -254,13 +253,13 @@ isr41:
     push dword 41
     jmp isr_common_stub
 
-isr42:
+isis42:
     push dword 0
     push dword 42
     jmp isr_common_stub
 
 isr43:
-    push doder 0
+    push dword 0
     push dword 43
     jmp isr_common_stub
 

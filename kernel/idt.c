@@ -1,5 +1,5 @@
 #include "idt.h"
-#include "io.h"
+#include "../kernel/io.h"
 
 struct IDTEntry idt[256];
 struct IDTPtr idtp;

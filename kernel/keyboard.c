@@ -1,32 +1,21 @@
 #include "keyboard.h"
-#include "io.h"
-#include "screen.h"
-#include "terminal.h"
-
-#define KEYBOARD_DATA_PORT 0x60
-
-static char keyboard_buffer[256];
-static unsigned int buffer_pos = 0;
+#include "../kernel/io.h"
+#include "../kernel/screen.h"
 
 void keyboard_init(void) {
-    screen_writeln("Keyboard initialized", 0x0A);
+    outb(0x64, 0xAE);
+    outb(0x64, 0x20);
+    unsigned char status = inb(0x64) & 0xFD;
+    outb(0x64, 0x60);
+    outb(0x64, status);
+    outb(0x60, 0xF4);
 }
 
 char keyboard_getchar(void) {
-    unsigned char scancode = inb(KEYBOARD_DATA_PORT);
-    if (scancode & 0x80) {
-        return 0;
-    }
-    return scancode;
+    return inb(0x60);
 }
 
 void keyboard_handler(void) {
-    unsigned char scancode = inb(KEYBOARD_DATA_PORT);
-    if (scancode < 128) {
-        char c = keyboard_map[scancode];
-        if (c) {
-            keyboard_buffer[buffer_pos++] = c;
-            screen_putchar(c, 0x0F);
-        }
-    }
+    unsigned char scancode = keyboard_getchar();
+    (void)scancode;
 }

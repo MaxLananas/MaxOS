@@ -42,7 +42,8 @@ SRCS_C = \
 	kernel/mouse.c \
 	kernel/kmain.c \
 	drivers/screen.c \
-	drivers/keyboard.c
+	drivers/keyboard.c \
+	drivers/mouse.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
