@@ -4,6 +4,8 @@
 struct IDTEntry idt[256];
 struct IDTPtr idtp;
 
+extern void idt_load(struct IDTPtr *idtp);
+
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
     idt[num].base_lo = base & 0xFFFF;
     idt[num].base_hi = (base >> 16) & 0xFFFF;
@@ -12,17 +14,11 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt[num].flags = flags;
 }
 
-void idt_load(struct IDTPtr *idt_ptr) {
-    __asm__ __volatile__("lidt (%0)" : : "r" (idt_ptr));
-}
-
 void idt_init(void) {
     idtp.limit = (sizeof(struct IDTEntry) * 256) - 1;
     idtp.base = (unsigned int)&idt;
-
     for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
-
     idt_load(&idtp);
 }

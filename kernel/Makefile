@@ -1,23 +1,69 @@
-# Ce Makefile est inclus dans le Makefile principal
-# Il gère uniquement les fichiers du noyau
-VPATH = ../
+AS     = nasm
+CC     = gcc
+LD     = ld
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I..
+LFLAGS = -m elf_i386 -T ../linker.ld --oformat binary
+EFLAGS = -f elf
+
+VPATH = ..
+
+.PHONY: all clean
+
+all: os.img
+
+$(BUILD):
+	mkdir -p $(BUILD)
+
+$(BUILD)/boot.bin: ../boot/boot.asm | $(BUILD)
+	$(AS) $(BFLAGS) $< -o $@
+
+$(BUILD)/kernel_entry.o: kernel_entry.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
+$(BUILD)/isr.o: isr.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
+$(BUILD)/irq.o: irq.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
-	idt.c \
-	irq.c \
-	irq_handler.c \
-	timer.c \
-	memory.c \
-	fault_handler.c \
-	paging.c \
-	screen.c \
-	keyboard.c \
-	terminal.c \
-	mouse.c \
-	kmain.c
+	kernel/idt.c \
+	kernel/irq.c \
+	kernel/irq_handler.c \
+	kernel/timer.c \
+	kernel/fault_handler.c \
+	kernel/paging.c \
+	kernel/screen.c \
+	kernel/keyboard.c \
+	kernel/terminal.c \
+	kernel/mouse.c \
+	kernel/kmain.c
 
 OBJS = \
-	$(addprefix $(BUILD)/, $(SRCS_C:.c=.o))
+	$(BUILD)/kernel_entry.o \
+	$(BUILD)/isr.o \
+	$(BUILD)/irq.o \
+	$(BUILD)/idt.o \
+	$(BUILD)/irq_handler.o \
+	$(BUILD)/timer.o \
+	$(BUILD)/fault_handler.o \
+	$(BUILD)/paging.o \
+	$(BUILD)/screen.o \
+	$(BUILD)/keyboard.o \
+	$(BUILD)/terminal.o \
+	$(BUILD)/mouse.o \
+	$(BUILD)/kmain.o
 
-$(BUILD)/%.o: kernel/%.c | $(BUILD)
+$(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
+	$(LD) $(LFLAGS) $^ -o $@
+
+os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
+	dd if=/dev/zero of=$@ bs=512 count=2880
+	dd if=$(BUILD)/boot.bin of=$@ conv=notrunc
+	dd if=$(BUILD)/kernel.bin of=$@ seek=1 conv=notrunc
+
+clean:
+	rm -rf $(BUILD) os.img

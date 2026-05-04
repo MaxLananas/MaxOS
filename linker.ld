@@ -1,8 +1,21 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 0x100000;
-    .text : { *(.text) }
-    .data : { *(.data) }
-    .bss : { *(.bss) }
+    . = 1M;
+
+    .text : {
+        *(.text)
+    }
+
+    .rodata : {
+        *(.rodata)
+    }
+
+    .data : {
+        *(.data)
+    }
+
+    .bss : {
+        *(.bss)
+    }
 }
