@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
+VPATH = kernel
+
 .PHONY: all clean
 
 all: os.img
@@ -28,17 +30,17 @@ $(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
-	kernel/idt.c \
-	kernel/irq.c \
-	kernel/irq_handler.c \
-	kernel/timer.c \
-	kernel/fault_handler.c \
-	kernel/paging.c \
-	kernel/screen.c \
-	kernel/keyboard.c \
-	kernel/terminal.c \
-	kernel/mouse.c \
-	kernel/kmain.c
+	idt.c \
+	irq.c \
+	irq_handler.c \
+	timer.c \
+	fault_handler.c \
+	paging.c \
+	screen.c \
+	keyboard.c \
+	terminal.c \
+	mouse.c \
+	kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -55,7 +57,7 @@ OBJS = \
 	$(BUILD)/mouse.o \
 	$(BUILD)/kmain.o
 
-$(BUILD)/%.o: $(SRC_DIR)/kernel/%.c | $(BUILD)
+$(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)

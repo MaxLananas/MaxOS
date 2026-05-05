@@ -1,45 +1,47 @@
-#include "../drivers/screen.h"
-#include "../kernel/io.h"
+#include "screen.h"
+#include "io.h"
 
-static unsigned short *video_memory = (unsigned short*)0xB8000;
-static unsigned char current_color = 0x0F;
-static int cursor_x = 0;
-static int cursor_y = 0;
+#define VIDEO_MEMORY 0xB8000
+#define WIDTH 80
+#define HEIGHT 25
+
+static unsigned char color = 0x0F;
+static unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
+static unsigned int row = 0;
+static unsigned int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    for (int i = 0; i < 80 * 25; i++) {
-        video_memory[i] = (current_color << 8) | ' ';
+    for (unsigned int i = 0; i < WIDTH * HEIGHT; i++) {
+        video_memory[i] = (color << 8) | ' ';
     }
-    cursor_x = 0;
-    cursor_y = 0;
+    row = 0;
+    col = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
-        cursor_y++;
-        cursor_x = 0;
+        col = 0;
+        row++;
     } else {
-        video_memory[cursor_y * 80 + cursor_x] = (color << 8) | c;
-        cursor_x++;
+        video_memory[row * WIDTH + col] = (color << 8) | c;
+        col++;
+        if (col >= WIDTH) {
+            col = 0;
+            row++;
+        }
     }
-
-    if (cursor_x >= 80) {
-        cursor_x = 0;
-        cursor_y++;
-    }
-
-    if (cursor_y >= 25) {
+    if (row >= HEIGHT) {
         screen_scroll();
     }
 }
 
 void screen_write(const char *str, unsigned char color) {
-    for (int i = 0; str[i] != 0; i++) {
-        screen_putchar(str[i], color);
+    while (*str) {
+        screen_putchar(*str++, color);
     }
 }
 
@@ -48,24 +50,20 @@ void screen_writeln(const char *str, unsigned char color) {
     screen_putchar('\n', color);
 }
 
-void screen_set_color(unsigned char color) {
-    current_color = color;
+void screen_set_color(unsigned char c) {
+    color = c;
 }
 
 int screen_get_row(void) {
-    return cursor_y;
+    return row;
 }
 
 void screen_scroll(void) {
-    for (int y = 1; y < 25; y++) {
-        for (int x = 0; x < 80; x++) {
-            video_memory[(y-1)*80 + x] = video_memory[y*80 + x];
-        }
+    for (unsigned int i = 0; i < (HEIGHT - 1) * WIDTH; i++) {
+        video_memory[i] = video_memory[i + WIDTH];
     }
-
-    for (int x = 0; x < 80; x++) {
-        video_memory[24*80 + x] = (current_color << 8) | ' ';
+    for (unsigned int i = (HEIGHT - 1) * WIDTH; i < HEIGHT * WIDTH; i++) {
+        video_memory[i] = (color << 8) | ' ';
     }
-
-    cursor_y = 24;
+    row = HEIGHT - 1;
 }
