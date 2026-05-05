@@ -1,7 +1,10 @@
 #include "irq.h"
-#include "../kernel/io.h"
+#include "io.h"
 
-void irq_install_handler(int irq, void (*handler)(void)) {
-    (void)irq;
-    (void)handler;
+extern void irq_install_handler(unsigned char irq, void (*handler)(void));
+
+void irq_install_handler(unsigned char irq, void (*handler)(void)) {
+    unsigned char mask = inb(0x21);
+    mask &= ~(1 << irq);
+    outb(0x21, mask);
 }

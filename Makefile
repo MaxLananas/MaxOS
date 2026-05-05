@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = kernel drivers
+VPATH = kernel
 
 .PHONY: all clean
 
@@ -40,10 +40,7 @@ SRCS_C = \
 	kernel/keyboard.c \
 	kernel/terminal.c \
 	kernel/mouse.c \
-	kernel/kmain.c \
-	drivers/screen.c \
-	drivers/keyboard.c \
-	drivers/mouse.c
+	kernel/kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
