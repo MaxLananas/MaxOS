@@ -256,4 +256,39 @@ isr39:
 isr40:
     push dword 0
     push dword 40
-    jm
+    jmp isr_common_stub
+
+isr41:
+    push dword 0
+    push dword 41
+    jmp isr_common_stub
+
+isr42:
+    push dword 0
+    push dword 42
+    jmp isr_common_stub
+
+isr43:
+    push dword 0
+    push dword 43
+    jmp isr_common_stub
+
+isr44:
+    push dword 0
+    push dword 44
+    jmp isr_common_stub
+
+isr45:
+    push dword 0
+    push dword 45
+    jmp isr_common_stub
+
+isr46:
+    push dword 0
+    push dword 46
+    jmp isr_common_stub
+
+isr47:
+    push dword 0
+    push dword 47
+    jmp isr_common_stub

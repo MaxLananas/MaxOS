@@ -1,26 +1,19 @@
-#include "screen.h"
-#include "keyboard.h"
-#include "terminal.h"
-#include "idt.h"
-#include "isr.h"
-#include "irq.h"
-#include "timer.h"
-#include "mouse.h"
-#include "paging.h"
+#include "../drivers/screen.h"
+#include "../kernel/idt.h"
+#include "../kernel/timer.h"
+#include "../kernel/keyboard.h"
+#include "../kernel/terminal.h"
 
 void kmain(void) {
     screen_init();
     screen_clear();
-    screen_writeln("Kernel started", 0x0F);
+    screen_set_color(0x0F);
+    screen_writeln("Booting...", 0x0F);
 
     idt_init();
-    isr_init();
-    irq_init();
     timer_init(100);
     keyboard_init();
-    mouse_init();
-    paging_init();
-
     terminal_init();
+
     terminal_run();
 }

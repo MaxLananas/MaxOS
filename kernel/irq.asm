@@ -29,80 +29,80 @@ irq_common_stub:
 
 irq0:
     push dword 0
-    push dword 32
+    push dword 0
     jmp irq_common_stub
 
 irq1:
     push dword 0
-    push dword 33
+    push dword 1
     jmp irq_common_stub
 
 irq2:
     push dword 0
-    push dword 34
+    push dword 2
     jmp irq_common_stub
 
 irq3:
     push dword 0
-    push dword 35
+    push dword 3
     jmp irq_common_stub
 
 irq4:
     push dword 0
-    push dword 36
+    push dword 4
     jmp irq_common_stub
 
 irq5:
     push dword 0
-    push dword 37
+    push dword 5
     jmp irq_common_stub
 
 irq6:
     push dword 0
-    push dword 38
+    push dword 6
     jmp irq_common_stub
 
 irq7:
     push dword 0
-    push dword 39
+    push dword 7
     jmp irq_common_stub
 
 irq8:
     push dword 0
-    push dword 40
+    push dword 8
     jmp irq_common_stub
 
 irq9:
     push dword 0
-    push dword 41
+    push dword 9
     jmp irq_common_stub
 
 irq10:
     push dword 0
-    push dword 42
+    push dword 10
     jmp irq_common_stub
 
 irq11:
     push dword 0
-    push dword 43
+    push dword 11
     jmp irq_common_stub
 
 irq12:
     push dword 0
-    push dword 44
+    push dword 12
     jmp irq_common_stub
 
 irq13:
     push dword 0
-    push dword 45
+    push dword 13
     jmp irq_common_stub
 
 irq14:
     push dword 0
-    push dword 46
+    push dword 14
     jmp irq_common_stub
 
 irq15:
     push dword 0
-    push dword 47
+    push dword 15
     jmp irq_common_stub

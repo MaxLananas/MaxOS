@@ -55,7 +55,7 @@ OBJS = \
 	$(BUILD)/mouse.o \
 	$(BUILD)/kmain.o
 
-$(BUILD)/%.o: %.c | $(BUILD)
+$(BUILD)/%.o: $(SRC_DIR)/kernel/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
