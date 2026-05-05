@@ -19,6 +19,14 @@ global irq15
 
 extern irq_handler
 
+irq_common_stub:
+    pusha
+    push esp
+    call irq_handler
+    add esp, 4
+    popa
+    iret
+
 irq0:
     push dword 0
     push dword 32
@@ -98,11 +106,3 @@ irq15:
     push dword 0
     push dword 47
     jmp irq_common_stub
-
-irq_common_stub:
-    pusha
-    push esp
-    call irq_handler
-    add esp, 8
-    popa
-    iret

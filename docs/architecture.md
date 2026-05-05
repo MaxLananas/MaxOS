@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (121)
+## Fonctions implémentées (122)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -54,9 +54,8 @@
 | `terminal_run` | — | `;` |
 | `terminal_process` | — | `;` |
 | `ata_init` | — | `void ata_init(void);` |
-| `keyboard_init` | — | `void keyboard_init(void);` |
 | `keyboard_getchar` | — | `;` |
-| `keyboard_handler` | — | `;` |
+| `keyboard_init` | — | `void keyboard_init(void);` |
 | `mouse_wait` | — | `void mouse_wait(unsigned char a_type) {` |
 | `mouse_write` | — | `void mouse_write(unsigned char a_write) {` |
 | `mouse_read` | — | `unsigned char mouse_read() {` |
@@ -73,6 +72,7 @@
 | `screen_scroll` | — | `;` |
 | `usb_init` | — | `void usb_init(void);` |
 | `vga_init` | — | `void vga_init(void);` |
+| `vga_putchar` | — | `;` |
 
 ## Règles bare metal
 

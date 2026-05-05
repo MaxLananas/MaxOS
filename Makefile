@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = kernel
-
 .PHONY: all clean
 
 all: os.img

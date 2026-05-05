@@ -1,8 +1,6 @@
 #include "idt.h"
 #include "io.h"
 
-extern void idt_load(struct IDTPtr *idtp);
-
 struct IDTEntry idt[256];
 struct IDTPtr idtp;
 
@@ -14,11 +12,15 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt[num].flags = flags;
 }
 
+void idt_load(struct IDTPtr *idtp) {
+    __asm__ volatile("lidt %0" : : "m"(*idtp));
+}
+
 void idt_init(void) {
     idtp.limit = (sizeof(struct IDTEntry) * 256) - 1;
     idtp.base = (unsigned int)&idt;
 
-    for (unsigned int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
 
