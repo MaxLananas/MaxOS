@@ -8,11 +8,9 @@ Voici la documentation technique complète pour MaxOS, formatée en Markdown.
 
 # MaxOS - Documentation Technique
 
-## Table des Matières
+## Introduction
 
-1.  [Vue d'ensemble](#1-vue-densemble)
-2.  [Prérequis](#2-prérequis)
-3.  [Compilation de MaxOS](#3-compilation-de-maxos)
+MaxOS est un système d'exploitation bare-metal en cours de développement, conçu pour fonctionner sur l'architecture x86. Actuellement à un stade de prototype précoce (score estimé : 35/100), il démont
 
 ---
 *MaxOS AI v18.0*

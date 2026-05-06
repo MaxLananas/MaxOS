@@ -256,7 +256,7 @@ isr39:
 isr40:
     push dword 0
     push dword 40
-    jmp isr_common_stub
+    jmp isr_common_stul
 
 isr41:
     push dword 0
