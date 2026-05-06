@@ -6,9 +6,7 @@ LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
-SRC_DIR = .
-
-VPATH = kernel
+SRC_DIR = kernel
 
 .PHONY: all clean
 
@@ -20,47 +18,38 @@ $(BUILD):
 $(BUILD)/boot.bin: $(SRC_DIR)/boot/boot.asm | $(BUILD)
 	$(AS) $(BFLAGS) $< -o $@
 
-$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel/kernel_entry.asm | $(BUILD)
+$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)
+$(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
+$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
-	idt.c \
-	irq.c \
-	irq_handler.c \
-	timer.c \
-	fault_handler.c \
-	paging.c \
-	screen.c \
-	keyboard.c \
-	terminal.c \
-	mouse.c \
-	kmain.c
+	$(SRC_DIR)/idt.c \
+	$(SRC_DIR)/irq.c \
+	$(SRC_DIR)/irq_handler.c \
+	$(SRC_DIR)/timer.c \
+	$(SRC_DIR)/fault_handler.c \
+	$(SRC_DIR)/paging.c \
+	$(SRC_DIR)/screen.c \
+	$(SRC_DIR)/keyboard.c \
+	$(SRC_DIR)/terminal.c \
+	$(SRC_DIR)/mouse.c \
+	$(SRC_DIR)/kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
-	$(BUILD)/idt.o \
-	$(BUILD)/irq_handler.o \
-	$(BUILD)/timer.o \
-	$(BUILD)/fault_handler.o \
-	$(BUILD)/paging.o \
-	$(BUILD)/screen.o \
-	$(BUILD)/keyboard.o \
-	$(BUILD)/terminal.o \
-	$(BUILD)/mouse.o \
-	$(BUILD)/kmain.o
+	$(patsubst $(SRC_DIR)/%.c,$(BUILD)/%.o,$(SRCS_C))
 
-$(BUILD)/%.o: %.c | $(BUILD)
+$(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/kernel.bin: $(BUILD)/kernel_entry.o $(OBJS) | $(BUILD)
+$(BUILD)/kernel.bin: $(OBJS) | $(BUILD)
 	$(LD) $(LFLAGS) $^ -o $@
 
 os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin

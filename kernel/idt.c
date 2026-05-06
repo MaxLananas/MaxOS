@@ -1,30 +1,72 @@
 #include "idt.h"
 #include "io.h"
-#include "isr.h"
-#include "irq.h"
 
 struct IDTEntry idt[256];
 struct IDTPtr idtp;
 
+extern void idt_load(struct IDTPtr *idtp);
+
+extern void isr0();
+extern void isr1();
+extern void isr2();
+extern void isr3();
+extern void isr4();
+extern void isr5();
+extern void isr6();
+extern void isr7();
+extern void isr8();
+extern void isr9();
+extern void isr10();
+extern void isr11();
+extern void isr12();
+extern void isr13();
+extern void isr14();
+extern void isr15();
+extern void isr16();
+extern void isr17();
+extern void isr18();
+extern void isr19();
+extern void isr20();
+extern void isr21();
+extern void isr22();
+extern void isr23();
+extern void isr24();
+extern void isr25();
+extern void isr26();
+extern void isr27();
+extern void isr28();
+extern void isr29();
+extern void isr30();
+extern void isr31();
+
+extern void irq0();
+extern void irq1();
+extern void irq2();
+extern void irq3();
+extern void irq4();
+extern void irq5();
+extern void irq6();
+extern void irq7();
+extern void irq8();
+extern void irq9();
+extern void irq10();
+extern void irq11();
+extern void irq12();
+extern void irq13();
+extern void irq14();
+extern void irq15();
+
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
-    idt[num].base_lo = (base & 0xFFFF);
+    idt[num].base_lo = base & 0xFFFF;
     idt[num].base_hi = (base >> 16) & 0xFFFF;
     idt[num].sel = sel;
     idt[num].always0 = 0;
     idt[num].flags = flags;
 }
 
-void idt_load(struct IDTPtr *idtp) {
-    __asm__ volatile("lidt (%0)" : : "r" (idtp));
-}
-
 void idt_init(void) {
-    idtp.limit = (sizeof(struct IDTEntry) * 256) - 1;
+    idtp.limit = sizeof(struct IDTEntry) * 256 - 1;
     idtp.base = (unsigned int)&idt;
-
-    for (unsigned int i = 0; i < 256; i++) {
-        idt_set_gate(i, 0, 0, 0);
-    }
 
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
@@ -58,22 +100,6 @@ void idt_init(void) {
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
     idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
-    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
-    idt_set_gate(33, (unsigned int)isr33, 0x08, 0x8E);
-    idt_set_gate(34, (unsigned int)isr34, 0x08, 0x8E);
-    idt_set_gate(35, (unsigned int)isr35, 0x08, 0x8E);
-    idt_set_gate(36, (unsigned int)isr36, 0x08, 0x8E);
-    idt_set_gate(37, (unsigned int)isr37, 0x08, 0x8E);
-    idt_set_gate(38, (unsigned int)isr38, 0x08, 0x8E);
-    idt_set_gate(39, (unsigned int)isr39, 0x08, 0x8E);
-    idt_set_gate(40, (unsigned int)isr40, 0x08, 0x8E);
-    idt_set_gate(41, (unsigned int)isr41, 0x08, 0x8E);
-    idt_set_gate(42, (unsigned int)isr42, 0x08, 0x8E);
-    idt_set_gate(43, (unsigned int)isr43, 0x08, 0x8E);
-    idt_set_gate(44, (unsigned int)isr44, 0x08, 0x8E);
-    idt_set_gate(45, (unsigned int)isr45, 0x08, 0x8E);
-    idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
-    idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
 
     idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
     idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
