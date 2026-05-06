@@ -170,7 +170,6 @@ isr16:
 
 isr17:
     cli
-    push dword 0
     push dword 17
     jmp isr_common_stub
 
@@ -232,7 +231,7 @@ isr27:
     cli
     push dword 0
     push dword 27
-    jmp isr_common_stub
+    jmp isr_common_strub
 
 isr28:
     cli
