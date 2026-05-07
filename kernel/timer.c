@@ -2,10 +2,10 @@
 #include "io.h"
 #include "irq.h"
 
-unsigned int timer_ticks = 0;
+static unsigned int ticks = 0;
 
 void timer_handler(void) {
-    timer_ticks++;
+    ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -13,16 +13,17 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-
     irq_set_handler(0, timer_handler);
 }
 
 unsigned int timer_get_ticks(void) {
-    return timer_ticks;
+    return ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_ticks;
-    unsigned int wait = ms * 1000 / 1000;
-    while ((timer_ticks - start) < wait);
+    unsigned int start = ticks;
+    unsigned int end = start + (ms * 1000) / 1000;
+    while (ticks < end) {
+        asm volatile("hlt");
+    }
 }
