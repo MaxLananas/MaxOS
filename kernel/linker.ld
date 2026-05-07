@@ -1,21 +1,27 @@
 ENTRY(_start)
 
-SECTIONS {
-    . = 0x100000;
+SECTIONS
+{
+    . = 0x1000;
 
     .text : {
-        *(.text)
-    }
-
-    .rodata : {
-        *(.rodata)
+        *(.text*)
     }
 
     .data : {
-        *(.data)
+        *(.data*)
+        *(.rodata*)
     }
 
     .bss : {
-        *(.bss)
+        *(.bss*)
     }
+
+    /DISCARD/ : {
+        *(.comment*)
+        *(.eh_frame*)
+        *(.note*)
+    }
+
+    _stack_top = . + 16384;
 }

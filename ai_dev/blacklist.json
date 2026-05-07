@@ -46,5 +46,45 @@
   "Syst\u00e8me de fichiers complet (ext2, FAT32 avanc\u00e9)": {
     "consecutive_fails": 1,
     "last_fail": 1778145253
+  },
+  "Impl\u00e9mentation compl\u00e8te du gestionnaire de processus": {
+    "consecutive_fails": 1,
+    "last_fail": 1778163744
+  },
+  "Migration vers APIC et d\u00e9sactivation du PIC": {
+    "consecutive_fails": 1,
+    "last_fail": 1778164011
+  },
+  "Syst\u00e8me de fichiers persistant avec gestion des disques": {
+    "consecutive_fails": 1,
+    "last_fail": 1778164213
+  },
+  "Gestion compl\u00e8te de la souris avec protocole PS/2": {
+    "consecutive_fails": 1,
+    "last_fail": 1778164401
+  },
+  "Syst\u00e8me de gestion de la m\u00e9moire avanc\u00e9": {
+    "consecutive_fails": 1,
+    "last_fail": 1778164638
+  },
+  "Applications GUI interactives": {
+    "consecutive_fails": 1,
+    "last_fail": 1778164888
+  },
+  "Gestion des exceptions mat\u00e9rielles (MCE, NMI)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778165173
+  },
+  "Terminal avanc\u00e9 avec historique et commandes": {
+    "consecutive_fails": 1,
+    "last_fail": 1778165411
+  },
+  "Optimisation du bootloader": {
+    "consecutive_fails": 1,
+    "last_fail": 1778165660
+  },
+  "Support multi-c\u0153urs (SMP)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778165877
   }
 }

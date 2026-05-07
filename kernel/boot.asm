@@ -1,5 +1,5 @@
-[org 0x7C00]
-[bits 16]
+BITS 16
+org 0x7C00
 
 start:
     xor ax, ax
@@ -7,26 +7,22 @@ start:
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
+    sti
 
-    mov si, msg
-    call print_string
+    ; Enable A20 line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
 
-    mov ah, 0x00
-    mov al, 0x03
-    int 0x10
+    ; Load kernel
+    mov ah, 0x02
+    mov al, 64
+    mov ch, 0
+    mov dh, 0
+    mov cl, 2
+    mov bx, 0x1000
+    int 0x13
 
-    jmp 0x10000
-
-print_string:
-    lodsb
-    or al, al
-    jz .done
-    mov ah, 0x0E
-    int 0x10
-    jmp print_string
-.done:
-    ret
-
-msg db "Booting...", 0
-times 510-($-$$) db 0
-dw 0xAA55
+    jmp 0x0000:0x1000
+    times 510-($-$$) db 0
+    dw 0xAA55

@@ -1,14 +1,12 @@
 AS     = nasm
 CC     = gcc
 LD     = ld
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -Ikernel
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
-
-VPATH = kernel drivers
 
 .PHONY: all clean
 
@@ -17,7 +15,7 @@ all: os.img
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/boot.bin: $(SRC_DIR)/boot/boot.asm | $(BUILD)
+$(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
 	$(AS) $(BFLAGS) $< -o $@
 
 $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
@@ -26,32 +24,27 @@ $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 $(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
+$(BUILD)/ap_start.o: $(SRC_DIR)/ap_start.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
 	idt.c \
-	irq.c \
-	irq_handler.c \
 	timer.c \
 	fault_handler.c \
 	screen.c \
 	keyboard.c \
 	terminal.c \
-	mouse.c \
-	pmm.c \
-	vmm.c \
-	mem.c \
-	paging.c \
-	kmain.c
+	smp.c \
+	apic.c \
+	schedule.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
-	$(BUILD)/irq.o \
+	$(BUILD)/ap_start.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-$(BUILD)/%.o: %.c | $(BUILD)
+$(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(OBJS) | $(BUILD)

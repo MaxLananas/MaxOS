@@ -1,6 +1,6 @@
 #ifndef VMM_H
 #define VMM_H
 
-void vmm_init(void);
+void heap_init(void *start, unsigned int size);
 
 #endif

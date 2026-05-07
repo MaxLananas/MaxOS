@@ -2,203 +2,201 @@
 
 > Généré par MaxOS AI v18.0
 
-Voici une documentation technique complète pour **MaxOS** au format Markdown, structurée selon vos exigences :
-
 ```markdown
-# **MaxOS - Documentation Technique**
-*Un système d'exploitation minimaliste en 32 bits*
+# **MaxOS – Documentation Technique**
+*Un système d'exploitation minimaliste en développement*
+
+---
+**Version** : 0.1 (Pre-Alpha)
+**Score** : 35/100 (Fonctionnalités de base implémentées)
+**Licence** : MIT
+**Auteurs** : [Votre Nom/Groupe]
+**Dernière mise à jour** : [Date]
 
 ---
 
-## **📌 Introduction**
-MaxOS est un système d'exploitation expérimental conçu pour apprendre les bases des OS modernes. Il inclut :
-- Un **bootloader** en ASM (`boot.asm`)
-- Un **kernel** chargé à l'adresse `0x1000:0x0000`
-- Un passage en **mode 32 bits**
-- Une **IDT** initialisée (fichiers `idt.c`/`idt.h`)
-- Des **ISR manuels** (sans macros, `isr.asm`)
-- Une **configuration des IRQ et du PIC** (`irq.asm`/`irq.c`)
-- Un **gestionnaire d'exceptions** (`exceptions.c`)
-- Un **gestionnaire de fautes** (`fault_handler.c`)
+## **1. Introduction**
+MaxOS est un système d'exploitation **32-bit** en développement, conçu pour des architectures **x86**. Il intègre actuellement :
+- Un **bootloader** fonctionnel (`boot.asm`).
+- Une **IDT** (Interrupt Descriptor Table) initialisée (`idt.c/idt.asm`).
+- Des **ISR** (Interrupt Service Routines) manuelles (`isr.asm`).
+- La gestion des **IRQ/PIT** (Interruptions matérielles et timer, `irq.asm/timer.c`).
+- Une **gestion mémoire basique** (physique et virtuelle, `pmm.c/vmm.c`).
+- Un **pilote VGA** pour l'affichage texte (`screen.c`).
+- Un **pilote clavier PS/2** (`keyboard.c`).
+- Un **terminal minimaliste** (`terminal.c`).
 
-**Statistiques** :
-- **51 fichiers C** | **16 fichiers ASM**
-- **Score : 35/100** (Niveau : *desc*)
+---
+## **2. Prérequis et Compilation**
+
+### **2.1. Dépendances**
+Pour compiler MaxOS, vous aurez besoin de :
+- **GCC** (pour la compilation croisée, `i686-elf-gcc`).
+- **NASM** (assembleur, version ≥ 2.15).
+- **GNU Make** (pour l'automatisation).
+- **QEMU** (pour l'émulation, version ≥ 6.0).
+- **GNU Grub** (pour générer l'image disque, `grub-mkrescue`).
+
+#### **Installation sous Linux (Debian/Ubuntu)**
+```bash
+sudo apt update
+sudo apt install build-essential nasm qemu-system-x86 grub2 xorriso
+```
+
+#### **Installation du compilateur croisé (i686-elf)**
+```bash
+# Télécharger et installer le toolchain (exemple pour Linux)
+wget https://github.com/lordmilko/i686-elf-tools/releases/download/8.3/i686-elf-tools-linux.tar.xz
+tar -xf i686-elf-tools-linux.tar.xz
+sudo mv i686-elf-tools /opt/
+export PATH="$PATH:/opt/i686-elf-tools/bin"
+```
 
 ---
 
-## **🛠️ Guide Développeur**
-
-### **1️⃣ Compilation**
-#### **Prérequis**
-- **GCC** (pour la compilation C)
-- **NASM** (pour l'assemblage)
-- **QEMU** (pour l'émulation)
-- **Make** (pour automatiser la build)
-
-#### **Étapes**
-1. **Cloner le dépôt** (si applicable) :
+### **2.2. Compilation**
+1. **Cloner le dépôt** :
    ```bash
-   git clone https://github.com/votre-utilisateur/MaxOS.git
+   git clone https://github.com/[votre-utilisateur]/MaxOS.git
    cd MaxOS
    ```
 
-2. **Compiler le bootloader et le kernel** :
+2. **Compiler le noyau** :
    ```bash
    make
    ```
-   - **Sortie** : Un fichier `kernel.bin` (format binaire brut).
+   - Cela génère :
+     - `bin/kernel.bin` (binaire du noyau).
+     - `bin/os.iso` (image bootable avec GRUB).
 
-3. **Générer une image disque** (optionnel) :
+3. **Nettoyer les fichiers temporaires** :
    ```bash
-   make disk
+   make clean
    ```
-   - **Sortie** : `maxos.img` (pour QEMU ou un vrai disque).
 
 ---
+## **3. Test avec QEMU**
 
-### **2️⃣ Test dans QEMU**
-#### **Lancement de base**
+### **3.1. Lancer l'OS en mode graphique**
 ```bash
 make run
 ```
 - **Options QEMU** :
-  - `-fda maxos.img` : Utilise l'image disque.
-  - `-serial stdio` : Affiche la sortie série dans le terminal.
-  - `-d int` : Active les logs des interruptions (utile pour le débogage).
+  - `-m 512M` : 512 Mo de RAM.
+  - `-serial mon:stdio` : Redirige la sortie série vers le terminal.
+  - `-d int` : Affiche les interruptions (débogage).
 
-#### **Débogage avancé**
-1. **Lancer QEMU avec GDB** :
+### **3.2. Débogage avec GDB**
+1. Lancer QEMU en mode débogage :
    ```bash
    make debug
    ```
-   - **Dans un autre terminal** :
-     ```bash
-     gdb -q kernel.bin
-     (gdb) target remote localhost:1234
-     (gdb) continue
-     ```
-
-2. **Vérifier les logs** :
-   - Utilisez `dmesg` ou `serial` pour afficher les messages du kernel.
-
----
-
-### **3️⃣ Structure des Fichiers**
-```
-MaxOS/
-├── boot/               # Code du bootloader
-│   ├── boot.asm        # Chargeur principal (charge le kernel)
-│   └── boot_sect.bin   # Secteur de boot (512 octets)
-├── kernel/             # Code du kernel
-│   ├── arch/           # Architecture spécifique (x86)
-│   │   ├── asm/        # Code assembleur
-│   │   │   ├── isr.asm  # Gestionnaires d'interruptions (ISR)
-│   │   │   ├── irq.asm  # Configuration du PIC et des IRQ
-│   │   │   └── ...
-│   │   ├── c/          # Code C
-│   │   │   ├── idt.c    # Initialisation de l'IDT
-│   │   │   ├── irq.c    # Gestion des IRQ
-│   │   │   ├── exceptions.c  # Gestion des exceptions
-│   │   │   ├── fault_handler.c  # Gestion des fautes
-│   │   │   └── ...
-│   │   └── include/    # En-têtes
-│   │       ├── idt.h
-│   │       ├── isr.h
-│   │       └── ...
-│   ├── drivers/        # Pilotes matériels
-│   ├── lib/            # Bibliothèques utilitaires
-│   └── main.c          # Point d'entrée du kernel
-├── Makefile            # Script de compilation
-├── linker.ld           # Script de linkage (pour le kernel)
-└── README.md           # Documentation de base
-```
-
-#### **Fichiers Clés**
-| Fichier          | Description                                                                 |
-|------------------|-----------------------------------------------------------------------------|
-| `boot.asm`       | Charge le kernel à `0x1000:0x0000` et active le mode 32 bits.               |
-| `isr.asm`        | Gestionnaires d'interruptions (ISR) sans macros.                            |
-| `irq.asm`        | Configuration du PIC (8259) et des IRQ.                                    |
-| `idt.c`          | Initialisation de la table des descripteurs d'interruptions (IDT).         |
-| `exceptions.c`   | Gestion des exceptions (ex: division par zéro).                            |
-| `fault_handler.c`| Gestion des fautes (ex: page fault).                                       |
-
----
-
-### **4️⃣ Contribuer**
-#### **Processus**
-1. **Forker le dépôt** et créer une branche :
+2. Dans un autre terminal, attacher GDB :
    ```bash
-   git checkout -b feature/ma-nouvelle-fonctionnalite
+   i686-elf-gdb bin/kernel.bin
+   (gdb) target remote localhost:1234
+   (gdb) continue
    ```
 
-2. **Implémenter votre code** en suivant les conventions :
-   - **C** : Respecter le style (indentation, noms de variables).
-   - **ASM** : Commenter chaque section critique.
-   - **Documenter** les nouvelles fonctions dans les en-têtes.
-
-3. **Tester** :
-   - Vérifiez que le kernel compile (`make`).
-   - Testez dans QEMU (`make run`).
-
-4. **Soumettre une Pull Request** :
-   - Décrivez clairement les changements.
-   - Incluez des logs ou captures d'écran si pertinent.
-
-#### **Bonnes Pratiques**
-- **Éviter les dépendances externes** (MaxOS est minimaliste).
-- **Optimiser pour la lisibilité** (le code est éducatif).
-- **Documenter les choix techniques** dans les commentaires.
+### **3.3. Captures d'écran**
+- **Sortie attendue** :
+  - Affichage du message de boot (`"MaxOS v0.1"`).
+  - Terminal interactif (saisie clavier fonctionnelle).
+  - Timer PIT affichant des interruptions périodiques.
 
 ---
+## **4. Structure des Fichiers**
 
-### **5️⃣ Roadmap**
-#### **Objectifs à Court Terme (0-6 mois)**
-| Tâche                          | Priorité | Statut       |
-|--------------------------------|----------|--------------|
-| Ajouter un système de fichiers | ⭐⭐⭐⭐   | En cours     |
-| Implémenter la pagination      | ⭐⭐⭐    | Planifié     |
-| Support du clavier (PS/2)      | ⭐⭐⭐⭐   | À faire      |
-| Gestion basique de la mémoire  | ⭐⭐⭐⭐   | En cours     |
-
-#### **Objectifs à Moyen Terme (6-12 mois)**
-| Tâche                          | Priorité | Statut       |
-|--------------------------------|----------|--------------|
-| Multitâche (scheduling)        | ⭐⭐⭐⭐⭐  | Planifié     |
-| Pilotes pour le VGA            | ⭐⭐⭐    | À faire      |
-| Support des disques (ATA)      | ⭐⭐⭐⭐   | En réflexion |
-| Réseau (NE2000)                | ⭐⭐      | À long terme |
-
-#### **Objectifs à Long Terme (12+ mois)**
-| Tâche                          | Priorité | Statut       |
-|--------------------------------|----------|--------------|
-| Portage vers x86_64            | ⭐⭐⭐⭐   | En réflexion |
-| Système de paquets             | ⭐⭐      | Idée         |
-| Compatibilité avec Linux       | ⭐       | Idée         |
-
----
-## **📜 Licence**
-MaxOS est distribué sous la licence **MIT** (voir `LICENSE`).
-
----
-## **🤝 Remerciements**
-- Inspiré par **Linux**, **Minix**, et **OSDev Wiki**.
-- Merci aux contributeurs open-source pour leurs ressources.
-
----
-**🔗 Liens Utiles**
-- [OSDev Wiki](https://wiki.osdev.org/)
-- [GNU Assembler (GAS)](https://sourceware.org/binutils/docs/as/)
-- [QEMU Documentation](https://www.qemu.org/docs/)
-
----
-*Dernière mise à jour : `date`*
+```
+MaxOS/
+├── bin/                # Binaires générés (kernel.bin, os.iso)
+├── src/
+│   ├── boot/           # Bootloader (boot.asm, multiboot.h)
+│   ├── kernel/         # Noyau principal
+│   │   ├── cpu/        # Gestion CPU (idt.c, isr.asm, irq.asm)
+│   │   ├── mem/        # Mémoire (pmm.c, vmm.c, heap.c)
+│   │   ├── drivers/    # Pilotes (screen.c, keyboard.c)
+│   │   ├── terminal/   # Terminal (terminal.c)
+│   │   └── init/       # Initialisation (main.c, kernel_entry.asm)
+│   └── lib/            # Bibliothèques utilitaires (stdio.h, string.c)
+├── tools/              # Scripts (grub.mk, link.ld)
+├── Makefile            # Règles de compilation
+└── docs/               # Documentation
 ```
 
----
+### **Fichiers clés**
+| Fichier               | Rôle                                  |
+|-----------------------|---------------------------------------|
+| `boot/boot.asm`       | Bootloader (mode réel → protégé).     |
+| `kernel/cpu/idt.c`    | Initialisation de l'IDT.             |
+| `kernel/cpu/isr.asm`  | Handlers d'interruptions.             |
+| `kernel/mem/pmm.c`    | Gestionnaire de mémoire physique.    |
+| `kernel/drivers/screen.c` | Pilote VGA (texte 80x25).       |
+| `kernel/terminal/terminal.c` | Interface utilisateur basique. |
 
-### **Points
+---
+## **5. Contribuer au Projet**
+
+### **5.1. Rapporter un Bug**
+- Ouvrir une **issue** sur GitHub avec :
+  - Une description claire.
+  - Les étapes pour reproduire.
+  - La sortie de `make run` (logs).
+
+### **5.2. Soumettre une Pull Request (PR)**
+1. **Forker** le dépôt.
+2. Créer une branche :
+   ```bash
+   git checkout -b feature/[nom]
+   ```
+3. Commiter avec des messages clairs :
+   ```bash
+   git commit -m "feat(mem): Ajout de la pagination"
+   ```
+4. Pousser et ouvrir une PR vers `main`.
+
+### **5.3. Conventions de Code**
+- **C** : Norme **C99** (pas de C++).
+- **Assembleur** : Syntax **NASM**.
+- **Nommage** :
+  - `snake_case` pour les fonctions/variables.
+  - `SCREAMING_SNAKE_CASE` pour les macros.
+- **Commentaires** :
+  - **Doxygen** pour les fonctions publiques.
+  - Explications pour les sections critiques (ex : `pmm.c`).
+
+---
+## **6. Roadmap**
+
+| Version | Objectifs                                                                 | Statut      |
+|---------|---------------------------------------------------------------------------|-------------|
+| **0.1** | Bootloader, IDT, ISR, PIT, VGA, Clavier, Terminal basique.               | ✅ Terminé  |
+| **0.2** | Gestion avancée de la mémoire (paging, heap), Système de fichiers (FAT16). | ⚠️ En cours |
+| **0.3** | Multitâche (scheduler round-robin), Pilotes ATA/IDE.                     | ❌ Planifié  |
+| **0.4** | Réseau (pilote NE2000), GUI basique (VESA).                              | ❌ Planifié  |
+| **1.0** | Version stable avec shell utilisable.                                    | ❌ Long terme |
+
+### **Prochaines Étapes (Priorité)**
+1. **Implémenter le paging** (`vmm.c`).
+2. **Ajouter un allocateur dynamique** (`heap.c`).
+3. **Support des appels système** (`syscall.asm`).
+4. **Pilote ATA** pour lire le disque.
+
+---
+## **7. Ressources Utiles**
+- **Documentation x86** :
+  - [Intel Manuals](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
+  - [OSDev Wiki](https://wiki.osdev.org/)
+- **Outils** :
+  - [QEMU Monitor Commands](https://wiki.qemu.org/Documentation/Monitor)
+  - [GDB for OSDev](https://wiki.osdev.org/Kernel_Debugging)
+
+---
+## **8. Licence**
+Ce projet est sous **licence MIT**. Voir [LICENSE](LICENSE) pour plus de détails.
+
+---
+**Contact** : [votre
 
 ---
 *MaxOS AI v18.0*

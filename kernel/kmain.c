@@ -1,26 +1,21 @@
+#include "idt.h"
 #include "screen.h"
 #include "keyboard.h"
-#include "terminal.h"
-#include "idt.h"
-#include "irq.h"
 #include "timer.h"
-#include "fault_handler.h"
-#include "ata.h"
-#include "fs/vfs.h"
 
 void kmain(void) {
     screen_init();
-    screen_clear();
-    screen_writeln("Kernel started", 0x02);
-
+    screen_write("Initializing IDT...", 0x0A);
     idt_init();
-    irq_init();
-    irq_handler_init();
-    timer_init(100);
-    ata_init();
-    vfs_init();
-    terminal_init();
+    screen_writeln("OK", 0x0A);
 
-    screen_writeln("All systems initialized", 0x02);
-    terminal_run();
+    screen_write("Initializing keyboard...", 0x0A);
+    keyboard_init();
+    screen_writeln("OK", 0x0A);
+
+    screen_write("Initializing timer...", 0x0A);
+    timer_init(100);
+    screen_writeln("OK", 0x0A);
+
+    screen_writeln("System ready.", 0x0A);
 }

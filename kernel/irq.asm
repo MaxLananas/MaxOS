@@ -1,5 +1,6 @@
 BITS 32
 
+; IRQs 0-15
 global irq0
 global irq1
 global irq2
@@ -21,98 +22,98 @@ extern irq_handler
 
 irq0:
     cli
-    push dword 0
-    push dword 32
+    push byte 0
+    push byte 0
     jmp irq_common_stub
 
 irq1:
     cli
-    push dword 0
-    push dword 33
+    push byte 0
+    push byte 1
     jmp irq_common_stub
 
 irq2:
     cli
-    push dword 0
-    push dword 34
+    push byte 0
+    push byte 2
     jmp irq_common_stub
 
 irq3:
     cli
-    push dword 0
-    push dword 35
+    push byte 0
+    push byte 3
     jmp irq_common_stub
 
 irq4:
     cli
-    push dword 0
-    push dword 36
+    push byte 0
+    push byte 4
     jmp irq_common_stub
 
 irq5:
     cli
-    push dword 0
-    push dword 37
+    push byte 0
+    push byte 5
     jmp irq_common_stub
 
 irq6:
     cli
-    push dword 0
-    push dword 38
+    push byte 0
+    push byte 6
     jmp irq_common_stub
 
 irq7:
     cli
-    push dword 0
-    push dword 39
+    push byte 0
+    push byte 7
     jmp irq_common_stub
 
 irq8:
     cli
-    push dword 0
-    push dword 40
+    push byte 0
+    push byte 8
     jmp irq_common_stub
 
 irq9:
     cli
-    push dword 0
-    push dword 41
+    push byte 0
+    push byte 9
     jmp irq_common_stub
 
 irq10:
     cli
-    push dword 0
-    push dword 42
+    push byte 0
+    push byte 10
     jmp irq_common_stub
 
 irq11:
     cli
-    push dword 0
-    push dword 43
+    push byte 0
+    push byte 11
     jmp irq_common_stub
 
 irq12:
     cli
-    push dword 0
-    push dword 44
+    push byte 0
+    push byte 12
     jmp irq_common_stub
 
 irq13:
     cli
-    push dword 0
-    push dword 45
+    push byte 0
+    push byte 13
     jmp irq_common_stub
 
 irq14:
     cli
-    push dword 0
-    push dword 46
+    push byte 0
+    push byte 14
     jmp irq_common_stub
 
 irq15:
     cli
-    push dword 0
-    push dword 47
+    push byte 0
+    push byte 15
     jmp irq_common_stub
 
 irq_common_stub:
@@ -124,9 +125,7 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    push esp
     call irq_handler
-    add esp, 4
     pop eax
     mov ds, ax
     mov es, ax
@@ -134,4 +133,5 @@ irq_common_stub:
     mov gs, ax
     popa
     add esp, 8
+    sti
     iret

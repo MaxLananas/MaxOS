@@ -1,10 +1,10 @@
 BITS 32
 global _start
-global _stack_top
 extern kmain
 
 section .bss
     resb 16384
+global _stack_top
 _stack_top:
 
 section .text

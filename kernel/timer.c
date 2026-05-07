@@ -1,12 +1,7 @@
-#include "timer.h"
 #include "io.h"
 #include "screen.h"
 
 static unsigned int ticks = 0;
-
-void timer_handler(void) {
-    ticks++;
-}
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
@@ -20,7 +15,8 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
-    unsigned int end = start + (ms * 1000) / 1000;
-    while (ticks < end);
+}
+
+void timer_handler(void) {
+    ticks++;
 }
