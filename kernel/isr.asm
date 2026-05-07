@@ -48,29 +48,9 @@ global isr44
 global isr45
 global isr46
 global isr47
+global isr_handler
 
 extern isr_handler
-
-isr_common_stub:
-    pusha
-    mov ax, ds
-    push eax
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    push esp
-    call isr_handler
-    add esp, 4
-    pop eax
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    popa
-    add esp, 8
-    iret
 
 isr0:
     cli
@@ -207,7 +187,7 @@ isr23:
     cli
     push dword 0
     push dword 23
-    jmp isr_common_stuf
+    jmp isr_common_stub
 
 isr24:
     cli
@@ -352,3 +332,24 @@ isr47:
     push dword 0
     push dword 47
     jmp isr_common_stub
+
+isr_common_stub:
+    pusha
+    mov ax, ds
+    push eax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    push esp
+    call isr_handler
+    add esp, 4
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    popa
+    add esp, 8
+    iret

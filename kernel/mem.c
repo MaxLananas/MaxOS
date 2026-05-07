@@ -1,11 +1,7 @@
 #include "mem.h"
 
-void mem_init(unsigned int start, unsigned int end) {
+void heap_init(void *start, unsigned int size) {
 }
 
-void mem_free_page(void *addr) {
-}
-
-unsigned int mem_used_pages(void) {
-    return 0;
+void heap_free(void *ptr) {
 }

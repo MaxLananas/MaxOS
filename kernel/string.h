@@ -1,10 +1,6 @@
 #ifndef STRING_H
 #define STRING_H
 
-unsigned int strlen(const char *str) {
-    unsigned int len = 0;
-    while (str[len]) len++;
-    return len;
-}
+int stringcmp(const char *s1, const char *s2);
 
 #endif

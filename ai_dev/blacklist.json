@@ -6,5 +6,45 @@
   "kernel/io.h + IDT + ISR complet": {
     "consecutive_fails": 8,
     "last_fail": 1777969293
+  },
+  "Impl\u00e9mentation des syscalls": {
+    "consecutive_fails": 1,
+    "last_fail": 1778143319
+  },
+  "Impl\u00e9mentation du scheduler pr\u00e9emptif": {
+    "consecutive_fails": 1,
+    "last_fail": 1778143535
+  },
+  "Gestion avanc\u00e9e de la m\u00e9moire (paging 4 niveaux, KASLR)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778143756
+  },
+  "Migration vers APIC et gestion avanc\u00e9e des interruptions": {
+    "consecutive_fails": 1,
+    "last_fail": 1778143974
+  },
+  "Gestion avanc\u00e9e des disques (ATA PIO \u2192 DMA, MBR/GPT)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778144204
+  },
+  "Gestion des interruptions NMI et MCE": {
+    "consecutive_fails": 1,
+    "last_fail": 1778144426
+  },
+  "Gestion des utilisateurs et permissions": {
+    "consecutive_fails": 1,
+    "last_fail": 1778144636
+  },
+  "Support des extensions CPU (SSE, MMX)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778144825
+  },
+  "Support des p\u00e9riph\u00e9riques PCI et gestion des erreurs": {
+    "consecutive_fails": 1,
+    "last_fail": 1778145028
+  },
+  "Syst\u00e8me de fichiers complet (ext2, FAT32 avanc\u00e9)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778145253
   }
 }

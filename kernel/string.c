@@ -1,9 +1,9 @@
 #include "string.h"
 
-int strcmp(const char *str1, const char *str2) {
-    while (*str1 && (*str1 == *str2)) {
-        str1++;
-        str2++;
+int stringcmp(const char *s1, const char *s2) {
+    while(*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
     }
-    return *(unsigned char*)str1 - *(unsigned char*)str2;
+    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
 }
