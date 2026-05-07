@@ -1,11 +1,11 @@
 {
   "Makefile canonique + os.img garanti": {
-    "consecutive_fails": 7,
-    "last_fail": 1777969138
+    "consecutive_fails": 8,
+    "last_fail": 1778183388
   },
   "kernel/io.h + IDT + ISR complet": {
-    "consecutive_fails": 8,
-    "last_fail": 1777969293
+    "consecutive_fails": 9,
+    "last_fail": 1778183596
   },
   "Impl\u00e9mentation des syscalls": {
     "consecutive_fails": 1,

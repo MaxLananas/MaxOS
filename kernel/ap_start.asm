@@ -1,18 +1,18 @@
 BITS 32
 
-section .text
 global ap_start
+extern kmain
 
+section .text
 ap_start:
-    mov eax, cr0
-    and eax, 0x9FFFFFFF
-    mov cr0, eax
+    mov esp, _stack_top_ap
+    call kmain
+.hang:
+    cli
+    hlt
+    jmp .hang
 
-    mov esp, [esi + 4]
-    mov cr3, [esi + 16]
-
-    mov eax, cr0
-    or eax, 0x80000000
-    mov cr0, eax
-
-    jmp [esi]
+section .bss
+    resb 16384
+global _stack_top_ap
+_stack_top_ap:

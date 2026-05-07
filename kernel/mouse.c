@@ -1,13 +1,12 @@
+#include "mouse.h"
 #include "io.h"
-
-#define MOUSE_PORT 0x60
+#include "screen.h"
 
 void mouse_init(void) {
+    irq_set_handler(12, mouse_handler);
 }
 
 void mouse_handler(void) {
-    unsigned char status = inb(0x64);
-    if (status & 0x20) {
-        inb(MOUSE_PORT);
-    }
+    unsigned char data = inb(0x60);
+    screen_putchar('M', 0x0F);
 }
