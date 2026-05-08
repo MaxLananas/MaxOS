@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (114)
+## Fonctions implémentées (110)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -56,9 +56,6 @@
 | `ata_init` | — | `void ata_init(void);` |
 | `keyboard_getchar` | — | `;` |
 | `keyboard_init` | — | `void keyboard_init(void);` |
-| `mouse_wait` | — | `void mouse_wait(unsigned char type) {` |
-| `mouse_write` | — | `void mouse_write(unsigned char data) {` |
-| `mouse_read` | — | `unsigned char mouse_read(void) {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_init` | — | `void pci_init(void);` |
@@ -73,6 +70,9 @@
 | `usb_init` | — | `void usb_init(void);` |
 | `vga_init` | — | `void vga_init(void);` |
 | `vga_putchar` | — | `;` |
+| `vga_clear` | — | `;` |
+| `inb` | — | `static inline unsigned char inb(unsigned short port) {` |
+| `outb` | — | `static inline void outb(unsigned short port, unsigned char v` |
 
 ## Règles bare metal
 
