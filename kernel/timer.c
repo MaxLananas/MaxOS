@@ -3,10 +3,11 @@
 #include "idt.h"
 #include "isr.h"
 
-static unsigned int timer_ticks = 0;
+unsigned int timer_ticks = 0;
 
 void timer_handler(void) {
     timer_ticks++;
+    outb(0x20, 0x20);
 }
 
 void timer_init(unsigned int hz) {
@@ -24,7 +25,7 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_get_ticks();
-    unsigned int wait = ms * 1000 / 1000; // Approximate conversion
-    while ((timer_get_ticks() - start) < wait);
+    unsigned int start = timer_ticks;
+    unsigned int wait = ms / 10;
+    while ((timer_ticks - start) < wait);
 }

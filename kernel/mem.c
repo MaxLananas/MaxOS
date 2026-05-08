@@ -1,14 +1,21 @@
 #include "mem.h"
-#include "screen.h"
+#include "paging.h"
+
+#define MEM_START 0x100000
+#define MEM_END 0x200000
+
+unsigned int mem_size_kb = 0;
+unsigned int used_pages = 0;
 
 void mem_init(unsigned int mem_size_kb) {
-    screen_writeln("Memory initialized", 0x0A);
+    mem_size_kb = mem_size_kb;
+    paging_init();
 }
 
 void mem_free_page(void *addr) {
-    // Placeholder for memory free implementation
+    used_pages--;
 }
 
 unsigned int mem_used_pages(void) {
-    return 0;
+    return used_pages;
 }

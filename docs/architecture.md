@@ -54,11 +54,11 @@
 | `terminal_run` | — | `;` |
 | `terminal_process` | — | `;` |
 | `ata_init` | — | `void ata_init(void);` |
-| `keyboard_getchar` | — | `char keyboard_getchar(void) {` |
+| `keyboard_getchar` | — | `;` |
 | `keyboard_init` | — | `void keyboard_init(void);` |
-| `mouse_wait` | — | `void mouse_wait(unsigned char a_type) {` |
-| `mouse_write` | — | `void mouse_write(unsigned char a_write) {` |
-| `mouse_read` | — | `unsigned char mouse_read() {` |
+| `mouse_wait` | — | `void mouse_wait(unsigned char type) {` |
+| `mouse_write` | — | `void mouse_write(unsigned char data) {` |
+| `mouse_read` | — | `unsigned char mouse_read(void) {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_init` | — | `void pci_init(void);` |
