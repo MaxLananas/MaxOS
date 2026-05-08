@@ -26,6 +26,9 @@ $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 $(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
+$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
 $(BUILD)/ap_start.o: $(SRC_DIR)/ap_start.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
@@ -45,6 +48,7 @@ SRCS_C = \
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
+	$(BUILD)/idt_load.o \
 	$(BUILD)/ap_start.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
