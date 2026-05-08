@@ -36,8 +36,6 @@ SRCS_C = \
 	screen.c \
 	keyboard.c \
 	terminal.c \
-	apic.c \
-	schedule.c \
 	mouse.c \
 	paging.c \
 	mem.c \

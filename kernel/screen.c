@@ -6,37 +6,41 @@
 #define VGA_MEMORY 0xB8000
 
 static unsigned char color = 0x0F;
-static unsigned short *video_memory = (unsigned short*)VGA_MEMORY;
+static unsigned short *vga_buffer = (unsigned short*)VGA_MEMORY;
 static unsigned int row = 0;
-static unsigned int column = 0;
+static unsigned int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        video_memory[i] = (color << 8) | ' ';
+    for (unsigned int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
+        vga_buffer[i] = (unsigned short)0x20 | (color << 8);
     }
     row = 0;
-    column = 0;
+    col = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
         row++;
-        column = 0;
-    } else {
-        video_memory[row * VGA_WIDTH + column] = (color << 8) | c;
-        column++;
-        if (column >= VGA_WIDTH) {
-            row++;
-            column = 0;
+        col = 0;
+        if (row >= VGA_HEIGHT) {
+            screen_scroll();
         }
+        return;
     }
 
-    if (row >= VGA_HEIGHT) {
-        screen_scroll();
+    vga_buffer[row * VGA_WIDTH + col] = (unsigned short)c | (color << 8);
+    col++;
+
+    if (col >= VGA_WIDTH) {
+        row++;
+        col = 0;
+        if (row >= VGA_HEIGHT) {
+            screen_scroll();
+        }
     }
 }
 
@@ -60,16 +64,13 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (int i = 0; i < VGA_HEIGHT - 1; i++) {
-        for (int j = 0; j < VGA_WIDTH; j++) {
-            video_memory[i * VGA_WIDTH + j] = video_memory[(i + 1) * VGA_WIDTH + j];
-        }
+    for (unsigned int i = 0; i < VGA_WIDTH * (VGA_HEIGHT - 1); i++) {
+        vga_buffer[i] = vga_buffer[i + VGA_WIDTH];
     }
 
-    for (int j = 0; j < VGA_WIDTH; j++) {
-        video_memory[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (color << 8) | ' ';
+    for (unsigned int i = VGA_WIDTH * (VGA_HEIGHT - 1); i < VGA_WIDTH * VGA_HEIGHT; i++) {
+        vga_buffer[i] = (unsigned short)0x20 | (color << 8);
     }
 
     row = VGA_HEIGHT - 1;
-    column = 0;
 }
