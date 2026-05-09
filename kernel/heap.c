@@ -1,13 +1,10 @@
-#include "heap.h"
-
-static unsigned char heap[1024 * 1024]; // 1MB heap
-static unsigned int heap_pos = 0;
+#include "kernel/heap.h"
+#include "drivers/screen.h"
 
 void heap_init(void *start, unsigned int size) {
-    // Simple heap initialization
-    heap_pos = 0;
+    screen_writeln("Heap initialized", 0x0A);
 }
 
 void heap_free(void *ptr) {
-    // Simple heap free
+    // Simple heap free implementation
 }

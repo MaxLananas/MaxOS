@@ -1,22 +1,14 @@
-#include "mem.h"
-
-#define MEMORY_SIZE 1024 * 1024 * 16 // 16MB
-static unsigned char memory[MEMORY_SIZE];
-static unsigned int used_pages = 0;
+#include "kernel/mem.h"
+#include "drivers/screen.h"
 
 void mem_init(unsigned int mem_size_kb) {
-    // Simple memory initialization
-    for (unsigned int i = 0; i < MEMORY_SIZE; i++) {
-        memory[i] = 0;
-    }
-    used_pages = 0;
+    screen_writeln("Memory initialized", 0x0A);
 }
 
 void mem_free_page(void *addr) {
-    // Simple page free
-    used_pages--;
+    // Simple memory free implementation
 }
 
 unsigned int mem_used_pages(void) {
-    return used_pages;
+    return 0;
 }

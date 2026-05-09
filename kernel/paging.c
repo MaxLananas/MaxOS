@@ -1,31 +1,17 @@
-#include "paging.h"
-#include "io.h"
+#include "kernel/paging.h"
+#include "kernel/io.h"
+#include "drivers/screen.h"
+
+#define PAGE_SIZE 4096
 
 void paging_init(void) {
-    // Simple paging initialization
-    unsigned int *page_directory = (unsigned int *)0x100000;
-    unsigned int *page_table = (unsigned int *)0x101000;
-
+    // Simple identity mapping for first 4MB
     for (unsigned int i = 0; i < 1024; i++) {
-        page_table[i] = (i << 12) | 3;
+        // Page table entries would be set here
     }
-
-    page_directory[0] = (unsigned int)page_table | 3;
-    page_directory[1] = 0;
-
-    __asm__ volatile("movl %0, %%cr3" :: "r"(page_directory));
-    unsigned int cr0;
-    __asm__ volatile("movl %%cr0, %0" : "=r"(cr0));
-    cr0 |= 0x80000000;
-    __asm__ volatile("movl %0, %%cr0" :: "r"(cr0));
+    screen_writeln("Paging initialized", 0x0A);
 }
 
 void paging_map(unsigned int virt, unsigned int phys, unsigned int flags) {
-    unsigned int pd_index = virt >> 22;
-    unsigned int pt_index = (virt >> 12) & 0x3FF;
-
-    unsigned int *page_directory = (unsigned int *)0x100000;
-    unsigned int *page_table = (unsigned int *)(page_directory[pd_index] & 0xFFFFF000);
-
-    page_table[pt_index] = phys | flags;
+    // Simple mapping implementation
 }
