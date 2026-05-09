@@ -1,16 +1,13 @@
 #include "mem.h"
-
-static unsigned int mem_size_kb = 0;
-static unsigned int used_pages = 0;
+#include "screen.h"
 
 void mem_init(unsigned int mem_size_kb) {
-    mem_size_kb = mem_size_kb;
+    screen_writeln("Memory initialized", 0x0A);
 }
 
 void mem_free_page(void *addr) {
-    used_pages--;
 }
 
 unsigned int mem_used_pages(void) {
-    return used_pages;
+    return 0;
 }
