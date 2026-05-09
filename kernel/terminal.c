@@ -3,23 +3,16 @@
 #include "keyboard.h"
 #include "string.h"
 
-#define MAX_CMD_LEN 100
-
-static char cmd_buffer[MAX_CMD_LEN];
-static unsigned int cmd_len = 0;
-
 void terminal_init(void) {
-    screen_clear();
-    screen_writeln("Terminal initialized", 0x0A);
+    screen_init();
+    keyboard_init();
 }
 
 void terminal_run(void) {
-    screen_writeln("> ", 0x0F);
+    screen_clear();
+    screen_writeln("Terminal ready", 0x0A);
 }
 
 void terminal_process(const char *cmd) {
-    if (cmd_len > 0) {
-        screen_writeln(cmd, 0x0F);
-        cmd_len = 0;
-    }
+    screen_writeln(cmd, 0x0F);
 }
