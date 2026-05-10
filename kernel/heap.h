@@ -3,6 +3,5 @@
 
 void heap_init(void *start, unsigned int size);
 void heap_free(void *ptr);
-unsigned int heap_used(void);
 
 #endif

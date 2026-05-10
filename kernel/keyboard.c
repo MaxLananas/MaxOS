@@ -1,23 +1,17 @@
 #include "keyboard.h"
 #include "io.h"
-#include "irq.h"
 #include "screen.h"
-#include "terminal.h"
+#include "idt.h"
 
 void keyboard_init(void) {
-    outb(0x21, inb(0x21) & ~(1 << 1));
-}
-
-char keyboard_getchar(void) {
-    unsigned char scancode;
-    while ((scancode = inb(0x60)) == 0);
-    return scancode;
+    idt_set_gate(33, (unsigned int)isr33, 0x08, 0x8E);
 }
 
 void keyboard_handler(void) {
     unsigned char scancode = inb(0x60);
-    if (scancode < 128) {
-        char c = scancode;
-        screen_putchar(c, 0x0F);
+    if (scancode & 0x80) {
+        return;
     }
+    screen_putchar(scancode, 0x0F);
+    outb(0x20, 0x20);
 }

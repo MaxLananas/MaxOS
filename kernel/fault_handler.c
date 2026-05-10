@@ -3,10 +3,10 @@
 #include "idt.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_writeln("Exception occurred", 0x0F);
-    screen_writeln("Exception number:", 0x0F);
+    screen_set_color(0x0C);
+    screen_writeln("EXCEPTION OCCURRED", 0x0F);
+    screen_write("Exception: ", 0x0F);
     screen_putchar('0' + num, 0x0F);
-    screen_putchar('\n', 0xFF);
-
-    while (1);
+    screen_writeln("", 0x0F);
+    for (;;);
 }
