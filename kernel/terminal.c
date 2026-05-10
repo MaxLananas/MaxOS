@@ -1,9 +1,9 @@
 #include "terminal.h"
 #include "screen.h"
 #include "keyboard.h"
-#include "string.h"
+#include "timer.h"
 
-#define MAX_CMD 128
+#define MAX_CMD 256
 
 char cmd_buffer[MAX_CMD];
 unsigned int cmd_pos = 0;
@@ -14,23 +14,25 @@ void terminal_init(void) {
 }
 
 void terminal_run(void) {
-    screen_writeln("> ", 0x0F);
     while (1) {
-        char c = keyboard_getchar();
-        if (c == '\n') {
-            screen_putchar('\n', 0x0F);
-            cmd_buffer[cmd_pos] = '\0';
-            terminal_process(cmd_buffer);
-            cmd_pos = 0;
-            screen_writeln("> ", 0x0F);
-        } else {
-            screen_putchar(c, 0x0F);
-            cmd_buffer[cmd_pos++] = c;
-        }
+        asm volatile("hlt");
     }
 }
 
 void terminal_process(const char *cmd) {
-    screen_writeln("Command: ", 0x0F);
-    screen_writeln(cmd, 0x0F);
+    if (*cmd == '\n') {
+        cmd_buffer[cmd_pos] = '\0';
+        screen_writeln(cmd_buffer, 0x0F);
+        cmd_pos = 0;
+    } else if (*cmd == '\b') {
+        if (cmd_pos > 0) {
+            cmd_pos--;
+            screen_putchar(' ', 0x0F);
+        }
+    } else {
+        if (cmd_pos < MAX_CMD - 1) {
+            cmd_buffer[cmd_pos++] = *cmd;
+            screen_putchar(*cmd, 0x0F);
+        }
+    }
 }
