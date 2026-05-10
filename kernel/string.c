@@ -1,9 +1,20 @@
 #include "string.h"
 
-int stringcmp(const char *s1, const char *s2) {
-    while(*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
+unsigned int strlen(const char *str) {
+    unsigned int len = 0;
+    while (str[len]) {
+        len++;
     }
-    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+    return len;
+}
+
+void strcpy(char *dest, const char *src) {
+    while ((*dest++ = *src++));
+}
+
+void strcat(char *dest, const char *src) {
+    while (*dest) {
+        dest++;
+    }
+    while ((*dest++ = *src++));
 }

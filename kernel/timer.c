@@ -1,21 +1,20 @@
-#include "kernel/io.h"
-#include "kernel/timer.h"
-#include "kernel/idt.h"
-#include "drivers/screen.h"
+#include "timer.h"
+#include "idt.h"
+#include "io.h"
 
-#define PIT_DATA_PORT 0x40
-#define PIT_COMMAND_PORT 0x43
+unsigned int timer_ticks = 0;
 
-static unsigned int timer_ticks = 0;
+void timer_handler(void) {
+    timer_ticks++;
+    outb(0x20, 0x20);
+}
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
-    outb(PIT_COMMAND_PORT, 0x36);
-    outb(PIT_DATA_PORT, divisor & 0xFF);
-    outb(PIT_DATA_PORT, (divisor >> 8) & 0xFF);
-
-    idt_set_gate(32, (unsigned int)timer_handler, 0x08, 0x8E);
-    screen_writeln("Timer initialized", 0x0A);
+    outb(0x43, 0x36);
+    outb(0x40, divisor & 0xFF);
+    outb(0x40, (divisor >> 8) & 0xFF);
+    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -24,9 +23,6 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = timer_ticks;
-    while ((timer_ticks - start) * 10 < ms);
-}
-
-void timer_handler(void) {
-    timer_ticks++;
+    unsigned int wait = ms / 10;
+    while ((timer_ticks - start) < wait);
 }

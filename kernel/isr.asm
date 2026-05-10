@@ -53,6 +53,7 @@ global isr46
 global isr47
 
 extern isr_handler
+extern irq_handler
 
 ; ISR 0-31
 isr0:
@@ -105,6 +106,7 @@ isr7:
 
 isr8:
     cli
+    push dword 0
     push byte 8
     jmp isr_common_stub
 
@@ -116,26 +118,31 @@ isr9:
 
 isr10:
     cli
+    push dword 0
     push byte 10
     jmp isr_common_stub
 
 isr11:
     cli
+    push dword 0
     push byte 11
     jmp isr_common_stub
 
 isr12:
     cli
+    push dword 0
     push byte 12
     jmp isr_common_stub
 
 isr13:
     cli
+    push dword 0
     push byte 13
     jmp isr_common_stub
 
 isr14:
     cli
+    push dword 0
     push byte 14
     jmp isr_common_stub
 
@@ -153,7 +160,7 @@ isr16:
 
 isr17:
     cli
-    push byte 0
+    push dword 0
     push byte 17
     jmp isr_common_stub
 
@@ -246,97 +253,97 @@ isr32:
     cli
     push byte 0
     push byte 32
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr33:
     cli
     push byte 0
     push byte 33
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr34:
     cli
     push byte 0
     push byte 34
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr35:
     cli
     push byte 0
     push byte 35
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr36:
     cli
     push byte 0
     push byte 36
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr37:
     cli
     push byte 0
     push byte 37
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr38:
     cli
     push byte 0
     push byte 38
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr39:
     cli
     push byte 0
     push byte 39
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr40:
     cli
     push byte 0
     push byte 40
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr41:
     cli
     push byte 0
     push byte 41
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr42:
     cli
     push byte 0
     push byte 42
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr43:
     cli
     push byte 0
     push byte 43
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr44:
     cli
     push byte 0
     push byte 44
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr45:
     cli
     push byte 0
     push byte 45
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr46:
     cli
     push byte 0
     push byte 46
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr47:
     cli
     push byte 0
     push byte 47
-    jmp isr_common_stub
+    jmp irq_common_stub
 
 isr_common_stub:
     pusha
@@ -347,7 +354,31 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
+    push esp
     call isr_handler
+    add esp, 4
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    popa
+    add esp, 8
+    sti
+    iret
+
+irq_common_stub:
+    pusha
+    mov ax, ds
+    push eax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    push esp
+    call irq_handler
+    add esp, 4
     pop eax
     mov ds, ax
     mov es, ax
