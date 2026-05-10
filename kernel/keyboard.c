@@ -15,3 +15,11 @@ void keyboard_handler(void) {
     screen_putchar(scancode, 0x0F);
     outb(0x20, 0x20);
 }
+
+char keyboard_getchar(void) {
+    unsigned char scancode;
+    do {
+        scancode = inb(0x60);
+    } while (scancode & 0x80);
+    return scancode;
+}

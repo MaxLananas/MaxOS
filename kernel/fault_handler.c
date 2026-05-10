@@ -8,5 +8,8 @@ void fault_handler(unsigned int num, unsigned int err) {
     screen_write("Exception: ", 0x0F);
     screen_putchar('0' + num, 0x0F);
     screen_writeln("", 0x0F);
+    screen_write("Error code: ", 0x0F);
+    screen_putchar('0' + err, 0x0F);
+    screen_writeln("", 0x0F);
     for (;;);
 }

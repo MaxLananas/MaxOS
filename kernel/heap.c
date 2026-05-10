@@ -1,16 +1,24 @@
 #include "heap.h"
-#include "mem.h"
+#include "screen.h"
 
-#define HEAP_START 0x200000
-#define HEAP_SIZE 0x100000
+#define HEAP_SIZE 1024 * 1024
 
 unsigned char heap[HEAP_SIZE];
-unsigned int heap_ptr = 0;
+unsigned int heap_pos = 0;
 
 void heap_init(void *start, unsigned int size) {
-    heap_ptr = 0;
+    heap_pos = 0;
 }
 
 void heap_free(void *ptr) {
-    (void)ptr;
+    // Simple free implementation
+}
+
+void *heap_alloc(unsigned int size) {
+    void *ptr = &heap[heap_pos];
+    heap_pos += size;
+    if (heap_pos >= HEAP_SIZE) {
+        return 0;
+    }
+    return ptr;
 }
