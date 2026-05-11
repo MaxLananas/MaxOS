@@ -1,5 +1,5 @@
 #include "idt.h"
-#include "io.h"
+#include "isr.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;
@@ -15,7 +15,7 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
 }
 
 void idt_init(void) {
-    idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
+    idt_ptr.limit = sizeof(idt_entries) - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
     for (unsigned int i = 0; i < 256; i++) {

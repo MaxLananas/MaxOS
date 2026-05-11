@@ -1,4 +1,5 @@
 #include "mem.h"
+#include "screen.h"
 
 #define MEM_BITMAP_SIZE 128 * 1024
 
@@ -10,27 +11,21 @@ void mem_init(unsigned int mem_size_kb) {
     }
 }
 
-void *mem_alloc_page(void) {
-    for (unsigned int i = 0; i < MEM_BITMAP_SIZE; i++) {
-        if (mem_bitmap[i] == 0) {
-            mem_bitmap[i] = 1;
-            return (void*)(i * 4096);
-        }
-    }
-    return 0;
-}
-
 void mem_free_page(void *addr) {
     unsigned int index = (unsigned int)addr / 4096;
-    if (index < MEM_BITMAP_SIZE) {
-        mem_bitmap[index] = 0;
+    if (index < MEM_BITMAP_SIZE * 8) {
+        mem_bitmap[index / 8] &= ~(1 << (index % 8));
     }
 }
 
 unsigned int mem_used_pages(void) {
     unsigned int count = 0;
     for (unsigned int i = 0; i < MEM_BITMAP_SIZE; i++) {
-        if (mem_bitmap[i]) count++;
+        unsigned char byte = mem_bitmap[i];
+        while (byte) {
+            count += byte & 1;
+            byte >>= 1;
+        }
     }
     return count;
 }

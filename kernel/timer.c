@@ -1,12 +1,12 @@
 #include "timer.h"
 #include "idt.h"
 #include "io.h"
+#include "screen.h"
 
-unsigned int ticks = 0;
+static unsigned int timer_ticks = 0;
 
 void timer_handler(void) {
-    ticks++;
-    outb(0x20, 0x20);
+    timer_ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -18,12 +18,12 @@ void timer_init(unsigned int hz) {
 }
 
 unsigned int timer_get_ticks(void) {
-    return ticks;
+    return timer_ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
+    unsigned int start = timer_ticks;
     unsigned int end = start + (ms * 1000) / 1000;
-    while (ticks < end)
+    while (timer_ticks < end)
         asm volatile("hlt");
 }

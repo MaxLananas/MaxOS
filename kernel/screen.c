@@ -22,36 +22,42 @@ void screen_clear(void) {
     vga_col = 0;
 }
 
-void screen_putchar(char c, unsigned char col) {
+void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
-        vga_col = 0;
         vga_row++;
-    } else {
-        vga_buffer[vga_row * VGA_WIDTH + vga_col] = (col << 8) | c;
-        vga_col++;
+        vga_col = 0;
+        if (vga_row >= VGA_HEIGHT) {
+            screen_scroll();
+        }
+        return;
     }
+
+    unsigned short val = (color << 8) | (unsigned char)c;
+    vga_buffer[vga_row * VGA_WIDTH + vga_col] = val;
+    vga_col++;
+
     if (vga_col >= VGA_WIDTH) {
-        vga_col = 0;
         vga_row++;
-    }
-    if (vga_row >= VGA_HEIGHT) {
-        screen_scroll();
+        vga_col = 0;
+        if (vga_row >= VGA_HEIGHT) {
+            screen_scroll();
+        }
     }
 }
 
-void screen_write(const char *str, unsigned char col) {
+void screen_write(const char *str, unsigned char color) {
     while (*str) {
-        screen_putchar(*str++, col);
+        screen_putchar(*str++, color);
     }
 }
 
-void screen_writeln(const char *str, unsigned char col) {
-    screen_write(str, col);
-    screen_putchar('\n', col);
+void screen_writeln(const char *str, unsigned char color) {
+    screen_write(str, color);
+    screen_putchar('\n', color);
 }
 
-void screen_set_color(unsigned char col) {
-    color = col;
+void screen_set_color(unsigned char new_color) {
+    color = new_color;
 }
 
 int screen_get_row(void) {
@@ -59,13 +65,15 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (unsigned int i = 1; i < VGA_HEIGHT; i++) {
+    for (unsigned int i = 0; i < VGA_HEIGHT - 1; i++) {
         for (unsigned int j = 0; j < VGA_WIDTH; j++) {
-            vga_buffer[(i - 1) * VGA_WIDTH + j] = vga_buffer[i * VGA_WIDTH + j];
+            vga_buffer[i * VGA_WIDTH + j] = vga_buffer[(i + 1) * VGA_WIDTH + j];
         }
     }
+
     for (unsigned int j = 0; j < VGA_WIDTH; j++) {
         vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (color << 8) | ' ';
     }
-    vga_row--;
+
+    vga_row = VGA_HEIGHT - 1;
 }
