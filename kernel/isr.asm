@@ -55,7 +55,6 @@ global isr47
 extern isr_handler
 extern irq_handler
 
-; ISR 0-31
 isr0:
     cli
     push byte 0
@@ -107,7 +106,7 @@ isr7:
 isr8:
     cli
     push dword 0
-    push byte 8
+    push dword 8
     jmp isr_common_stub
 
 isr9:
@@ -119,31 +118,31 @@ isr9:
 isr10:
     cli
     push dword 0
-    push byte 10
+    push dword 10
     jmp isr_common_stub
 
 isr11:
     cli
     push dword 0
-    push byte 11
+    push dword 11
     jmp isr_common_stub
 
 isr12:
     cli
     push dword 0
-    push byte 12
+    push dword 12
     jmp isr_common_stub
 
 isr13:
     cli
     push dword 0
-    push byte 13
+    push dword 13
     jmp isr_common_stub
 
 isr14:
     cli
     push dword 0
-    push byte 14
+    push dword 14
     jmp isr_common_stub
 
 isr15:
@@ -161,7 +160,7 @@ isr16:
 isr17:
     cli
     push dword 0
-    push byte 17
+    push dword 17
     jmp isr_common_stub
 
 isr18:

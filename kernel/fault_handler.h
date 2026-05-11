@@ -2,5 +2,6 @@
 #define FAULT_HANDLER_H
 
 void fault_handler(unsigned int num, unsigned int err);
+void fault_handler_init(void);
 
 #endif

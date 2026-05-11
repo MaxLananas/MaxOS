@@ -7,6 +7,7 @@ BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
+VPATH = kernel:drivers
 
 .PHONY: all clean
 
@@ -34,14 +35,10 @@ SRCS_C = \
 	idt.c \
 	timer.c \
 	fault_handler.c \
-	screen.c \
 	keyboard.c \
-	terminal.c \
-	mouse.c \
-	paging.c \
-	mem.c \
-	heap.c \
-	kmain.c
+	main.c \
+	screen.c \
+	terminal.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

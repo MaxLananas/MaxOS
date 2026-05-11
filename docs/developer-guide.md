@@ -2,11 +2,9 @@
 
 > Généré par MaxOS AI v18.0
 
-# Documentation Technique MaxOS
+# MaxOS - Documentation Technique
 
-## Guide du Développeur
-
-MaxOS est un système d'exploitation bare-metal en cours de développement, conçu pour fonctionner sur l'architecture x86. Actuellement au stade de prototype (score estimé à 35/100), il est capable de démarrer sur une machine x86 et d'afficher du texte en
+Bienvenue dans la documentation technique de MaxOS, un système d'exploitation minimaliste et éducatif en cours de développement. MaxOS est conçu pour explorer les concepts fondamentaux de la programmation de systèmes d'exploitation, de la gestion du matériel à l'interaction avec l'utilisateur. Actuellement à un stade précoce (score estimé à 35/100), il
 
 ---
 *MaxOS AI v18.0*

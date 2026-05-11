@@ -52,8 +52,8 @@
     "last_fail": 1778163744
   },
   "Migration vers APIC et d\u00e9sactivation du PIC": {
-    "consecutive_fails": 1,
-    "last_fail": 1778164011
+    "consecutive_fails": 2,
+    "last_fail": 1778492866
   },
   "Syst\u00e8me de fichiers persistant avec gestion des disques": {
     "consecutive_fails": 1,
@@ -86,5 +86,41 @@
   "Support multi-c\u0153urs (SMP)": {
     "consecutive_fails": 1,
     "last_fail": 1778165877
+  },
+  "Support SMP pour le multi-c\u0153ur": {
+    "consecutive_fails": 1,
+    "last_fail": 1778493062
+  },
+  "Support HPET pour le timer haute pr\u00e9cision": {
+    "consecutive_fails": 1,
+    "last_fail": 1778493259
+  },
+  "Gestion ACPI pour la d\u00e9tection mat\u00e9rielle": {
+    "consecutive_fails": 1,
+    "last_fail": 1778493444
+  },
+  "Gestion avanc\u00e9e des exceptions (MCE, FPU, SSE)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778493650
+  },
+  "Optimisation de la m\u00e9moire (buddy allocator, slab allocator)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778493865
+  },
+  "Support des interruptions USB": {
+    "consecutive_fails": 1,
+    "last_fail": 1778494047
+  },
+  "Support des interruptions r\u00e9seau (e1000, RTL8139)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778494261
+  },
+  "Gestion avanc\u00e9e du clavier (scancodes \u00e9tendus, LED)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778494452
+  },
+  "Optimisation du terminal (scrolling, couleurs, polices)": {
+    "consecutive_fails": 1,
+    "last_fail": 1778494647
   }
 }

@@ -1,19 +1,11 @@
 #include "fault_handler.h"
 #include "screen.h"
-#include "idt.h"
+#include "isr.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_writeln("Exception occurred", 0x0C);
-    screen_putchar('E', 0x0C);
-    screen_putchar('x', 0x0C);
-    screen_putchar('c', 0x0C);
-    screen_putchar('e', 0x0C);
-    screen_putchar('p', 0x0C);
-    screen_putchar('t', 0x0C);
-    screen_putchar('i', 0x0C);
-    screen_putchar('o', 0x0C);
-    screen_putchar('n', 0x0C);
-    screen_putchar(' ', 0x0C);
-    screen_putchar('0' + num, 0x0C);
-    while (1);
+    screen_writeln("Fault handler called", 0x0C);
+}
+
+void fault_handler_init(void) {
+    idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
 }

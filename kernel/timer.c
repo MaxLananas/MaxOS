@@ -1,11 +1,10 @@
 #include "timer.h"
-#include "idt.h"
+#include "isr.h"
 #include "io.h"
-#include "screen.h"
 
 static unsigned int timer_ticks = 0;
 
-void timer_handler(void) {
+void timer_callback(struct regs *r) {
     timer_ticks++;
 }
 
@@ -14,7 +13,9 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
+
     idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
+    irq_install_handler(0, timer_callback);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -22,8 +23,7 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_ticks;
-    unsigned int end = start + (ms * 1000) / 1000;
+    unsigned int end = timer_ticks + (ms * 1000) / 1000;
     while (timer_ticks < end)
         asm volatile("hlt");
 }
