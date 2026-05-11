@@ -20,6 +20,5 @@ void idt_init(void) {
         idt_set_gate(i, 0, 0, 0);
     }
 
-    extern void idt_load(struct IDTPtr *idtp);
     idt_load(&idt_ptr);
 }

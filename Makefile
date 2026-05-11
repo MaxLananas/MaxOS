@@ -7,7 +7,7 @@ BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
-VPATH = kernel:drivers
+VPATH = kernel
 
 .PHONY: all clean
 
