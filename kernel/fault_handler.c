@@ -1,29 +1,18 @@
 #include "fault_handler.h"
-#include "screen.h"
 #include "idt.h"
+#include "io.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_clear();
-    screen_writeln("EXCEPTION OCCURRED", 0x0C);
-    screen_writeln("Exception number: ", 0x0C);
-    screen_putchar((char)('0' + num / 10), 0x0C);
-    screen_putchar((char)('0' + num % 10), 0x0C);
-    screen_putchar('\n', 0x0C);
-    screen_writeln("Error code: ", 0x0C);
-    screen_putchar((char)('0' + err / 100), 0x0C);
-    screen_putchar((char)('0' + (err / 10) % 10), 0x0C);
-    screen_putchar((char)('0' + err % 10), 0x0C);
-    screen_putchar('\n', 0x0C);
-    while (1) {
-        asm volatile("hlt");
-    }
+    screen_writeln("Exception occurred", 0x04);
+    screen_writeln("System halted", 0x04);
+    for(;;);
 }
 
 void fault_handler_init(void) {
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
     idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
-    idt_set_gate(3, (unsigned int)isr3, 0x08, 0x08, 0x8E);
+    idt_set_gate(3, (unsigned int)isr3, 0x08, 0x8E);
     idt_set_gate(4, (unsigned int)isr4, 0x08, 0x8E);
     idt_set_gate(5, (unsigned int)isr5, 0x08, 0x8E);
     idt_set_gate(6, (unsigned int)isr6, 0x08, 0x8E);
@@ -44,12 +33,12 @@ void fault_handler_init(void) {
     idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
     idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
     idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
-    idt_set_g24, (unsigned int)isr24, 0x08, 0x8E);
+    idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
     idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
     idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
     idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
-    idt_set_gate(31, (unsigned int)isr31, 0x08, 0x08E);
+    idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
 }
