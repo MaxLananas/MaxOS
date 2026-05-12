@@ -2,9 +2,6 @@
 #define KEYBOARD_H
 
 void keyboard_init(void);
-char keyboard_getchar(void);
 void keyboard_handler(void);
-
-extern const unsigned char keyboard_map[128];
 
 #endif
