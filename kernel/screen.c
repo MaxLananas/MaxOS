@@ -1,42 +1,43 @@
 #include "screen.h"
 #include "io.h"
 
-#define VIDEO_MEMORY 0xB8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
-#define WHITE_ON_BLACK 0x0F
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+#define VGA_ADDRESS 0xB8000
 
-unsigned char color = WHITE_ON_BLACK;
-unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
-unsigned int row = 0;
-unsigned int col = 0;
+static unsigned int cursor_row = 0;
+static unsigned int cursor_col = 0;
+static unsigned char color = 0x0F;
 
 void screen_init(void) {
-    screen_clear();
+    for (unsigned int i = 0; i < VGA_HEIGHT; i++) {
+        for (unsigned int j = 0; j < VGA_WIDTH; j++) {
+            unsigned short *vga = (unsigned short*)VGA_ADDRESS;
+            vga[i * VGA_WIDTH + j] = (color << 8) | ' ';
+        }
+    }
 }
 
 void screen_clear(void) {
-    unsigned int i;
-    for (i = 0; i < MAX_ROWS * MAX_COLS; i++) {
-        video_memory[i] = (color << 8) | ' ';
-    }
-    row = 0;
-    col = 0;
+    screen_init();
+    cursor_row = 0;
+    cursor_col = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
+    unsigned short *vga = (unsigned short*)VGA_ADDRESS;
     if (c == '\n') {
-        row++;
-        col = 0;
+        cursor_col = 0;
+        cursor_row++;
     } else {
-        video_memory[row * MAX_COLS + col] = (color << 8) | c;
-        col++;
-        if (col >= MAX_COLS) {
-            row++;
-            col = 0;
+        vga[cursor_row * VGA_WIDTH + cursor_col] = (color << 8) | c;
+        cursor_col++;
+        if (cursor_col >= VGA_WIDTH) {
+            cursor_col = 0;
+            cursor_row++;
         }
     }
-    if (row >= MAX_ROWS) {
+    if (cursor_row >= VGA_HEIGHT) {
         screen_scroll();
     }
 }
@@ -57,16 +58,18 @@ void screen_set_color(unsigned char new_color) {
 }
 
 int screen_get_row(void) {
-    return row;
+    return cursor_row;
 }
 
 void screen_scroll(void) {
-    unsigned int i;
-    for (i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
-        video_memory[i] = video_memory[i + MAX_COLS];
+    unsigned short *vga = (unsigned short*)VGA_ADDRESS;
+    for (unsigned int i = 1; i < VGA_HEIGHT; i++) {
+        for (unsigned int j = 0; j < VGA_WIDTH; j++) {
+            vga[(i - 1) * VGA_WIDTH + j] = vga[i * VGA_WIDTH + j];
+        }
     }
-    for (i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS * MAX_COLS; i++) {
-        video_memory[i] = (color << 8) | ' ';
+    for (unsigned int j = 0; j < VGA_WIDTH; j++) {
+        vga[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (color << 8) | ' ';
     }
-    row = MAX_ROWS - 1;
+    cursor_row--;
 }

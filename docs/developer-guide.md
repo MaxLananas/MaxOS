@@ -4,9 +4,9 @@
 
 # Documentation Technique MaxOS
 
-## Introduction
+## Guide du Développeur
 
-MaxOS est un système d'exploitation bare-metal en cours de développement, conçu pour fonctionner directement sur le matériel x86. Actuellement au stade de prototype "bare metal" (score 35/100), il démontre des capacités fondamentales telles que le démarrage via GRUB Multiboot et l'affichage de texte en
+Bienvenue dans la documentation technique de MaxOS, un système d'exploitation bare-metal en cours de développement. MaxOS est actuellement à un stade de prototype (score 35/100), capable de démarrer sur une architecture x86 et d'afficher du texte en mode VGA 80x2
 
 ---
 *MaxOS AI v18.0*
