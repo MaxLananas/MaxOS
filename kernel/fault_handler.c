@@ -1,20 +1,18 @@
 #include "fault_handler.h"
 #include "screen.h"
 #include "idt.h"
-#include "io.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_set_color(0x0C);
-    screen_write("FAULT:", 0x0C);
+    screen_writeln("Exception: ", 0x0C);
     screen_putchar('0' + num / 10, 0x0C);
     screen_putchar('0' + num % 10, 0x0C);
-    screen_write(" ERR:", 0x0C);
+    screen_writeln(" Error code: ", 0x0C);
     screen_putchar('0' + err / 10, 0x0C);
     screen_putchar('0' + err % 10, 0x0C);
-    while(1);
+    while (1);
 }
 
-void fault_handler_init() {
+void fault_handler_init(void) {
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
     idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
@@ -32,7 +30,7 @@ void fault_handler_init() {
     idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
     idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
     idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
-    idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
+    idt_set_gate(17, (unsigned int)isr17, 0x08, 0x08, 0x8E);
     idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
     idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
     idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
