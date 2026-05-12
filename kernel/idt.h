@@ -17,7 +17,7 @@ struct IDTPtr {
 extern struct IDTEntry idt_entries[256];
 extern struct IDTPtr idt_ptr;
 
-void idt_init(void);
+void idt_init();
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags);
 void idt_load(struct IDTPtr *idtp);
 

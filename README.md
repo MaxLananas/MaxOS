@@ -9,7 +9,7 @@
 | 🎯 Score | **35/100** |
 | 📈 Niveau | Prototype bare metal |
 | 📁 Fichiers | 125 |
-| 📝 Lignes | 2,932 |
+| 📝 Lignes | 3,017 |
 | 💾 os.img | ❌ Non bootable |
 | 🔐 Boot sector | Signature invalide: 0x0000 (attendu 0xAA55) |
 

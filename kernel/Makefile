@@ -32,6 +32,7 @@ $(BUILD)/ap_start.o: $(SRC_DIR)/ap_start.asm | $(BUILD)
 
 SRCS_C = \
 	idt.c \
+	irq.c \
 	timer.c \
 	fault_handler.c \
 	keyboard.c \
