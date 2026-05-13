@@ -2,61 +2,43 @@ AS     = nasm
 CC     = gcc
 LD     = ld
 CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
-LFLAGS = -m elf_i386 -T linker.ld --oformat binary
-BFLAGS = -f bin
+LFLAGS = -m elf_i386 -T ../linker.ld --oformat binary
 EFLAGS = -f elf
-BUILD  = build
-SRC_DIR = .
+
+VPATH = ../drivers
 
 .PHONY: all clean
 
-all: os.img
+all: ../os.img
 
-$(BUILD):
-	mkdir -p $(BUILD)
+../os.img: ../build/boot.bin ../build/kernel.bin
+	dd if=/dev/zero of=$@ bs=512 count=2880
+	dd if=../build/boot.bin of=$@ conv=notrunc
+	dd if=../build/kernel.bin of=$@ seek=1 conv=notrunc
 
-$(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
-	$(AS) $(BFLAGS) $< -o $@
-
-$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
+../build/boot.bin: boot.asm | ../build
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
+../build/kernel_entry.o: kernel_entry.asm | ../build
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
+../build/isr.o: isr.asm | ../build
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/ap_start.o: $(SRC_DIR)/ap_start.asm | $(BUILD)
+../build/idt_load.o: idt_load.asm | ../build
 	$(AS) $(EFLAGS) $< -o $@
 
-SRCS_C = \
-	idt.c \
-	irq.c \
-	timer.c \
-	fault_handler.c \
-	keyboard.c \
-	main.c \
-	screen.c \
-	terminal.c
+../build/ap_start.o: ap_start.asm | ../build
+	$(AS) $(EFLAGS) $< -o $@
 
-OBJS = \
-	$(BUILD)/kernel_entry.o \
-	$(BUILD)/isr.o \
-	$(BUILD)/idt_load.o \
-	$(BUILD)/ap_start.o \
-	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
-
-$(BUILD)/%.o: %.c | $(BUILD)
+../build/%.o: %.c | ../build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/kernel.bin: $(OBJS) | $(BUILD)
+../build/kernel.bin: ../build/kernel_entry.o ../build/isr.o ../build/idt_load.o ../build/ap_start.o $(patsubst %.c,../build/%.o,$(wildcard *.c) drivers/*.c)
 	$(LD) $(LFLAGS) $^ -o $@
 
-os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
-	dd if=/dev/zero of=$@ bs=512 count=2880
-	dd if=$(BUILD)/boot.bin of=$@ conv=notrunc
-	dd if=$(BUILD)/kernel.bin of=$@ seek=1 conv=notrunc
+../build:
+	mkdir -p ../build
 
 clean:
-	rm -rf $(BUILD) os.img
+	rm -rf ../build ../os.img
