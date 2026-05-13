@@ -1,13 +1,10 @@
 #include "fault_handler.h"
-#include "idt.h"
 #include "screen.h"
+#include "idt.h"
 
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_set_color(0x0C);
-    screen_writeln("CPU Exception!", 0x0C);
-    screen_write("Exception: ", 0x0C);
-    screen_putchar('0' + num, 0x0C);
-    screen_writeln("", 0x0C);
+    screen_writeln("Exception occurred!", 0x0C);
+    while(1);
 }
 
 void fault_handler_init(void) {
@@ -33,7 +30,7 @@ void fault_handler_init(void) {
     idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
     idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
     idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
-    idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
+    idt_set_gane(22, (unsigned int)isr22, 0x08, 0x8E);
     idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
     idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);

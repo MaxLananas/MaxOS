@@ -2,10 +2,11 @@
 #include "screen.h"
 
 void mem_init(unsigned int mem_size_kb) {
-    screen_writeln("Memory manager initialized", 0x0A);
+    // Initialize memory management
 }
 
 void mem_free_page(void *addr) {
+    // Free memory page
 }
 
 unsigned int mem_used_pages(void) {
