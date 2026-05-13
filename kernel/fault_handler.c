@@ -1,9 +1,13 @@
+#include "fault_handler.h"
+#include "idt.h"
+#include "screen.h"
+
 void fault_handler(unsigned int num, unsigned int err) {
-    screen_writeln("Exception: ", 0x04);
-    screen_putchar('0' + num / 10, 0x04);
-    screen_putchar('0' + num % 10, 0x04);
-    screen_writeln("", 0x04);
-    for (;;);
+    screen_set_color(0x0C);
+    screen_writeln("CPU Exception!", 0x0C);
+    screen_write("Exception: ", 0x0C);
+    screen_putchar('0' + num, 0x0C);
+    screen_writeln("", 0x0C);
 }
 
 void fault_handler_init(void) {
