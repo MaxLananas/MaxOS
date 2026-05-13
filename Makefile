@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
 
+VPATH = kernel drivers
+
 .PHONY: all clean
 
 all: os.img
