@@ -1,8 +1,7 @@
 BITS 32
-
 global idt_load
-extern idt_ptr
 
 idt_load:
-    lidt [idt_ptr]
+    mov eax, [esp + 4]
+    lidt [eax]
     ret

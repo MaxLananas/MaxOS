@@ -42,14 +42,7 @@ SRCS_C = \
 	keyboard.c \
 	main.c \
 	screen.c \
-	terminal.c \
-	mem.c \
-	paging.c \
-	schedule.c \
-	process.c \
-	smp.c \
-	cpu.c \
-	smp_lock.c
+	terminal.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -57,7 +50,7 @@ OBJS = \
 	$(BUILD)/idt_load.o \
 	$(BUILD)/ap_start.o \
 	$(BUILD)/irq.o \
-	$(patsubst %.c,$(SRCS_C),$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C)))
+	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

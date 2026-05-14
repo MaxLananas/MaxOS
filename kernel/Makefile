@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
+VPATH = .
+
 .PHONY: all clean
 
 all: os.img
@@ -40,17 +42,7 @@ SRCS_C = \
 	keyboard.c \
 	main.c \
 	screen.c \
-	terminal.c \
-	mem.c \
-	paging.c \
-	schedule.c \
-	process.c \
-	smp.c \
-	cpu.c \
-	smp_lock.c \
-	timer_api.c \
-	hpet.c \
-	hpet_handler.c
+	terminal.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

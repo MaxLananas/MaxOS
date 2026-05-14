@@ -43,81 +43,81 @@ irq_common_stub:
     iret
 
 irq0:
-    push byte 0
-    push byte 32
+    push dword 0
+    push dword 32
     jmp irq_common_stub
 
 irq1:
-    push byte 0
-    push byte 33
+    push dword 0
+    push dword 33
     jmp irq_common_stub
 
 irq2:
-    push byte 0
-    push byte 34
+    push dword 0
+    push dword 34
     jmp irq_common_stub
 
 irq3:
-    push byte 0
-    push byte 35
+    push dword 0
+    push dword 35
     jmp irq_common_stub
 
 irq4:
-    push byte 0
-    push byte 36
+    push dword 0
+    push dword 36
     jmp irq_common_stub
 
 irq5:
-    push byte 0
-    push byte 37
+    push dword 0
+    push dword 37
     jmp irq_common_stub
 
 irq6:
-    push byte 0
-    push byte 38
+    push dword 0
+    push dword 38
     jmp irq_common_stub
 
 irq7:
-    push byte 0
-    push byte 39
+    push dword 0
+    push dword 39
     jmp irq_common_stub
 
 irq8:
-    push byte 0
-    push byte 40
+    push dword 0
+    push dword 40
     jmp irq_common_stub
 
 irq9:
-    push byte 0
-    push byte 41
+    push dword 0
+    push dword 41
     jmp irq_common_stub
 
 irq10:
-    push byte 0
-    push byte 42
+    push dword 0
+    push dword 42
     jmp irq_common_stub
 
 irq11:
-    push byte 0
-    push byte 43
+    push dword 0
+    push dword 43
     jmp irq_common_stub
 
 irq12:
-    push byte 0
-    push byte 44
+    push dword 0
+    push dword 44
     jmp irq_common_stub
 
 irq13:
-    push byte 0
-    push byte 45
+    push dword 0
+    push dword 45
     jmp irq_common_stub
 
 irq14:
-    push byte 0
-    push byte 46
-    jmp irq_common_stub
+    push dword 0
+    push dword 46
+    jq irq_common_stub
 
 irq15:
-    push byte 0
-    push byte 47
+    push dword 0
+    push dword 47
     jmp irq_common_stub
