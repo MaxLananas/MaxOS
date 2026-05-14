@@ -2,26 +2,32 @@
 #include "screen.h"
 
 #define PAGE_SIZE 4096
-#define MEM_START 0x100000
 
-unsigned int mem_size_kb = 0;
+unsigned int *page_directory = (unsigned int*)0x9C000;
+unsigned int *page_table = (unsigned int*)0x9D000;
 unsigned int used_pages = 0;
-unsigned int *page_bitmap = (unsigned int *)0x10000;
 
-void mem_init(unsigned int size_kb) {
-    mem_size_kb = size_kb;
-    unsigned int total_pages = size_kb * 1024 / PAGE_SIZE;
-    for (unsigned int i = 0; i < (total_pages + 31) / 32; i++) {
-        page_bitmap[i] = 0;
+void mem_init(unsigned int mem_size_kb) {
+    for (int i = 0; i < 1024; i++) {
+        page_table[i] = (i * PAGE_SIZE) | 3;
     }
+
+    page_directory[0] = (unsigned int)page_table | 3;
+    for (int i = 1; i < 1024; i++) {
+        page_directory[i] = 0 | 2;
+    }
+
+    __asm__ volatile("movl %0, %%cr3" :: "r"(page_directory));
+    unsigned int cr0;
+    __asm__ volatile("movl %%cr0, %0" : "=r"(cr0));
+    cr0 |= 0x80000000;
+    __asm__ volatile("movl %0, %%cr0" :: "r"(cr0));
 }
 
 void mem_free_page(void *addr) {
     unsigned int page = (unsigned int)addr / PAGE_SIZE;
-    if (page < (mem_size_kb * 1024 / PAGE_SIZE)) {
-        page_bitmap[page / 32] &= ~(1 << (page % 32));
-        used_pages--;
-    }
+    page_table[page] = 0;
+    used_pages--;
 }
 
 unsigned int mem_used_pages(void) {
@@ -29,16 +35,21 @@ unsigned int mem_used_pages(void) {
 }
 
 void paging_init(void) {
-    for (unsigned int i = 0; i < 1024; i++) {
-        paging_map(i * 0x1000, i * 0x1000, 3);
-    }
+    screen_writeln("Paging initialized", 0x0A);
 }
 
 void paging_map(unsigned int virt, unsigned int phys, unsigned int flags) {
     unsigned int pd_index = virt >> 22;
     unsigned int pt_index = (virt >> 12) & 0x3FF;
-    unsigned int *page_directory = (unsigned int *)0xFFFFF000;
-    unsigned int *page_table = (unsigned int *)0xFFC00000;
-    page_directory[pd_index] = ((unsigned int)page_table) | 1;
-    page_table[pt_index] = phys | flags;
+
+    if (!(page_directory[pd_index] & 1)) {
+        unsigned int *new_pt = (unsigned int*)0x9E000;
+        for (int i = 0; i < 1024; i++) {
+            new_pt[i] = 0;
+        }
+        page_directory[pd_index] = (unsigned int)new_pt | 3;
+    }
+
+    unsigned int *pt = (unsigned int*)(page_directory[pd_index] & 0xFFFFF000);
+    pt[pt_index] = phys | flags;
 }

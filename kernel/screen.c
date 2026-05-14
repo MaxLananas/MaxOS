@@ -7,34 +7,31 @@
 
 unsigned char color = 0x0F;
 unsigned short *vga_buffer = (unsigned short*)VGA_MEMORY;
-unsigned int vga_index = 0;
 unsigned int row = 0;
-unsigned int column = 0;
+unsigned int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    for (unsigned int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        vga_buffer[i] = (unsigned short)0x20 | (color << 8);
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
+        vga_buffer[i] = (unsigned char)' ' | (color << 8);
     }
-    vga_index = 0;
     row = 0;
-    column = 0;
+    col = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
         row++;
-        column = 0;
+        col = 0;
     } else {
-        vga_buffer[vga_index] = (unsigned short)c | (color << 8);
-        vga_index++;
-        column++;
-        if (column >= VGA_WIDTH) {
+        vga_buffer[row * VGA_WIDTH + col] = (unsigned char)c | (color << 8);
+        col++;
+        if (col >= VGA_WIDTH) {
             row++;
-            column = 0;
+            col = 0;
         }
     }
     if (row >= VGA_HEIGHT) {
@@ -62,14 +59,11 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (unsigned int i = 0; i < VGA_HEIGHT - 1; i++) {
-        for (unsigned int j = 0; j < VGA_WIDTH; j++) {
-            vga_buffer[i * VGA_WIDTH + j] = vga_buffer[(i + 1) * VGA_WIDTH + j];
-        }
+    for (int i = 0; i < VGA_WIDTH * (VGA_HEIGHT - 1); i++) {
+        vga_buffer[i] = vga_buffer[i + VGA_WIDTH];
     }
-    for (unsigned int j = 0; j < VGA_WIDTH; j++) {
-        vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (unsigned short)0x20 | (color << 8);
+    for (int i = VGA_WIDTH * (VGA_HEIGHT - 1); i < VGA_WIDTH * VGA_HEIGHT; i++) {
+        vga_buffer[i] = (unsigned char)' ' | (color << 8);
     }
     row = VGA_HEIGHT - 1;
-    column = 0;
 }

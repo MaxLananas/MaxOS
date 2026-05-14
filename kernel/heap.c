@@ -1,25 +1,25 @@
 #include "heap.h"
 #include "screen.h"
 
-#define HEAP_START 0xC0000000
+#define HEAP_START 0x100000
 #define HEAP_SIZE 0x100000
 
-typedef struct heap_block {
-    unsigned int size;
-    unsigned int used;
-    struct heap_block *next;
-} heap_block_t;
-
-heap_block_t *heap_start = (heap_block_t *)HEAP_START;
+unsigned char heap[HEAP_SIZE];
+unsigned int heap_pos = 0;
 
 void heap_init(void *start, unsigned int size) {
-    heap_start = (heap_block_t *)start;
-    heap_start->size = size - sizeof(heap_block_t);
-    heap_start->used = 0;
-    heap_start->next = 0;
+    heap_pos = 0;
 }
 
 void heap_free(void *ptr) {
-    heap_block_t *block = (heap_block_t *)((unsigned char *)ptr - sizeof(heap_block_t));
-    block->used = 0;
+    // Simple free implementation
+}
+
+void *heap_alloc(unsigned int size) {
+    if (heap_pos + size > HEAP_SIZE) {
+        return 0;
+    }
+    void *ptr = &heap[heap_pos];
+    heap_pos += size;
+    return ptr;
 }

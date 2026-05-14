@@ -22,8 +22,6 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
-    unsigned int wait = ms * 1000 / 1000; // Approximate conversion
-    while ((ticks - start) < wait) {
-        asm volatile("nop");
-    }
+    unsigned int wait = ms * 1000 / 18;
+    while (ticks - start < wait);
 }
