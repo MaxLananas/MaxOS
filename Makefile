@@ -32,6 +32,9 @@ $(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
 $(BUILD)/ap_start.o: $(SRC_DIR)/ap_start.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
+$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
 SRCS_C = \
 	idt.c \
 	timer.c \
@@ -40,17 +43,21 @@ SRCS_C = \
 	main.c \
 	screen.c \
 	terminal.c \
-	mouse.c \
 	mem.c \
 	paging.c \
-	heap.c
+	schedule.c \
+	process.c \
+	smp.c \
+	cpu.c \
+	smp_lock.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/idt_load.o \
 	$(BUILD)/ap_start.o \
-	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
+	$(BUILD)/irq.o \
+	$(patsubst %.c,$(SRCS_C),$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C)))
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

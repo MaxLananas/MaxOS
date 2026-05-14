@@ -1,27 +1,22 @@
 #include "timer.h"
-#include "idt.h"
+#include "isr.h"
 #include "io.h"
 
-unsigned int ticks = 0;
-
-void timer_handler(void) {
-    ticks++;
-}
+unsigned int timer_ticks = 0;
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
+    idt_set_gate(32, (unsigned int)irq_handler, 0x08, 0x8E);
 }
 
 unsigned int timer_get_ticks(void) {
-    return ticks;
+    return timer_ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
-    unsigned int wait = ms * 1000 / 18;
-    while (ticks - start < wait);
+    unsigned int start = timer_ticks;
+    while ((timer_ticks - start) * 1000 / 1193 < ms);
 }

@@ -1,6 +1,6 @@
 BITS 32
-global idt_load
 
+global idt_load
 extern idt_ptr
 
 idt_load:
