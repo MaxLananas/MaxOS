@@ -24,7 +24,7 @@ extern void isr19(void);
 extern void isr20(void);
 extern void isr21(void);
 extern void isr22(void);
-extern void isr23(void);
+  extern void isr23(void);
 extern void isr24(void);
 extern void isr25(void);
 extern void isr26(void);
@@ -49,8 +49,5 @@ extern void isr44(void);
 extern void isr45(void);
 extern void isr46(void);
 extern void isr47(void);
-
-extern void isr_handler(unsigned int num, unsigned int err);
-extern void irq_handler(unsigned int num);
 
 #endif

@@ -1,19 +1,20 @@
 #include "fault_handler.h"
-#include "idt.h"
 #include "screen.h"
+#include "idt.h"
 
-void fault_handler(unsigned int num, unsigned int err)
-{
-    screen_set_color(0x0C);
-    screen_writeln("EXCEPTION: ", 0x0C);
+void fault_handler(unsigned int num, unsigned int err) {
+    screen_writeln("Exception: ", 0x0C);
     screen_putchar('0' + num / 10, 0x0C);
     screen_putchar('0' + num % 10, 0x0C);
-    screen_writeln("", 0x0C);
-    for(;;);
+    screen_writeln(" Error code: ", 0x0C);
+    screen_putchar('0' + err / 10, 0x0C);
+    screen_putchar('0' + err % 10, 0x0C);
+    while (1) {
+        asm volatile("hlt");
+    }
 }
 
-void fault_handler_init(void)
-{
+void fault_handler_init(void) {
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
     idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
@@ -33,7 +34,7 @@ void fault_handler_init(void)
     idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
-    idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
+    idt_set_gake(19, (unsigned int)isr19, 0x08, 0x8E);
     idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
     idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
     idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
@@ -42,8 +43,8 @@ void fault_handler_init(void)
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
     idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
     idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
-    idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
+    idt_set_gate(28, (unsigned int)isr28, 0x08, 0x08, 0x8E);
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
-    idt_set_gane(31, (unsigned int)isr31, 0x08, 0x8E);
+    idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
 }
