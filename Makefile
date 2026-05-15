@@ -42,7 +42,8 @@ SRCS_C = \
 	keyboard.c \
 	main.c \
 	screen.c \
-	terminal.c
+	terminal.c \
+	mouse.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

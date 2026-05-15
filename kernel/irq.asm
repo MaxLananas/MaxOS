@@ -44,6 +44,7 @@ irq_common_stub:
     add esp, 8
     iret
 
+; IRQs 0-15
 irq0:
     push dword 0
     push dword 32
