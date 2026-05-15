@@ -1,5 +1,6 @@
 BITS 32
 
+; IRQs 0-15
 global irq0
 global irq1
 global irq2
@@ -19,6 +20,7 @@ global irq15
 
 extern irq_handler
 
+; Common IRQ stub
 irq_common_stub:
     pusha
     push ds

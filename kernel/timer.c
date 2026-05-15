@@ -1,7 +1,11 @@
 #include "timer.h"
 #include "io.h"
+#include "screen.h"
 
-unsigned int ticks = 0;
+#define PIT_CHANNEL0 0x40
+#define PIT_CMD 0x43
+
+static unsigned int ticks = 0;
 
 void timer_handler(void) {
     ticks++;
@@ -9,9 +13,9 @@ void timer_handler(void) {
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
-    outb(0x43, 0x36);
-    outb(0x40, divisor & 0xFF);
-    outb(0x40, (divisor >> 8) & 0xFF);
+    outb(PIT_CMD, 0x36);
+    outb(PIT_CHANNEL0, divisor & 0xFF);
+    outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -20,5 +24,6 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
-    while ((ticks - start) * (1000 / hz) < ms);
+    unsigned int end = start + ms * 1000 / 1000;
+    while (ticks < end);
 }
