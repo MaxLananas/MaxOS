@@ -4,22 +4,11 @@
 
 void terminal_init(void) {
     screen_init();
+    keyboard_init();
 }
 
 void terminal_run(void) {
-    char cmd[256];
-    int pos = 0;
-    while(1) {
-        char c = keyboard_getchar();
-        if (c == '\n') {
-            cmd[pos] = '\0';
-            terminal_process(cmd);
-            pos = 0;
-        } else {
-            cmd[pos++] = c;
-            screen_putchar(c, 0x0F);
-        }
-    }
+    screen_writeln("Terminal ready", 0x0A);
 }
 
 void terminal_process(const char *cmd) {

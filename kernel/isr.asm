@@ -205,7 +205,7 @@ isr25:
 isr26:
     push dword 0
     push dword 26
-    jmp isr_common_stub
+    jmp isr_common_star
 
 isr27:
     push dword 0

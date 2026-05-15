@@ -1,11 +1,10 @@
 #include "timer.h"
 #include "io.h"
-#include "irq.h"
 
-unsigned int tick = 0;
+unsigned int ticks = 0;
 
-void timer_callback(unsigned int irq) {
-    tick++;
+void timer_handler(void) {
+    ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -13,16 +12,13 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-
-    irq_install_handler(0, timer_callback);
 }
 
 unsigned int timer_get_ticks(void) {
-    return tick;
+    return ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = tick;
-    unsigned int end = start + ms * 1000 / 1000;
-    while(tick < end);
+    unsigned int start = ticks;
+    while ((ticks - start) * (1000 / hz) < ms);
 }

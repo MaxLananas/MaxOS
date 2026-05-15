@@ -41,8 +41,7 @@ SRCS_C = \
 	fault_handler.c \
 	keyboard.c \
 	main.c \
-	screen.c \
-	terminal.c
+	screen.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
