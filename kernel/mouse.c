@@ -1,27 +1,36 @@
-#include "drivers/screen.h"
-#include "kernel/io.h"
-#include "kernel/idt.h"
-#include "kernel/mouse.h"
+#include "screen.h"
+#include "io.h"
 
 #define MOUSE_DATA_PORT 0x60
-#define MOUSE_COMMAND_PORT 0x64
+#define MOUSE_STATUS_PORT 0x64
 
 void mouse_init(void) {
-    outb(MOUSE_COMMAND_PORT, 0xA8);
-    outb(MOUSE_COMMAND_PORT, 0x20);
-    unsigned char status = inb(MOUSE_DATA_PORT) | 2;
-    outb(MOUSE_COMMAND_PORT, 0x60);
-    outb(MOUSE_DATA_PORT, status);
-    outb(MOUSE_COMMAND_PORT, 0xD4);
-    outb(MOUSE_DATA_PORT, 0xF4);
-    inb(MOUSE_DATA_PORT);
+    unsigned char status;
 
-    idt_set_gate(44, (unsigned int)mouse_handler, 0x08, 0x8E);
-    outb(0x21, inb(0x21) & 0xEF);
+    // Enable mouse
+    outb(0x64, 0xA8);
+    outb(0x64, 0x20);
+    status = inb(0x60) | 2;
+    outb(0x64, 0x60);
+    outb(0x60, status);
+
+    // Set default settings
+    outb(0x64, 0xD4);
+    outb(0x60, 0xF4);
+
+    screen_writeln("Mouse initialized", 0x0F);
 }
 
 void mouse_handler(void) {
     unsigned char mouse_data = inb(MOUSE_DATA_PORT);
-    screen_putchar('M', 0x0A);
-    outb(0x20, 0x20);
+    static unsigned int mouse_x = 40;
+    static unsigned int mouse_y = 12;
+
+    // Simple mouse movement handling
+    if (mouse_data & 0x01) {
+        mouse_x += (mouse_data & 0x10) ? -1 : 1;
+        mouse_y += (mouse_data & 0x20) ? -1 : 1;
+    }
+
+    screen_putchar('M', 0x0F);
 }
