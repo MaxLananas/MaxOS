@@ -2,20 +2,20 @@
 #include "io.h"
 
 #define VIDEO_MEMORY 0xB8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
+#define WIDTH 80
+#define HEIGHT 25
 
 unsigned char color = 0x0F;
-unsigned short *video_memory = (unsigned short*)VIDEO_MEMORY;
-int row = 0;
-int col = 0;
+unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
+unsigned int row = 0;
+unsigned int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    for(int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
+    for (unsigned int i = 0; i < WIDTH * HEIGHT; i++) {
         video_memory[i] = (color << 8) | ' ';
     }
     row = 0;
@@ -23,30 +23,24 @@ void screen_clear(void) {
 }
 
 void screen_putchar(char c, unsigned char color) {
-    if(c == '\n') {
+    if (c == '\n') {
         row++;
         col = 0;
-        if(row >= MAX_ROWS) {
-            screen_scroll();
+    } else {
+        video_memory[row * WIDTH + col] = (color << 8) | c;
+        col++;
+        if (col >= WIDTH) {
+            row++;
+            col = 0;
         }
-        return;
     }
-
-    unsigned short *pos = video_memory + (row * MAX_COLS + col);
-    *pos = (color << 8) | (unsigned char)c;
-    col++;
-
-    if(col >= MAX_COLS) {
-        col = 0;
-        row++;
-        if(row >= MAX_ROWS) {
-            screen_scroll();
-        }
+    if (row >= HEIGHT) {
+        screen_scroll();
     }
 }
 
 void screen_write(const char *str, unsigned char color) {
-    while(*str) {
+    while (*str) {
         screen_putchar(*str++, color);
     }
 }
@@ -56,8 +50,8 @@ void screen_writeln(const char *str, unsigned char color) {
     screen_putchar('\n', color);
 }
 
-void screen_set_color(unsigned char color) {
-    screen_color = color;
+void screen_set_color(unsigned char c) {
+    color = c;
 }
 
 int screen_get_row(void) {
@@ -65,15 +59,11 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for(int i = 0; i < MAX_ROWS - 1; i++) {
-        for(int j = 0; j < MAX_COLS; j++) {
-            video_memory[i * MAX_COLS + j] = video_memory[(i + 1) * MAX_COLS + j];
-        }
+    for (unsigned int i = 0; i < (HEIGHT - 1) * WIDTH; i++) {
+        video_memory[i] = video_memory[i + WIDTH];
     }
-
-    for(int j = 0; j < MAX_COLS; j++) {
-        video_memory[(MAX_ROWS - 1) * MAX_COLS + j] = (color << 8) | ' ';
+    for (unsigned int i = (HEIGHT - 1) * WIDTH; i < HEIGHT * WIDTH; i++) {
+        video_memory[i] = (color << 8) | ' ';
     }
-
-    if(row > 0) row--;
+    row = HEIGHT - 1;
 }

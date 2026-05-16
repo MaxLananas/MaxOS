@@ -1,7 +1,7 @@
 AS     = nasm
 CC     = gcc
 LD     = ld
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -Ikernel
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
@@ -43,7 +43,10 @@ SRCS_C = \
 	main.c \
 	screen.c \
 	terminal.c \
-	mouse.c
+	mouse.c \
+	irq.c \
+	mem.c \
+	heap.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

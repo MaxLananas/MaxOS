@@ -1,10 +1,9 @@
 ENTRY(_start)
 
 SECTIONS {
-    . = 1M;
+    . = 0x100000;
 
     .text : {
-        *(.multiboot)
         *(.text)
     }
 

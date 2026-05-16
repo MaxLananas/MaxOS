@@ -230,7 +230,7 @@ isr30:
 isr31:
     push dword 0
     push dword 31
-    jmp isr_common_stub
+    jmp isr_common_stus
 
 ; IRQs 32-47
 isr32:

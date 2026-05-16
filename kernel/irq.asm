@@ -42,83 +42,26 @@ irq_common_stub:
     add esp, 8
     iret
 
-irq0:
+%macro IRQ 1
+irq%1:
     push dword 0
-    push dword 32
+    push dword %1
     jmp irq_common_stub
+%endmacro
 
-irq1:
-    push dword 0
-    push dword 33
-    jmp irq_common_stub
-
-irq2:
-    push dword 0
-    push dword 34
-    jmp irq_common_stub
-
-irq3:
-    push dword 0
-    push dword 35
-    jmp irq_common_stub
-
-irq4:
-    push dword 0
-    push dword 36
-    jmp irq_common_stub
-
-irq5:
-    push dword 0
-    push dword 37
-    jmp irq_common_stub
-
-irq6:
-    push dword 0
-    push dword 38
-    jmp irq_common_stub
-
-irq7:
-    push dword 0
-    push dword 39
-    jmp irq_common_stub
-
-irq8:
-    push dword 0
-    push dword 40
-    jmp irq_common_stub
-
-irq9:
-    push dword 0
-    push dword 41
-    jmp irq_common_stub
-
-irq10:
-    push dword 0
-    push dword 42
-    jmp irq_common_stub
-
-irq11:
-    push dword 0
-    push dword 43
-    jmp irq_common_stub
-
-irq12:
-    push dword 0
-    push dword 44
-    push dword 0
-    jmp irq_common_stub
-
-irq13:
-    push dword 0
-    push dword 45
-    jmp irq_common_stub
-
-irq14:
-    push dword 0
-    push dword 46
-    jmp irq_common_stub
-
-irq15:
-    push dword 0
-    push dword 47
-    jmp irq_common_stub
+IRQ 0
+IRQ 1
+IRQ 2
+IRQ 3
+IRQ 4
+IRQ 5
+IRQ 6
+IRQ 7
+IRQ 8
+IRQ 9
+IRQ 10
+IRQ 11
+IRQ 12
+IRQ 13
+IRQ 14
+IRQ 15
