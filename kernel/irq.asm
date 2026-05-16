@@ -32,7 +32,10 @@ irq_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
+    mov eax, [esp + 56]
+    push eax
     call irq_handler
+    pop eax
     pop eax
     pop gs
     pop fs
@@ -42,26 +45,66 @@ irq_common_stub:
     add esp, 8
     iret
 
-%macro IRQ 1
-irq%1:
+irq0:
     push dword 0
-    push dword %1
     jmp irq_common_stub
-%endmacro
 
-IRQ 0
-IRQ 1
-IRQ 2
-IRQ 3
-IRQ 4
-IRQ 5
-IRQ 6
-IRQ 7
-IRQ 8
-IRQ 9
-IRQ 10
-IRQ 11
-IRQ 12
-IRQ 13
-IRQ 14
-IRQ 15
+irq1:
+    push dword 1
+    jmp irq_common_stub
+
+irq2:
+    push dword 2
+    jmp irq_common_stub
+
+irq3:
+    push dword 3
+    jmp irq_common_stub
+
+irq4:
+    push dword 4
+    jmp irq_common_stub
+
+irq5:
+    push dword 5
+    jmp irq_common_stub
+
+irq6:
+    push dword 6
+    jmp irq_common_stub
+
+irq7:
+    push dword 7
+    jmp irq_common_stub
+
+irq8:
+    push dword 8
+    jmp irq_common_stub
+
+irq9:
+    push dword 9
+    jmp irq_common_stub
+
+irq10:
+    push dword 10
+    jmp irq_common_stub
+
+irq11:
+    push dword 11
+    jmp irq_common_stub
+
+irq12:
+    push dword 12
+    jmp irq_common_stub
+
+irq13:
+    push dword 13
+    jmp irq_common_stub
+
+irq14:
+    push dword 14
+    jmp irq_common_stub
+
+irq15:
+    push dword 15
+    jmp irq_common_stub
