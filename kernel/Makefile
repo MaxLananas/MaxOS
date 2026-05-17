@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = . drivers
-
 .PHONY: all clean
 
 all: os.img
@@ -43,7 +41,8 @@ SRCS_C = \
 	main.c \
 	screen.c \
 	terminal.c \
-	mouse.c
+	isr.c \
+	irq.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
