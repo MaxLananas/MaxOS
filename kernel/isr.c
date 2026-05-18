@@ -1,24 +1,18 @@
 #include "isr.h"
 #include "idt.h"
 #include "io.h"
-#include "screen.h"
-
-isr_t interrupt_handlers[256];
-
-void register_interrupt_handler(unsigned char n, isr_t handler) {
-    interrupt_handlers[n] = handler;
-}
+#include "fault_handler.h"
 
 void isr_handler(unsigned int num, unsigned int err) {
-    if (interrupt_handlers[num] != 0) {
-        isr_t handler = interrupt_handlers[num];
-        handler(num, err);
-    } else {
-        screen_writeln("Unhandled exception", 0x0F);
-        screen_writeln("Exception number: ", 0x0F);
-        screen_putchar('0' + num / 10, 0x0F);
-        screen_putchar('0' + num % 10, 0x0F);
-        for(;;);
-    }
+    screen_writeln("Received interrupt:", 0x0F);
+    screen_putchar('0' + num / 10, 0x0F);
+    screen_putchar('0' + num % 10, 0x0F);
+    screen_putchar('\n', 0x0F);
 }
-```=== END FILE ===
+
+void irq_handler(unsigned int num) {
+    if (num >= 40) {
+        outb(0xA0, 0x20);
+    }
+    outb(0x20, 0x20);
+}
