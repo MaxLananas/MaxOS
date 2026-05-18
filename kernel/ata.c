@@ -1,6 +1,6 @@
 #include "ata.h"
-#include "../kernel/io.h"
-#include "../screen.h"
+#include "io.h"
+#include "screen.h"
 
 #define ATA_DATA 0x1F0
 #define ATA_ERROR 0x1F1
@@ -21,63 +21,91 @@
 #define ATA_SR_IDX 0x02
 #define ATA_SR_ERR 0x01
 
-static void ata_wait_busy(void) {
+#define ATA_CMD_READ_PIO 0x20
+#define ATA_CMD_WRITE_PIO 0x30
+#define ATA_CMD_IDENTIFY 0xEC
+
+static void ata_wait_bsy(void) {
     while(inb(ATA_STATUS) & ATA_SR_BSY);
 }
 
-static void ata_wait_drq(void) {
-    while(!(inb(ATA_STATUS) & ATA_SR_DRQ));
+static void ata_wait_drdy(void) {
+    while(!(inb(ATA_STATUS) & ATA_SR_DRDY));
+}
+
+static unsigned char ata_read_status(void) {
+    return inb(ATA_STATUS);
+}
+
+static void ata_select_drive(unsigned char drive) {
+    outb(ATA_DRIVE_SELECT, 0xE0 | (drive << 4));
+    io_wait();
+}
+
+static void ata_send_command(unsigned char command) {
+    outb(ATA_COMMAND, command);
+    io_wait();
+}
+
+static void ata_set_lba(unsigned int lba) {
+    outb(ATA_LBA_LOW, (unsigned char)(lba & 0xFF));
+    outb(ATA_LBA_MID, (unsigned char)((lba >> 8) & 0xFF));
+    outb(ATA_LBA_HIGH, (unsigned char)((lba >> 16) & 0xFF));
+    outb(ATA_DRIVE_SELECT, 0xE0 | ((lba >> 24) & 0x0F));
 }
 
 void ata_init(void) {
-    screen_writeln("ATA: Initializing", 0x02);
+    ata_select_drive(0);
+    ata_wait_drdy();
+    screen_writeln("ATA: Primary IDE controller initialized", 0x02);
 }
 
-unsigned char ata_read(unsigned int lba, unsigned char *buffer, unsigned int sectors) {
-    ata_wait_busy();
+unsigned int ata_read(block_device_t *dev, unsigned int lba, unsigned char *buffer) {
+    unsigned int count = 1;
+    unsigned short *buf = (unsigned short*)buffer;
 
-    outb(ATA_DRIVE_SELECT, 0xE0 | ((lba >> 24) & 0x0F));
-    outb(ATA_SECTOR_COUNT, sectors);
-    outb(ATA_LBA_LOW, lba & 0xFF);
-    outb(ATA_LBA_MID, (lba >> 8) & 0xFF);
-    outb(ATA_LBA_HIGH, (lba >> 16) & 0xFF);
-    outb(ATA_COMMAND, 0x20);
+    ata_select_drive(0);
+    ata_wait_bsy();
+    ata_wait_drdy();
 
-    for(unsigned int i = 0; i < sectors; i++) {
-        ata_wait_busy();
-        ata_wait_drq();
+    outb(ATA_SECTOR_COUNT, count);
+    ata_set_lba(lba);
+
+    ata_send_command(ATA_CMD_READ_PIO);
+
+    for(unsigned int i = 0; i < count; i++) {
+        ata_wait_bsy();
+        ata_wait_drdy();
 
         for(unsigned int j = 0; j < 256; j++) {
-            unsigned short data = inw(ATA_DATA);
-            buffer[j * 2] = data & 0xFF;
-            buffer[j * 2 + 1] = (data >> 8) & 0xFF;
+            buf[j] = inw(ATA_DATA);
         }
-        buffer += 512;
     }
 
-    return 1;
+    return count * BLOCK_SIZE;
 }
 
-unsigned char ata_write(unsigned int lba, unsigned char *buffer, unsigned int sectors) {
-    ata_wait_busy();
+unsigned int ata_write(block_device_t *dev, unsigned int lba, const unsigned char *buffer) {
+    unsigned int count = 1;
+    unsigned short *buf = (unsigned short*)buffer;
 
-    outb(ATA_DRIVE_SELECT, 0xE0 | ((lba >> 24) & 0x0F));
-    outb(ATA_SECTOR_COUNT, sectors);
-    outb(ATA_LBA_LOW, lba & 0xFF);
-    outb(ATA_LBA_MID, (lba >> 8) & 0xFF);
-    outb(ATA_LBA_HIGH, (lba >> 16) & 0xFF);
-    outb(ATA_COMMAND, 0x30);
+    ata_select_drive(0);
+    ata_wait_bsy();
+    ata_wait_drdy();
 
-    for(unsigned int i = 0; i < sectors; i++) {
-        ata_wait_busy();
-        ata_wait_drq();
+    outb(ATA_SECTOR_COUNT, count);
+    ata_set_lba(lba);
+
+    ata_send_command(ATA_CMD_WRITE_PIO);
+
+    for(unsigned int i = 0; i < count; i++) {
+        ata_wait_bsy();
+        ata_wait_drdy();
 
         for(unsigned int j = 0; j < 256; j++) {
-            unsigned short data = (buffer[j * 2 + 1] << 8) | buffer[j * 2];
-            outw(ATA_DATA, data);
+            outw(ATA_DATA, buf[j]);
         }
-        buffer += 512;
     }
 
-    return 1;
+    return count * BLOCK_SIZE;
 }

@@ -154,5 +154,41 @@
   "Syst\u00e8me de fichiers r\u00e9seau": {
     "consecutive_fails": 1,
     "last_fail": 1778770386
+  },
+  "Gestion avanc\u00e9e de la m\u00e9moire (heap, paging)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779099216
+  },
+  "Impl\u00e9mentation compl\u00e8te du VFS et gestion des p\u00e9riph\u00e9riques": {
+    "consecutive_fails": 1,
+    "last_fail": 1779099427
+  },
+  "Support SMP et synchronisation": {
+    "consecutive_fails": 1,
+    "last_fail": 1779099612
+  },
+  "Syst\u00e8me de processus et scheduling pr\u00e9emptif": {
+    "consecutive_fails": 1,
+    "last_fail": 1779099826
+  },
+  "GUI moderne avec gestion des fen\u00eatres": {
+    "consecutive_fails": 1,
+    "last_fail": 1779100007
+  },
+  "Gestion des p\u00e9riph\u00e9riques modernes (USB, PCI)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779100214
+  },
+  "Optimisation des performances": {
+    "consecutive_fails": 1,
+    "last_fail": 1779100384
+  },
+  "Syst\u00e8me de logging et debugging": {
+    "consecutive_fails": 1,
+    "last_fail": 1779100569
+  },
+  "Documentation technique et conformit\u00e9": {
+    "consecutive_fails": 1,
+    "last_fail": 1779100800
   }
 }

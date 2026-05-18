@@ -41,8 +41,10 @@ SRCS_C = \
 	main.c \
 	screen.c \
 	terminal.c \
-	isr.c \
-	irq.c
+	schedule.c \
+	process.c \
+	task.c \
+	elf_loader.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

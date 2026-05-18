@@ -1,7 +1,7 @@
 BITS 32
 
-global _ap_stack_top
+global ap_start
 
-section .bss
-_ap_stack_top:
-    resb 8192
+ap_start:
+    cli
+    hlt
