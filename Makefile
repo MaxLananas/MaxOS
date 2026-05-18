@@ -65,3 +65,4 @@ os.img: $(BUILD)/boot.bin $(BUILD)/kernel.bin
 
 clean:
 	rm -rf $(BUILD) os.img
+```=== END FILE ===

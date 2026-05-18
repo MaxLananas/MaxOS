@@ -2,11 +2,11 @@
 
 > Généré par MaxOS AI v18.0
 
-# Documentation Technique MaxOS
+# MaxOS - Documentation Technique
 
 ## Introduction
 
-MaxOS est un système d'exploitation minimaliste, 32-bit, développé principalement en C et en assembleur (NASM). Conçu dans un but éducatif, il vise à fournir une base solide pour comprendre les mécanismes fondamentaux d'un système d'exploitation, de l'initialisation du processeur à la gestion des
+MaxOS est un système d'exploitation minimaliste en cours de développement, conçu comme une plateforme éducative et une base pour l'exploration des concepts fondamentaux des systèmes d'exploitation. Actuellement au stade de prototype "bare metal" (score estimé à 35/100), MaxOS démontre les capacités de démarrage
 
 ---
 *MaxOS AI v18.0*

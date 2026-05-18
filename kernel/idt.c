@@ -20,5 +20,9 @@ void idt_init(void) {
         idt_set_gate(i, 0, 0, 0);
     }
 
+    outb(0x21, 0xFF);
+    outb(0xA1, 0xFF);
+
     idt_load(&idt_ptr);
 }
+```=== END FILE ===

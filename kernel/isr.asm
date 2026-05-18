@@ -52,26 +52,7 @@ global isr45
 global isr46
 global isr47
 
-; IRQs
-global irq0
-global irq1
-global irq2
-global irq3
-global irq4
-global irq5
-global irq6
-global irq7
-global irq8
-global irq9
-global irq10
-global irq11
-global irq12
-global irq13
-global irq14
-global irq15
-
 extern isr_handler
-extern irq_handler
 
 ; Common ISR stub
 isr_common_stub:
@@ -88,30 +69,6 @@ isr_common_stub:
     mov eax, esp
     push eax
     call isr_handler
-    pop eax
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
-    add esp, 8
-    iret
-
-; Common IRQ stub
-irq_common_stub:
-    pusha
-    push ds
-    push es
-    push fs
-    push gs
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov eax, esp
-    push eax
-    call irq_handler
     pop eax
     pop gs
     pop fs
@@ -279,160 +236,53 @@ isr31:
 isr32:
     push dword 0
     push dword 32
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr33:
     push dword 0
     push dword 33
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr34:
     push dword 0
     push dword 34
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr35:
     push dword 0
     push dword 35
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr36:
     push dword 0
     push dword 36
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr37:
     push dword 0
     push dword 37
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr38:
     push dword 0
     push dword 38
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr39:
     push dword 0
     push dword 39
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr40:
     push dword 0
     push dword 40
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr41:
     push dword 0
     push dword 41
-    jmp irq_common_stub
+    jmp isr_common_stub
 
 isr42:
-    push dpoint dword 0
-    push dword 42
-    jmp irq_common_stub
-
-isr43:
-    push dword 0
-    push dword 43
-    jmp irq_common_stub
-
-isr44:
-    push dword 0
-    push dword 44
-    jmp irq_common_stub
-
-isr45:
-    push dword 0
-    push dword 45
-    jmp irq_common_stub
-
-isr46:
-    push dword 0
-    push dword 46
-    jmp irq_common_stub
-
-isr47:
-    push dword 0
-    push dword 47
-    jmp irq_common_stub
-
-; IRQs 0-15
-irq0:
-    push dword 0
-    push dword 32
-    jmp irq_common_stub
-
-irq1:
-    push dword 0
-    push dword 33
-    jmp irq_common_stub
-
-irq2:
-    push dword 0
-    push dword 34
-    jmp irq_common_stub
-
-irq3:
-    push dword 0
-    push dword 35
-    jmp irq_common_stub
-
-irq4:
-    push dword 0
-    push dword 36
-    jmp irq_common_stub
-
-irq5:
-    push dword 0
-    push dword 37
-    jmp irq_common_stub
-
-irq6:
-    push dword 0
-    push dword 38
-    jmp irq_common_stub
-
-irq7:
-    push dword 0
-    push dword 39
-    jmp irq_common_stub
-
-irq8:
-    push dword 0
-    push dword 40
-    jmp irq_common_stub
-
-irq9:
-    push dword 0
-    push dword 41
-    jmp irq_common_stub
-
-irq10:
-    push dword 0
-    push dword 42
-    jmp irq_common_stub
-
-irq11:
-    push dword 0
-    push dword 43
-    jmp irq_common_stub
-
-irq12:
-    push dword 0
-    push dword 44
-    jmp irq_common_stub
-
-irq13:
-    push dword 0
-    push dword 45
-    jmp irq_common_stub
-
-irq14:
-    push dword 0
-    push dword 46
-    jmp irq_common_stub
-
-irq15:
-    push dword 0
-    push dword 47
-    jmp irq_common_stub
+    push d
+```=== END FILE ===
