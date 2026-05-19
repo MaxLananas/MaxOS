@@ -8,6 +8,6 @@ typedef struct {
     unsigned int eip, cs, eflags, useresp, ss;
 } registers_t;
 
-void fault_handler(registers_t regs);
+void fault_handler(unsigned int num, unsigned int err);
 
 #endif

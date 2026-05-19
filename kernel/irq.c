@@ -1,6 +1,5 @@
 #include "irq.h"
 #include "io.h"
-#include "idt.h"
 
 void irq_handler(unsigned int num) {
     if (num >= 40) {

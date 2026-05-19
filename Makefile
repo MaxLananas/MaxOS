@@ -7,7 +7,6 @@ BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
-VPATH = kernel drivers
 
 .PHONY: all clean
 
@@ -25,13 +24,10 @@ $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 $(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
-	$(AS) $(EFLAGS) $< -o $@
-
-$(BUILD)/ap_start.o: $(SRC_DIR)/ap_start.asm | $(BUILD)
-	$(AS) $(EFLAGS) $< -o $@
-
 $(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
+$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
@@ -48,12 +44,11 @@ SRCS_C = \
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
-	$(BUILD)/idt_load.o \
-	$(BUILD)/ap_start.o \
 	$(BUILD)/irq.o \
+	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-$(BUILD)/%.o: %.c | $(BUILD)
+$(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(OBJS) | $(BUILD)

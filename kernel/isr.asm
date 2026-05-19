@@ -68,7 +68,8 @@ isr_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
-    call isr_handler
+    mov eax, isr_handler
+    call eax
     pop eax
     pop gs
     pop fs
