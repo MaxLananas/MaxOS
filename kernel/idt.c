@@ -16,9 +16,13 @@ void idt_init(void) {
     idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
-    for (unsigned int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0x08, 0x8E);
     }
 
     idt_load(&idt_ptr);
+}
+
+void idt_load(struct IDTPtr *idt_ptr) {
+    __asm__ volatile("lidt %0" : : "m"(*idt_ptr));
 }

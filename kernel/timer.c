@@ -1,10 +1,9 @@
 #include "timer.h"
 #include "io.h"
-#include "irq.h"
 
 unsigned int ticks = 0;
 
-void timer_callback(registers_t regs) {
+void timer_handler(void) {
     ticks++;
 }
 
@@ -13,7 +12,6 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-    irq_install_handler(0, timer_callback);
 }
 
 unsigned int timer_get_ticks(void) {

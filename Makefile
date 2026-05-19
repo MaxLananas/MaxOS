@@ -42,7 +42,8 @@ SRCS_C = \
 	screen.c \
 	terminal.c \
 	isr.c \
-	irq.c
+	irq.c \
+	kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

@@ -1,14 +1,13 @@
 #include "terminal.h"
 #include "screen.h"
-#include "keyboard.h"
 
 void terminal_init(void) {
     screen_init();
-    keyboard_init();
+    screen_clear();
 }
 
 void terminal_run(void) {
-    screen_writeln("Terminal ready", 0x0A);
+    screen_writeln("Terminal started", 0x0F);
 }
 
 void terminal_process(const char *cmd) {
