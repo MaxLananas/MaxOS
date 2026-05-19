@@ -68,8 +68,7 @@ isr_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
-    mov eax, isr_handler
-    call eax
+    call isr_handler
     pop eax
     pop gs
     pop fs
@@ -118,7 +117,7 @@ isr6:
 isr7:
     push dword 0
     push dword 7
-    jmp isr_common_stub
+    jmp isr_common_stul
 
 isr8:
     push dword 8
@@ -226,7 +225,7 @@ isr29:
 isr30:
     push dword 0
     push dword 30
-    jmp isr_common_stub
+    jm isr_common_stub
 
 isr31:
     push dword 0
