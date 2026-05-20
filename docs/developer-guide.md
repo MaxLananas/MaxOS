@@ -4,9 +4,11 @@
 
 # Documentation Technique MaxOS
 
-## Introduction
+## Guide du Développeur
 
-MaxOS est un système d'exploitation minimaliste et expérimental, conçu comme une plateforme d'apprentissage et de développement pour comprendre les rouages fondamentaux d'un OS. Actuellement au stade de "prototype bare metal" (score estimé : 35/100), MaxOS se concentre sur l'initialisation du matériel essentiel et l'affichage de base. Ce
+### Introduction
+
+MaxOS est un système d'exploitation prototype bare-metal, conçu pour l'apprentissage et l'expérimentation des concepts fondamentaux de l'ingénierie des systèmes d'exploitation. Actuellement classé à un stade de "Prototype bare metal" (score estimé : 35/100), MaxOS prend en charge le démarrage sur architecture x86 et offre un affichage texte VGA 80x25. Le projet est composé de 57 fichiers source C et de 19 fichiers d'assemblage (ASM), témoignant
 
 ---
 *MaxOS AI v18.0*

@@ -42,7 +42,8 @@ SRCS_C = \
 	mouse.c \
 	mem.c \
 	heap.c \
-	paging.c
+	paging.c \
+	kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

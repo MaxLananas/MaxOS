@@ -1,10 +1,11 @@
 #include "timer.h"
 #include "io.h"
+#include "screen.h"
 #include "irq.h"
 
 unsigned int ticks = 0;
 
-void timer_handler(void) {
+void timer_callback(void) {
     ticks++;
 }
 
@@ -21,6 +22,5 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
-    unsigned int end = start + ms * 1000 / 1000;
-    while (ticks < end);
+    while ((ticks - start) * (1000 / 100) < ms);
 }

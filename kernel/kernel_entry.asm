@@ -1,4 +1,4 @@
-BITS 32
+[bits 32]
 global _start
 global _stack_top
 extern kmain

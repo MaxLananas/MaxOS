@@ -1,4 +1,4 @@
-BITS 32
+[bits 32]
 
 ; ISRs 0-31 (CPU exceptions)
 global isr0
@@ -117,7 +117,7 @@ isr6:
 isr7:
     push dword 0
     push dword 7
-    jmp isr_common_stul
+    jmp isr_common_stub
 
 isr8:
     push dword 8
@@ -225,7 +225,7 @@ isr29:
 isr30:
     push dword 0
     push dword 30
-    jm isr_common_stub
+    jmp isr_common_stub
 
 isr31:
     push dword 0
