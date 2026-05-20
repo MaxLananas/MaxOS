@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
 
-VPATH = $(SRC_DIR):drivers
+VPATH = $(SRC_DIR)
 
 .PHONY: all clean
 

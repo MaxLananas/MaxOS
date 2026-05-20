@@ -1,6 +1,5 @@
 [bits 32]
 
-; IRQs 0-15
 global irq0
 global irq1
 global irq2
