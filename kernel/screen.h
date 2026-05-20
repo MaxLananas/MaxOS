@@ -9,5 +9,6 @@ void screen_writeln(const char *str, unsigned char color);
 void screen_set_color(unsigned char color);
 int screen_get_row(void);
 void screen_scroll(void);
+void screen_write_hex(unsigned int num);
 
 #endif

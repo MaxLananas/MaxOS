@@ -289,7 +289,7 @@ isr42:
     jmp isr_common_stub
 
 isr43:
-    push drule 0
+    push dword 0
     push dword 43
     jmp isr_common_stub
 

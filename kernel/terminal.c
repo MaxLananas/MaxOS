@@ -1,33 +1,38 @@
 #include "terminal.h"
 #include "screen.h"
-#include "keyboard.h"
 
 void terminal_init(void) {
     screen_init();
-    screen_writeln("Terminal initialized", 0x0A);
 }
 
 void terminal_run(void) {
-    screen_writeln("Terminal ready", 0x0A);
-    char cmd[256];
-    unsigned int pos = 0;
+    char buffer[256];
+    int i = 0;
+    char c;
 
     while (1) {
-        char c = keyboard_getchar();
+        c = keyboard_getchar();
         if (c == '\n') {
-            cmd[pos] = '\0';
-            terminal_process(cmd);
-            pos = 0;
-        } else {
-            cmd[pos++] = c;
+            buffer[i] = 0;
+            terminal_process(buffer);
+            screen_writeln("", 0x0F);
+            i = 0;
+        } else if (c == '\b' && i > 0) {
+            i--;
+            screen_putchar(' ', 0x0F);
+            screen_putchar('\b', 0x0F);
+        } else if (i < 255) {
             screen_putchar(c, 0x0F);
+            buffer[i++] = c;
         }
     }
 }
 
 void terminal_process(const char *cmd) {
-    screen_writeln("", 0x0F);
-    screen_writeln("Command: ", 0x0A);
-    screen_writeln(cmd, 0x0F);
-    screen_writeln("", 0x0F);
+    if (cmd[0] == 'h' && cmd[1] == 'e' && cmd[2] == 'l' && cmd[3] == 'p' && cmd[4] == 0) {
+        screen_writeln("Available commands:", 0x0F);
+        screen_writeln("  help - Show this help", 0x0F);
+    } else {
+        screen_writeln("Unknown command. Type 'help' for help.", 0x0F);
+    }
 }

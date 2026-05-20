@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
 
-VPATH = $(SRC_DIR)
+VPATH = $(SRC_DIR):drivers
 
 .PHONY: all clean
 
@@ -39,10 +39,6 @@ SRCS_C = \
 	keyboard.c \
 	screen.c \
 	terminal.c \
-	mouse.c \
-	mem.c \
-	heap.c \
-	paging.c \
 	kmain.c
 
 OBJS = \
