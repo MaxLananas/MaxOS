@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
 
+VPATH = $(SRC_DIR)
+
 .PHONY: all clean
 
 all: os.img
@@ -37,8 +39,6 @@ SRCS_C = \
 	keyboard.c \
 	screen.c \
 	terminal.c \
-	isr.c \
-	irq.c \
 	mouse.c \
 	mem.c \
 	heap.c \
@@ -52,7 +52,7 @@ OBJS = \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-$(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
+$(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(OBJS) | $(BUILD)

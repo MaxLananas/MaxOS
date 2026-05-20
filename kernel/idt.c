@@ -1,7 +1,6 @@
 #include "idt.h"
 #include "io.h"
 #include "isr.h"
-#include "irq.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;
@@ -15,10 +14,10 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
 }
 
 void idt_init(void) {
-    idt_ptr.limit = sizeof(idt_entries) - 1;
+    idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
-    for (int i = 0; i < 256; i++) {
+    for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
 
@@ -48,7 +47,7 @@ void idt_init(void) {
     idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
     idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
-    idt_set_gane(26, (unsigned int)isr26, 0x08, 0x8E);
+    idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
     idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
     idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);

@@ -12,11 +12,18 @@ void keyboard_init(void) {
     outb(0x60, status);
 }
 
-char keyboard_getchar(void) {
-    return inb(0x60);
+void keyboard_handler(void) {
+    unsigned char scancode = inb(0x60);
+    if (scancode & 0x80) {
+        return;
+    }
+    screen_putchar(scancode, 0x0F);
 }
 
-void keyboard_handler(void) {
-    unsigned char scancode = keyboard_getchar();
-    (void)scancode;
+char keyboard_getchar(void) {
+    unsigned char scancode;
+    do {
+        scancode = inb(0x60);
+    } while (scancode & 0x80);
+    return scancode;
 }
