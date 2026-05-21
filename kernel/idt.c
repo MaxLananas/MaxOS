@@ -22,7 +22,3 @@ void idt_init(void) {
 
     idt_load(&idt_ptr);
 }
-
-void idt_load(struct IDTPtr *idt_ptr) {
-    __asm__ volatile("lidt %0" :: "m"(*idt_ptr));
-}

@@ -2,6 +2,6 @@
 #define KEYBOARD_H
 
 void keyboard_init(void);
-void keyboard_callback(struct regs *r);
+char keyboard_getchar(void);
 
 #endif

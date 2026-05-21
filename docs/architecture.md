@@ -56,7 +56,7 @@
 | `ata_init` | — | `void ata_init(void);` |
 | `keyboard_getchar` | — | `;` |
 | `keyboard_init` | — | `void keyboard_init(void);` |
-| `keyboard_handler` | — | `;` |
+| `keyboard_handler` | — | `void keyboard_handler(void) {` |
 | `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_init` | — | `void pci_init(void);` |

@@ -37,13 +37,8 @@ SRCS_C = \
 	keyboard.c \
 	screen.c \
 	terminal.c \
-	isr.c \
-	irq.c \
-	mouse.c \
-	mem.c \
-	heap.c \
-	paging.c \
-	kmain.c
+	kmain.c \
+	isr.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -52,7 +47,7 @@ OBJS = \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-$(BUILD)/%.o: $(SRC_DIR)/%.c | $(BUILD)
+$(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD)/kernel.bin: $(OBJS) | $(BUILD)
