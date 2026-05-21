@@ -232,7 +232,7 @@ isr31:
     push dword 31
     jmp isr_common_stub
 
-; ISRs 32-47 (IRQs)
+; ISRs 32-47
 isr32:
     push dword 0
     push dword 32
@@ -241,74 +241,4 @@ isr32:
 isr33:
     push dword 0
     push dword 33
-    jmp isr_common_stub
-
-isr34:
-    push dword 0
-    push dword 34
-    jmp isr_common_stub
-
-isr35:
-    push dword 0
-    push dword 35
-    jmp isr_common_stub
-
-isr36:
-    push dword 0
-    push dword 36
-    jmp isr_common_stub
-
-isr37:
-    push dword 0
-    push dword 37
-    jmp isr_common_stub
-
-isr38:
-    push dword 0
-    push dword 38
-    jmp isr_common_stub
-
-isr39:
-    push dword 0
-    push dword 39
-    jmp isr_common_stub
-
-isr40:
-    push dword 0
-    push dword 40
-    jmp isr_common_stub
-
-isr41:
-    push dword 0
-    push dword 41
-    jmp isr_common_stub
-
-isr42:
-    push dword 0
-    push dword 42
-    jmp isr_common_stub
-
-isr43:
-    push dword 0
-    push dword 43
-    jmp isr_common_stub
-
-isr44:
-    push dword 0
-    push dword 44
-    jmp isr_common_stub
-
-isr45:
-    push dword 0
-    push dword 45
-    jmp isr_common_stub
-
-isr46:
-    push dword 0
-    push dword 46
-    jmp isr_common_stub
-
-isr47:
-    push dword 0
-    push dword 47
-    jmp isr_common_stub
+    jmp isr_common_st::end

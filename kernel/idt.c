@@ -1,5 +1,7 @@
+[code]
 #include "idt.h"
 #include "io.h"
+#include "isr.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;
@@ -17,9 +19,19 @@ void idt_init(void) {
     idt_ptr.base = (unsigned int)&idt_entries;
 
     for (unsigned int i = 0; i < 256; i++) {
-        idt_set_gate(i, 0, 0, 0);
+        idt_set_gate(i, 0, 0x08, 0x8E);
     }
 
-    outb(0x21, 0xFF);
-    outb(0xA1, 0xFF);
+    outb(0x20, 0x11);
+    outb(0xA0, 0x11);
+    outb(0x21, 0x20);
+    outb(0xA1, 0x28);
+    outb(0x21, 0x04);
+    outb(0xA1, 0x02);
+    outb(0x21, 0x01);
+    outb(0xA1, 0x01);
+    outb(0x21, 0x00);
+    outb(0xA1, 0x00);
+
+    idt_load(&idt_ptr);
 }

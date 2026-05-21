@@ -9,7 +9,7 @@
 | 🎯 Score | **35/100** |
 | 📈 Niveau | Prototype bare metal |
 | 📁 Fichiers | 140 |
-| 📝 Lignes | 3,070 |
+| 📝 Lignes | 3,004 |
 | 💾 os.img | ✅ Bootable |
 | 🔐 Boot sector | Signature 0xAA55 ✅ | 1474560 bytes |
 
