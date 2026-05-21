@@ -2,11 +2,11 @@
 
 > Généré par MaxOS AI v18.0
 
-# MaxOS - Documentation Technique
+# Documentation Technique MaxOS
 
 ## 1. Introduction
 
-MaxOS est un système d'exploitation minimaliste en cours de développement, conçu comme une plateforme éducative et une base pour l'exploration des concepts fondamentaux des systèmes d'exploitation. Actuellement au stade de prototype "bare metal" (score 35/100), MaxOS se concentre sur l'initial
+Bienvenue dans la documentation technique de **MaxOS**, un système d'exploitation expérimental et éducatif développé à partir de zéro (bare-metal). MaxOS est conçu comme une plateforme d'apprentissage pour explorer les concepts fondamentaux de la conception de systèmes d'exploitation, de la gestion du bootloader à l'interaction avec le matériel.
 
 ---
 *MaxOS AI v18.0*

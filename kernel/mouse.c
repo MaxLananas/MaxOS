@@ -1,6 +1,5 @@
 #include "mouse.h"
 #include "io.h"
-#include "idt.h"
 #include "screen.h"
 
 void mouse_init(void) {
@@ -12,8 +11,14 @@ void mouse_init(void) {
     outb(0x64, 0xD4);
     outb(0x60, 0xF4);
     outb(0x64, 0x20);
-    status = inb(0x60) & 0xFD;
-    outb(0x64, 0x60);
-    outb(0x60, status);
-    irq_set_handler(12, mouse_handler);
+    inb(0x60);
+}
+
+void mouse_handler(void) {
+    unsigned char status = inb(0x64);
+    while ((status & 0x01) == 0) {
+        status = inb(0x64);
+    }
+    unsigned char mouse_data = inb(0x60);
+    screen_putchar('M', 0x0F);
 }

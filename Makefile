@@ -40,7 +40,6 @@ SRCS_C = \
 	screen.c \
 	terminal.c \
 	kmain.c \
-	isr.c \
 	irq.c \
 	idt_load.c \
 	mouse.c \

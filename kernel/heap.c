@@ -1,4 +1,5 @@
 #include "heap.h"
+#include "mem.h"
 
 void heap_init(void *start, unsigned int size) {
 }
