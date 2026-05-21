@@ -3,4 +3,6 @@
 
 void irq_handler(unsigned int num);
 
+void irq_init(void);
+
 #endif

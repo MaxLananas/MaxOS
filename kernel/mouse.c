@@ -19,25 +19,41 @@ void mouse_wait(unsigned char type) {
     }
 }
 
+void mouse_write(unsigned char data) {
+    mouse_wait(1);
+    outb(0x64, 0xD4);
+    mouse_wait(1);
+    outb(0x60, data);
+}
+
+unsigned char mouse_read(void) {
+    mouse_wait(0);
+    return inb(0x60);
+}
+
 void mouse_init(void) {
     mouse_wait(1);
     outb(0x64, 0xA8);
     mouse_wait(1);
     outb(0x64, 0x20);
     mouse_wait(0);
-    unsigned char status = inb(0x60);
-    status |= 2;
+    unsigned char status = inb(0x60) | 2;
     mouse_wait(1);
     outb(0x64, 0x60);
     mouse_wait(1);
     outb(0x60, status);
-    outb(0x64, 0xD4);
-    outb(0x60, 0xF4);
-    mouse_wait(0);
-    inb(0x60);
+    mouse_write(0xF6);
+    mouse_read();
+    mouse_write(0xF4);
+    mouse_read();
 }
 
 void mouse_handler(void) {
-    unsigned char data = inb(0x60);
-    screen_putchar('M', 0x0F);
+    unsigned char status = inb(0x64);
+    if (status & 0x20) {
+        unsigned char mouse_data = inb(0x60);
+        screen_putchar('M', 0x0F);
+    }
+    outb(0x20, 0x20);
+    outb(0xA0, 0x20);
 }

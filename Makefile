@@ -40,7 +40,13 @@ SRCS_C = \
 	screen.c \
 	terminal.c \
 	kmain.c \
-	isr.c
+	isr.c \
+	irq.c \
+	idt_load.c \
+	mouse.c \
+	paging.c \
+	mem.c \
+	heap.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

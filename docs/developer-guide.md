@@ -6,7 +6,7 @@
 
 ## Introduction
 
-MaxOS est un système d'exploitation minimaliste et expérimental, conçu comme un prototype "bare metal" pour l'architecture x86. Son objectif principal est de fournir une plateforme d'apprentissage et de développement pour comprendre les mécanismes fondamentaux du démarrage d'un système d'exploitation, de la gestion matérielle de bas niveau
+Bienvenue dans la documentation technique de MaxOS, un système d'exploitation expérimental et didactique développé à partir de zéro (bare metal) pour l'architecture x86. MaxOS est conçu comme une plateforme d'apprentissage pour explorer les concepts fondamentaux des systèmes d'exploitation, de l'amorçage à la
 
 ---
 *MaxOS AI v18.0*
