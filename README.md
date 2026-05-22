@@ -8,8 +8,8 @@
 |---|---|
 | 🎯 Score | **35/100** |
 | 📈 Niveau | desc |
-| 📁 Fichiers | 144 |
-| 📝 Lignes | 3,128 |
+| 📁 Fichiers | 149 |
+| 📝 Lignes | 3,287 |
 | 💾 os.img | ✅ Bootable |
 | 🔐 Boot sector | Signature 0xAA55 ✅ | 1474560 bytes |
 
@@ -26,36 +26,47 @@ qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr 
 ## ✅ Fonctionnalités présentes
 
 - Bootloader fonctionnel (boot.asm)
-- GDT et IDT initialisées
-- ISR et IRQ configurés (isr.asm, irq.asm)
-- Gestion des exceptions (fault_handler.c)
-- PIT Timer initialisé (timer.c)
-- Clavier PS/2 fonctionnel (keyboard.c)
-- Écran VGA basique (screen.c, drivers/screen.h)
-- Terminal texte (terminal.c, drivers/terminal.h)
-- Gestion mémoire physique (pmm.c)
-- Paging activé (paging.c)
-- Heap basique (heap.c)
-- SMP support (smp.asm, smp.c)
-- VFS basique (vfs.c, fs/fat32.c)
-- Applications basiques (about, notepad, sysinfo)
-- GUI basique (ui.c, widget.c)
-- Souris PS/2 (mouse.c)
+- IDT initialisée (idt.c/idt.asm)
+- ISRs manuels (isr.asm)
+- IRQs configurées (irq.asm/irq.c)
+- GDT en place (gdt.asm)
+- Paging basique (paging.c)
+- PMM (Physical Memory Manager)
+- VGA driver (vga.c)
+- Clavier PS/2 (keyboard.c)
+- Timer PIT (timer.c)
+- Terminal basique (terminal.c)
+- FAT32 filesystem (fat32.c)
+- VFS (vfs.c)
+- GUI basique (ui.c)
+- SMP support (smp.asm/smp.c)
+- Exceptions/fault handlers (fault_handler.c)
 - PIC remappé (pic.c)
-- Ports E/S (io.h)
+- IO abstractions (io.h)
+- Makefile fonctionnel
 
 ## 🚧 En développement
 
-- Support du multitâche préemptif (schedule.c incomplet)
-- Gestion des processus (process.c vide)
-- Système de fichiers complet (FAT32 limité)
-- Gestion des interruptions système (syscall.c vide)
-- Gestion avancée de la mémoire (VMM incomplet)
-- Support des disques ATA (ata.c minimaliste)
-- Gestion des erreurs matérielles (MCE non implémenté)
-- Optimisation des performances (pas de cache TLB)
-- Sécurité mémoire (pas de protection des pages)
-- Support des périphériques USB (usb.c minimaliste)
+- Pas de gestion des processus (schedule.c vide)
+- Pas de heap dynamique (heap.c vide)
+- Pas de gestion des syscalls
+- Pas de support ACPI/SMP avancé
+- Pas de gestion des interruptions matérielles avancées (USB, ATA DMA)
+- Pas de protection mémoire (segments/ring protection)
+- Pas de système de fichiers complet (seulement FAT32 basique)
+- Pas de gestion des exceptions matérielles (MCE)
+- Pas de support pour les périphériques modernes (PCIe, AHCI)
+- Pas de système de logging structuré
+- Pas de gestion des timers avancés (HPET)
+- Pas de support pour les applications utilisateur (seulement stubs)
+- Pas de gestion des erreurs matérielles (NMI)
+- Pas de support pour les architectures multi-cœurs avancées
+- Pas de système de fichiers journalisé
+- Pas de gestion des interruptions NMI
+- Pas de support pour les périphériques USB HID
+- Pas de gestion des interruptions SMI
+- Pas de support pour les instructions CPU avancées (SSE, AVX)
+- Pas de système de fichiers réseau
 
 ## 📈 Progression
 

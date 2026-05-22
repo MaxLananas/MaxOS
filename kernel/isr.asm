@@ -66,11 +66,9 @@ isr_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov eax, esp
-    push eax
-    push dword [esp + 44]
+    push esp
     call isr_handler
-    add esp, 8
+    add esp, 4
     pop gs
     pop fs
     pop es
@@ -233,7 +231,7 @@ isr31:
     push dword 31
     jmp isr_common_stub
 
-; ISRs 32-47
+; IRQs 32-47
 isr32:
     push dword 0
     push dword 32

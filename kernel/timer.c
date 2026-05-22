@@ -1,12 +1,11 @@
 #include "timer.h"
+#include "idt.h"
 #include "io.h"
-#include "screen.h"
-#include "terminal.h"
 
-static unsigned int timer_ticks = 0;
+static unsigned int ticks = 0;
 
-void timer_handler(void) {
-    timer_ticks++;
+void timer_callback(void) {
+    ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -14,14 +13,15 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
+    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
 }
 
 unsigned int timer_get_ticks(void) {
-    return timer_ticks;
+    return ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_get_ticks();
-    unsigned int end = start + ms * 100 / 1193;
-    while (timer_get_ticks() < end);
+    unsigned int start = ticks;
+    unsigned int end = start + (ms * 1000) / 1000;
+    while (ticks < end);
 }

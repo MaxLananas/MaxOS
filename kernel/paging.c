@@ -1,30 +1,33 @@
-#include "../kernel/paging.h"
-#include "../kernel/io.h"
+#include "paging.h"
+#include "screen.h"
+#include "mem.h"
+
+#define PAGE_SIZE 4096
+#define PAGE_PRESENT 1
+#define PAGE_WRITE 2
+
+extern void paging_load_directory(unsigned int *dir);
+
+static unsigned int page_directory[1024] __attribute__((aligned(4096)));
+static unsigned int page_table[1024] __attribute__((aligned(4096)));
 
 void paging_init(void) {
-    unsigned int *page_directory = (unsigned int*)0x100000;
-    unsigned int *page_table = (unsigned int*)0x101000;
-
-    for (unsigned int i = 0; i < 1024; i++) {
-        page_table[i] = (i * 0x1000) | 3;
+    unsigned int i;
+    for (i = 0; i < 1024; i++) {
+        page_table[i] = (i * PAGE_SIZE) | PAGE_PRESENT | PAGE_WRITE;
     }
 
-    page_directory[0] = (unsigned int)page_table | 3;
-    for (unsigned int i = 1; i < 1024; i++) {
-        page_directory[i] = 0 | 2;
+    page_directory[0] = (unsigned int)page_table | PAGE_PRESENT | PAGE_WRITE;
+    for (i = 1; i < 1024; i++) {
+        page_directory[i] = 0;
     }
 
-    __asm__ volatile("movl %0, %%cr3" : : "r"(page_directory));
-    unsigned int cr0;
-    __asm__ volatile("movl %%cr0, %0" : "=r"(cr0));
-    cr0 |= 0x80000000;
-    __asm__ volatile("movl %0, %%cr0" : : "r"(cr0));
+    paging_load_directory(page_directory);
+    screen_writeln("Paging initialized", 0x0A);
 }
 
 void paging_map(unsigned int virt, unsigned int phys, unsigned int flags) {
-    unsigned int pd_index = virt >> 22;
-    unsigned int pt_index = (virt >> 12) & 0x3FF;
-    unsigned int *page_table = (unsigned int*)(0xFFC00000 + (pd_index << 12));
-    page_table[pt_index] = phys | flags;
-    __asm__ volatile("invlpg (%0)" : : "a"(virt) : "memory");
+    unsigned int table_idx = virt / (PAGE_SIZE * 1024);
+    unsigned int entry_idx = (virt / PAGE_SIZE) % 1024;
+    page_table[entry_idx] = phys | flags;
 }

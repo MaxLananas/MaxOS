@@ -29,9 +29,6 @@ $(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 $(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/handlers.o: $(SRC_DIR)/handlers.asm | $(BUILD)
-	$(AS) $(EFLAGS) $< -o $@
-
 $(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
@@ -43,13 +40,16 @@ SRCS_C = \
 	screen.c \
 	terminal.c \
 	kmain.c \
-	mouse.c
+	mouse.c \
+	syscall.c \
+	syscall_table.c \
+	heap.c \
+	mem.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
-	$(BUILD)/handlers.o \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
