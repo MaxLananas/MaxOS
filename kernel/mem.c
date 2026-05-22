@@ -1,21 +1,34 @@
 #include "mem.h"
+#include "screen.h"
 #include "paging.h"
 
-#define MEM_START 0x100000
-#define MEM_END 0x200000
+#define MEM_BITMAP_SIZE 128
 
-unsigned int used_pages = 0;
+unsigned char mem_bitmap[MEM_BITMAP_SIZE];
 
 void mem_init(unsigned int mem_size_kb) {
-    for (unsigned int i = 0; i < mem_size_kb / 4; i++) {
-        paging_map(MEM_START + i * 4096, MEM_START + i * 4096, 3);
+    screen_writeln("Initializing memory", 0x0A);
+
+    for (int i = 0; i < MEM_BITMAP_SIZE; i++) {
+        mem_bitmap[i] = 0;
     }
 }
 
 void mem_free_page(void *addr) {
-    used_pages--;
+    unsigned int index = (unsigned int)addr / 4096;
+    if (index < MEM_BITMAP_SIZE * 8) {
+        mem_bitmap[index / 8] &= ~(1 << (index % 8));
+    }
 }
 
 unsigned int mem_used_pages(void) {
-    return used_pages;
+    unsigned int count = 0;
+    for (int i = 0; i < MEM_BITMAP_SIZE; i++) {
+        for (int j = 0; j < 8; j++) {
+            if (mem_bitmap[i] & (1 << j)) {
+                count++;
+            }
+        }
+    }
+    return count;
 }

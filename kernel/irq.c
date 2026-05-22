@@ -1,8 +1,9 @@
 #include "irq.h"
-#include "idt.h"
 #include "io.h"
+#include "screen.h"
 #include "timer.h"
 #include "keyboard.h"
+#include "mouse.h"
 
 void irq_handler(unsigned int num) {
     if (num >= 40) {
@@ -10,21 +11,9 @@ void irq_handler(unsigned int num) {
     }
     outb(0x20, 0x20);
 
-    if (num == 32) {
-        timer_handler();
-    } else if (num == 33) {
-        keyboard_handler();
+    switch (num) {
+        case 32: timer_callback(); break;
+        case 33: keyboard_handler(); break;
+        case 44: mouse_handler(); break;
     }
-}
-
-void irq_init(void) {
-    outb(0x21, 0xFC);
-    outb(0xA1, 0xFF);
-    idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
-    idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
-    idt_set_gate(34, (unsigned int)irq2, 0x08, 0x8E);
-    idt_set_gate(35, (unsigned int)irq3, 0x08, 0x8E);
-    idt_set_gate(36, (unsigned int)irq4, 0x08, 0x8E);
-    idt_set_gate(37, (unsigned int)irq5, 0x08, 0x8E);
-    idt_set_gate(38, (unsigned int)irq6, 0x08, 0x8E);
 }
