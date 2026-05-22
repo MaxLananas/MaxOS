@@ -68,8 +68,9 @@ isr_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
+    push dword [esp + 44]
     call isr_handler
-    pop eax
+    add esp, 8
     pop gs
     pop fs
     pop es

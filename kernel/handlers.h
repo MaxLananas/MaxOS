@@ -1,7 +1,8 @@
 #ifndef HANDLERS_H
 #define HANDLERS_H
 
-void irq0_handler(void);
-void irq1_handler(void);
+void timer_handler(void);
+void keyboard_handler(void);
+void mouse_handler(void);
 
 #endif
