@@ -14,11 +14,11 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt_entries[num].flags = flags;
 }
 
-void idt_init(void) {
+void idt_init() {
     idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
-    for (int i = 0; i < 256; i++) {
+    for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
 

@@ -2,20 +2,7 @@ ENTRY(_start)
 
 SECTIONS {
     . = 0x100000;
-
-    .text : {
-        *(.text)
-    }
-
-    .rodata : {
-        *(.rodata)
-    }
-
-    .data : {
-        *(.data)
-    }
-
-    .bss : {
-        *(.bss)
-    }
+    .text : { *(.text) }
+    .data : { *(.data) }
+    .bss : { *(.bss) }
 }
