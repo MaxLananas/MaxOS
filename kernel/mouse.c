@@ -1,35 +1,59 @@
 #include "mouse.h"
-#include "io.h"
-#include "idt.h"
-#include "irq.h"
-#include "screen.h"
+#include "../kernel/io.h"
+#include "../drivers/screen.h"
 
-static int mouse_x = 40;
-static int mouse_y = 12;
+void mouse_wait(unsigned char a_type) {
+    unsigned int timeout = 100000;
+    if (a_type == 0) {
+        while (timeout--) {
+            if ((inb(0x64) & 1) == 1) {
+                return;
+            }
+        }
+    } else {
+        while (timeout--) {
+            if ((inb(0x64) & 2) == 0) {
+                return;
+            }
+        }
+    }
+}
+
+void mouse_write(unsigned char a_write) {
+    mouse_wait(1);
+    outb(0x64, 0xD4);
+    mouse_wait(1);
+    outb(0x60, a_write);
+}
+
+unsigned char mouse_read(void) {
+    mouse_wait(0);
+    return inb(0x60);
+}
 
 void mouse_init(void) {
-    outb(0x64, 0xA8); // Enable mouse
-    outb(0x64, 0x20); // Read command byte
-    unsigned char status = inb(0x60);
-    status |= 0x02; // Enable IRQ12
-    outb(0x64, 0x60); // Write command byte
+    mouse_wait(1);
+    outb(0x64, 0xA8);
+    mouse_wait(1);
+    outb(0x64, 0x20);
+    mouse_wait(0);
+    unsigned char status = inb(0x60) | 2;
+    mouse_wait(1);
+    outb(0x64, 0x60);
+    mouse_wait(1);
     outb(0x60, status);
 
-    outb(0x64, 0xD4); // Send to mouse
-    outb(0x60, 0xF4); // Enable data reporting
+    mouse_write(0xF6);
+    mouse_read();
 
-    irq_install_handler(12, mouse_handler);
+    mouse_write(0xF4);
+    mouse_read();
 }
 
 void mouse_handler(void) {
     unsigned char status = inb(0x64);
-    if (!(status & 0x20)) return;
-
-    unsigned char mouse_data = inb(0x60);
-
-    // TODO: Implement mouse movement handling
-    screen_putchar('M', 0x0F);
-
-    outb(0x20, 0x20);
-    outb(0xA0, 0x20);
+    if (status & 0x20) {
+        unsigned char mouse_data = inb(0x60);
+        // TODO: Process mouse data
+    }
 }

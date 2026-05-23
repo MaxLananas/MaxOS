@@ -1,42 +1,37 @@
-#include "screen.h"
-#include "io.h"
+#include "drivers/screen.h"
+#include "../kernel/io.h"
 
 #define VIDEO_MEMORY 0xB8000
 #define MAX_ROWS 25
 #define MAX_COLS 80
 #define SCREEN_SIZE (MAX_ROWS * MAX_COLS)
 
-static unsigned char color = 0x0F;
-static unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
-static int row = 0;
-static int col = 0;
+static unsigned char screen_color = 0x0F;
+static unsigned int screen_pos = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
+    unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
     for (int i = 0; i < SCREEN_SIZE; i++) {
-        video_memory[i] = (color << 8) | ' ';
+        video_memory[i] = (screen_color << 8) | ' ';
     }
-    row = 0;
-    col = 0;
+    screen_pos = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
+    unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
+
     if (c == '\n') {
-        row++;
-        col = 0;
+        screen_pos += MAX_COLS - (screen_pos % MAX_COLS);
     } else {
-        video_memory[row * MAX_COLS + col] = (color << 8) | c;
-        col++;
-        if (col >= MAX_COLS) {
-            row++;
-            col = 0;
-        }
+        video_memory[screen_pos] = (color << 8) | c;
+        screen_pos++;
     }
 
-    if (row >= MAX_ROWS) {
+    if (screen_pos >= SCREEN_SIZE) {
         screen_scroll();
     }
 }
@@ -52,22 +47,24 @@ void screen_writeln(const char *str, unsigned char color) {
     screen_putchar('\n', color);
 }
 
-void screen_set_color(unsigned char new_color) {
-    color = new_color;
+void screen_set_color(unsigned char color) {
+    screen_color = color;
 }
 
 int screen_get_row(void) {
-    return row;
+    return screen_pos / MAX_COLS;
 }
 
 void screen_scroll(void) {
+    unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
+
     for (int i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
         video_memory[i] = video_memory[i + MAX_COLS];
     }
 
     for (int i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS * MAX_COLS; i++) {
-        video_memory[i] = (color << 8) | ' ';
+        video_memory[i] = (screen_color << 8) | ' ';
     }
 
-    row = MAX_ROWS - 1;
+    screen_pos -= MAX_COLS;
 }

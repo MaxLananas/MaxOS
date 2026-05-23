@@ -21,7 +21,6 @@ extern void isr16(void);
 extern void isr17(void);
 extern void isr18(void);
 extern void isr19(void);
-extern void idt_set_gane(void); // Typo fix
 extern void isr20(void);
 extern void isr21(void);
 extern void isr22(void);
