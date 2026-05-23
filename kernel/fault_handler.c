@@ -2,11 +2,13 @@
 #include "screen.h"
 #include "io.h"
 
-void fault_handler(unsigned int num, unsigned int err) {
-    screen_set_color(0x0C);
-    screen_writeln("EXCEPTION: ", 0x0C);
-    screen_putchar('0' + num / 10, 0x0C);
-    screen_putchar('0' + num % 10, 0x0C);
-    screen_writeln("", 0x0C);
-    for (;;);
+void fault_handler(unsigned int num, unsigned int err)
+{
+    screen_writeln("Fault:", 0x04);
+    screen_write("Num: ", 0x04);
+    screen_putchar('0' + (num / 10), 0x04);
+    screen_putchar('0' + (num % 10), 0x04);
+    screen_putchar('\n', 0x04);
+
+    outb(0x20, 0x20);
 }
