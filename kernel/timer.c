@@ -1,32 +1,25 @@
 #include "timer.h"
 #include "io.h"
-#include "screen.h"
-#include "terminal.h"
+#include "irq.h"
 
-#define PIT_CHANNEL0 0x40
-#define PIT_CMD 0x43
+unsigned int timer_ticks = 0;
 
-static unsigned int ticks = 0;
+void timer_handler(void) {
+    timer_ticks++;
+}
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
-    outb(PIT_CMD, 0x36);
-    outb(PIT_CHANNEL0, divisor & 0xFF);
-    outb(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
+    outb(0x43, 0x36);
+    outb(0x40, divisor & 0xFF);
+    outb(0x40, (divisor >> 8) & 0xFF);
 }
 
 unsigned int timer_get_ticks(void) {
-    return ticks;
+    return timer_ticks;
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = ticks;
-    unsigned int end = start + ms * 1000 / 1000;
-    while (ticks < end) {
-        asm volatile("hlt");
-    }
-}
-
-void timer_handler(void) {
-    ticks++;
+    unsigned int start = timer_ticks;
+    while ((timer_ticks - start) * 1000 / 1193 < ms);
 }

@@ -2,23 +2,23 @@
 #include "io.h"
 
 #define VIDEO_MEMORY 0xB8000
-#define MAX_ROWS 25
-#define MAX_COLS 80
-#define DEFAULT_COLOR 0x0F
+#define WIDTH 80
+#define HEIGHT 25
 
-static unsigned char color = DEFAULT_COLOR;
-static unsigned short *video_memory = (unsigned short*)VIDEO_MEMORY;
-static unsigned int row = 0;
-static unsigned int col = 0;
+unsigned char color = 0x0F;
+unsigned short *video_memory = (unsigned short*)VIDEO_MEMORY;
+int row = 0;
+int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    unsigned int i;
-    for (i = 0; i < MAX_ROWS * MAX_COLS; i++) {
-        video_memory[i] = (DEFAULT_COLOR << 8) | ' ';
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
+            video_memory[i * WIDTH + j] = (color << 8) | ' ';
+        }
     }
     row = 0;
     col = 0;
@@ -26,18 +26,17 @@ void screen_clear(void) {
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
-        col = 0;
         row++;
+        col = 0;
     } else {
-        video_memory[row * MAX_COLS + col] = (color << 8) | c;
+        video_memory[row * WIDTH + col] = (color << 8) | c;
         col++;
-        if (col >= MAX_COLS) {
-            col = 0;
+        if (col >= WIDTH) {
             row++;
+            col = 0;
         }
     }
-
-    if (row >= MAX_ROWS) {
+    if (row >= HEIGHT) {
         screen_scroll();
     }
 }
@@ -53,8 +52,8 @@ void screen_writeln(const char *str, unsigned char color) {
     screen_putchar('\n', color);
 }
 
-void screen_set_color(unsigned char new_color) {
-    color = new_color;
+void screen_set_color(unsigned char c) {
+    color = c;
 }
 
 int screen_get_row(void) {
@@ -62,13 +61,13 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    unsigned int i;
-    for (i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
-        video_memory[i] = video_memory[i + MAX_COLS];
+    for (int i = 1; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
+            video_memory[(i - 1) * WIDTH + j] = video_memory[i * WIDTH + j];
+        }
     }
-
-    for (i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS * MAX_COLS; i++) {
-        video_memory[i] = (DEFAULT_COLOR << 8) | ' ';
+    for (int j = 0; j < WIDTH; j++) {
+        video_memory[(HEIGHT - 1) * WIDTH + j] = (color << 8) | ' ';
     }
-    row = MAX_ROWS - 1;
+    row--;
 }
