@@ -1,10 +1,10 @@
 #include "timer.h"
-#include "io.h"
 #include "idt.h"
+#include "io.h"
 
 unsigned int ticks = 0;
 
-void timer_callback(void) {
+void timer_callback(unsigned int irq) {
     ticks++;
 }
 
@@ -13,9 +13,7 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-
-    idt_set_gate(32, (unsigned int)timer_callback, 0x08, 0x8E);
-    idt_load(&idt_ptr);
+    idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -25,5 +23,6 @@ unsigned int timer_get_ticks(void) {
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
     unsigned int end = start + (ms * 1000) / 1000;
-    while (ticks < end);
+    while (ticks < end)
+        asm volatile("nop");
 }
