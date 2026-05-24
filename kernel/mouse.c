@@ -32,7 +32,7 @@ unsigned char mouse_read(void) {
     return inb(0x60);
 }
 
-void mouse_handler(void) {
+void mouse_callback(void) {
     unsigned char status = inb(0x64);
     if (status & 0x20) {
         unsigned char data = inb(0x60);
@@ -51,13 +51,11 @@ void mouse_init(void) {
     outb(0x64, 0x60);
     mouse_wait(1);
     outb(0x60, status);
-
     mouse_write(0xF6);
     mouse_read();
-
     mouse_write(0xF4);
     mouse_read();
 
-    idt_set_gate(44, (unsigned int)mouse_handler, 0x08, 0x8E);
+    idt_set_gate(44, (unsigned int)mouse_callback, 0x08, 0x8E);
     idt_load(&idt_ptr);
 }

@@ -6,18 +6,17 @@
 #define MAX_COLS 80
 
 unsigned char color = 0x0F;
-unsigned char *video_memory = (unsigned char*)VIDEO_MEMORY;
-int row = 0;
-int col = 0;
+unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
+unsigned int row = 0;
+unsigned int col = 0;
 
 void screen_init(void) {
     screen_clear();
 }
 
 void screen_clear(void) {
-    for (int i = 0; i < MAX_ROWS * MAX_COLS * 2; i += 2) {
-        video_memory[i] = ' ';
-        video_memory[i+1] = color;
+    for (unsigned int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
+        video_memory[i] = (color << 8) | ' ';
     }
     row = 0;
     col = 0;
@@ -27,15 +26,22 @@ void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
         row++;
         col = 0;
+    } else if (c == '\r') {
+        col = 0;
+    } else if (c == '\b') {
+        if (col > 0) {
+            col--;
+            video_memory[row * MAX_COLS + col] = (color << 8) | ' ';
+        }
     } else {
-        video_memory[(row * MAX_COLS + col) * 2] = c;
-        video_memory[(row * MAX_COLS + col) * 2 + 1] = color;
+        video_memory[row * MAX_COLS + col] = (color << 8) | c;
         col++;
         if (col >= MAX_COLS) {
             row++;
             col = 0;
         }
     }
+
     if (row >= MAX_ROWS) {
         screen_scroll();
     }
@@ -61,12 +67,13 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (int i = 0; i < (MAX_ROWS - 1) * MAX_COLS * 2; i++) {
-        video_memory[i] = video_memory[i + MAX_COLS * 2];
+    for (unsigned int i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
+        video_memory[i] = video_memory[i + MAX_COLS];
     }
-    for (int i = (MAX_ROWS - 1) * MAX_COLS * 2; i < MAX_ROWS * MAX_COLS * 2; i += 2) {
-        video_memory[i] = ' ';
-        video_memory[i+1] = color;
+
+    for (unsigned int i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS * MAX_COLS; i++) {
+        video_memory[i] = (color << 8) | ' ';
     }
+
     row = MAX_ROWS - 1;
 }
