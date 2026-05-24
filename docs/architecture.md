@@ -54,7 +54,7 @@
 | `terminal_run` | — | `;` |
 | `terminal_process` | — | `;` |
 | `ata_init` | — | `void ata_init(void);` |
-| `keyboard_getchar` | — | `;` |
+| `keyboard_getchar` | — | `char keyboard_getchar(void) {` |
 | `keyboard_init` | — | `void keyboard_init(void);` |
 | `keyboard_handler` | — | `;` |
 | `mouse_init` | — | `void mouse_init(void);` |

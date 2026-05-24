@@ -1,10 +1,11 @@
 #include "timer.h"
 #include "idt.h"
 #include "io.h"
+#include "screen.h"
 
 unsigned int ticks = 0;
 
-void timer_callback(unsigned int irq) {
+void timer_callback() {
     ticks++;
 }
 
@@ -22,7 +23,7 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
-    unsigned int end = start + (ms * 1000) / 1000;
+    unsigned int end = start + ms;
     while (ticks < end)
-        asm volatile("nop");
+        asm volatile("hlt");
 }

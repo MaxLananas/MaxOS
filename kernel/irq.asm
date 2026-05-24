@@ -1,4 +1,5 @@
 [bits 32]
+
 global irq0
 global irq1
 global irq2
@@ -10,7 +11,6 @@ global irq7
 global irq8
 global irq9
 global irq10
-
 global irq11
 global irq12
 global irq13
