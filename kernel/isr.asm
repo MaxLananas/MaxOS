@@ -47,42 +47,11 @@ global irq8
 global irq9
 global irq10
 global irq11
+
 global irq12
 global irq13
 global irq14
 global irq15
-global irq16
-global irq17
-global irq18
-global irq19
-global irq20
-global irq21
-global irq22
-global irq23
-global irq24
-global irq25
-global irq26
-global irq27
-global irq28
-global irq29
-global irq30
-global irq31
-global irq32
-global irq33
-global irq34
-global irq35
-global irq36
-global irq37
-global irq38
-global irq39
-global irq40
-global irq41
-global irq42
-global irq43
-global irq44
-global irq45
-global irq46
-global irq47
 
 extern isr_handler
 extern irq_handler
@@ -287,7 +256,7 @@ isr31:
     push dword 31
     jmp isr_common_stub
 
-; IRQs 32-47
+; IRQs 0-15
 irq0:
     push dword 0
     push dword 32

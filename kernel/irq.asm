@@ -12,30 +12,14 @@ global irq8
 global irq9
 global irq10
 global irq11
+global irq12
+global irq13
+global irq14
+global irq15
+
 extern irq_handler
 
-irq_common_stub:
-    pusha
-    push ds
-    push es
-    push fs
-    push gs
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    push esp
-    call irq_handler
-    add esp, 4
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
-    add esp, 8
-    iret
-
+; IRQ stubs
 irq0:
     push dword 0
     push dword 32
@@ -95,3 +79,45 @@ irq11:
     push dword 0
     push dword 43
     jmp irq_common_stub
+
+irq12:
+    push dword 0
+    push dword 44
+    jmp irq_common_stub
+
+irq13:
+    push dword 0
+    push dword 45
+    jmp irq_common_stub
+
+irq14:
+    push dword 0
+    push dword 46
+    jmp irq_common_stub
+
+irq15:
+    push dword 0
+    push dword 47
+    jmp irq_common_stub
+
+irq_common_stub:
+    pusha
+    push ds
+    push es
+    push fs
+    push gs
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    push esp
+    call irq_handler
+    add esp, 4
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    popa
+    add esp, 8
+    iret
