@@ -1,19 +1,20 @@
-#include "kmain.h"
 #include "screen.h"
-#include "idt.h"
-#include "timer.h"
 #include "keyboard.h"
-#include "fault_handler.h"
+#include "idt.h"
+#include "irq.h"
+#include "timer.h"
 #include "mouse.h"
+#include "fault_handler.h"
 
-void kmain() {
+void kmain(void) {
     screen_init();
+    screen_clear();
     idt_init();
-    timer_init(100);
+    irq_init();
     keyboard_init();
+    timer_init(100);
     mouse_init();
-    fault_handler_init();
 
-    screen_writeln("Kernel started successfully", 0x0A);
-    while (1);
+    screen_writeln("Kernel initialized", 0x0A);
+    for(;;);
 }

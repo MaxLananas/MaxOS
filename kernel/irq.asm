@@ -1,5 +1,6 @@
 [bits 32]
 
+; IRQs 0-15
 global irq0
 global irq1
 global irq2
@@ -19,6 +20,7 @@ global irq15
 
 extern irq_handler
 
+; Common IRQ stub
 irq_common_stub:
     pusha
     push ds
@@ -41,6 +43,7 @@ irq_common_stub:
     add esp, 8
     iret
 
+; IRQs 0-15
 irq0:
     push dword 0
     push dword 32
@@ -84,7 +87,7 @@ irq7:
 irq8:
     push dword 0
     push dword 40
-    jmp irq_common_stub
+    jmap irq_common_stub
 
 irq9:
     push dword 0
@@ -114,7 +117,7 @@ irq13:
 irq14:
     push dword 0
     push dword 46
-    jmap irq_common_stub
+    jmp irq_common_stub
 
 irq15:
     push dword 0
