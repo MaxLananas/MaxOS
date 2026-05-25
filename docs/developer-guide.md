@@ -6,7 +6,11 @@
 
 ## Introduction
 
-MaxOS est un système d'exploitation bare-metal en cours de développement, conçu pour l'architecture x86. Ce document sert de guide technique et de référence pour les développeurs souhaitant comprendre, compiler, tester et contribuer au projet MaxOS. Actuellement à l'état de prototype, MaxOS démontre les fonctionnalités fondament
+MaxOS est un système d'exploitation bare-metal en phase de prototype, conçu pour l'architecture x86. Il représente une base solide pour l'expérimentation et le développement de systèmes d'exploitation, offrant une compréhension approfondie des mécanismes de bas niveau.
+
+**État Actuel du Projet:**
+
+*   **Score de Matur
 
 ---
 *MaxOS AI v18.0*

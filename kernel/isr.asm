@@ -35,38 +35,6 @@ global isr30
 global isr31
 
 ; ISRs 32-47 (IRQs)
-global irq0
-global irq1
-global irq2
-global irq3
-global irq4
-global irq5
-global irq6
-global irq7
-global irq8
-global irq9
-global irq10
-global irq11
-global irq12
-global irq13
-global irq14
-global irq15
-global irq16
-global irq17
-global irq18
-global irq19
-global irq20
-global irq21
-global irq22
-global irq23
-global irq24
-global irq25
-global irq26
-global irq27
-global irq28
-global irq29
-global isr30
-global isr31
 global isr32
 global isr33
 global isr34
@@ -83,6 +51,24 @@ global isr44
 global isr45
 global isr46
 global isr47
+
+; IRQs 0-15
+global irq0
+global irq1
+global irq2
+global irq3
+global irq4
+global irq5
+global irq6
+global irq7
+global irq8
+global irq9
+global irq10
+global irq11
+global irq12
+global irq13
+global irq14
+global irq15
 
 extern isr_handler
 extern irq_handler
@@ -225,7 +211,7 @@ isr18:
 isr19:
     push dword 0
     push dword 19
-    jmp isr_common_stum
+    jmp isr_common_stub
 
 isr20:
     push dword 0
@@ -280,7 +266,7 @@ isr29:
 isr30:
     push dword 0
     push dword 30
-    jmp isr_common_stub
+    jmp isr_common_stus
 
 isr31:
     push dword 0
@@ -313,7 +299,7 @@ isr36:
     push dword 36
     jmp isr_common_stub
 
-isr37:
+isir37:
     push dword 0
     push dword 37
     jmp isr_common_stub
