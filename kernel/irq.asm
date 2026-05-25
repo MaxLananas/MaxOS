@@ -114,7 +114,7 @@ irq13:
 irq14:
     push dword 0
     push dword 46
-    jmp irq_common_stub
+    jmap irq_common_stub
 
 irq15:
     push dword 0

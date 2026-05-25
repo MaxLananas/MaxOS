@@ -3,41 +3,31 @@
 #include "keyboard.h"
 #include "string.h"
 
-#define MAX_CMD_LEN 128
+#define MAX_CMD_LEN 100
 
-void terminal_init(void) {
+char cmd_buffer[MAX_CMD_LEN];
+unsigned int cmd_len = 0;
+
+void terminal_init() {
     screen_clear();
     screen_writeln("Terminal initialized", 0x0A);
 }
 
-void terminal_run(void) {
-    char cmd[MAX_CMD_LEN] = {0};
-    unsigned int cmd_pos = 0;
-
-    while (1) {
-        char c = keyboard_getchar();
-        if (c) {
-            if (c == '\n') {
-                screen_putchar('\n', 0x0F);
-                cmd[cmd_pos] = '\0';
-                terminal_process(cmd);
-                cmd_pos = 0;
-            } else if (c == '\b') {
-                if (cmd_pos > 0) {
-                    cmd_pos--;
-                    screen_putchar('\b', 0x0F);
-                    screen_putchar(' ', 0x0F);
-                    screen_putchar('\b', 0x0F);
-                }
-            } else {
-                cmd[cmd_pos++] = c;
-                screen_putchar(c, 0x0F);
-            }
-        }
-    }
+void terminal_run() {
+    screen_writeln("> ", 0x0F);
+    terminal_process(cmd_buffer);
 }
 
 void terminal_process(const char *cmd) {
-    screen_writeln("Command executed:", 0x0A);
-    screen_writeln(cmd, 0x0F);
+    if (cmd_len == 0) return;
+
+    if (cmd[0] == 'h' && cmd[1] == 'e' && cmd[2] == 'l' && cmd[3] == 'p') {
+        screen_writeln("Available commands: help, clear", 0x0A);
+    } else if (cmd[0] == 'c' && cmd[1] == 'l' && cmd[2] == 'e' && cmd[3] == 'a' && cmd[4] == 'r') {
+        screen_clear();
+    } else {
+        screen_writeln("Unknown command", 0x0C);
+    }
+
+    cmd_len = 0;
 }
