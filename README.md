@@ -47,10 +47,3 @@ MaxOS/
 ├── apps/          # Applications (terminal)
 └── ai_dev/        # Bot IA développeur
 ```
-
-## Bot IA
-
-Aucun historique disponible.
-
----
-*Mis à jour automatiquement par MaxOS AI v18.0*
