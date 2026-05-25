@@ -52,26 +52,7 @@ global isr45
 global isr46
 global isr47
 
-; IRQs 0-15
-global irq0
-global irq1
-global irq2
-global irq3
-global irq4
-global irq5
-global irq6
-global irq7
-global irq8
-global irq9
-global irq10
-global irq11
-global irq12
-global irq13
-global irq14
-global irq15
-
 extern isr_handler
-extern irq_handler
 
 ; Common ISR stub
 isr_common_stub:
@@ -87,29 +68,6 @@ isr_common_stub:
     mov gs, ax
     push esp
     call isr_handler
-    add esp, 4
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    popa
-    add esp, 8
-    iret
-
-; Common IRQ stub
-irq_common_stub:
-    pusha
-    push ds
-    push es
-    push fs
-    push gs
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    push esp
-    call irq_handler
     add esp, 4
     pop gs
     pop fs
@@ -266,7 +224,7 @@ isr29:
 isr30:
     push dword 0
     push dword 30
-    jmp isr_common_stus
+    jmp isr_common_stub
 
 isr31:
     push dword 0
@@ -299,7 +257,7 @@ isr36:
     push dword 36
     jmp isr_common_stub
 
-isir37:
+isr37:
     push dword 0
     push dword 37
     jmp isr_common_stub
@@ -353,84 +311,3 @@ isr47:
     push dword 0
     push dword 47
     jmp isr_common_stub
-
-; IRQs 0-15
-irq0:
-    push dword 0
-    push dword 32
-    jmp irq_common_stub
-
-irq1:
-    push dword 0
-    push dword 33
-    jmp irq_common_stub
-
-irq2:
-    push dword 0
-    push dword 34
-    jmp irq_common_stub
-
-irq3:
-    push dword 0
-    push dword 35
-    jmp irq_common_stub
-
-irq4:
-    push dword 0
-    push dword 36
-    jmp irq_common_stub
-
-irq5:
-    push dword 0
-    push dword 37
-    jmp irq_common_stub
-
-irq6:
-    push dword 0
-    push dword 38
-    jmp irq_common_stub
-
-irq7:
-    push dword 0
-    push dword 39
-    jmp irq_common_stub
-
-irq8:
-    push dword 0
-    push dword 40
-    jmp irq_common_stub
-
-irq9:
-    push dword 0
-    push dword 41
-    jmp irq_common_stub
-
-irq10:
-    push dword 0
-    push dword 42
-    jmp irq_common_stub
-
-irq11:
-    push dword 0
-    push dword 43
-    jmp irq_common_stub
-
-irq12:
-    push dword 0
-    push dword 44
-    jmp irq_common_stub
-
-irq13:
-    push dword 0
-    push dword 45
-    jmp irq_common_stub
-
-irq14:
-    push dword 0
-    push dword 46
-    jmp irq_common_stub
-
-irq15:
-    push dword 0
-    push dword 47
-    jmp irq_common_stub
