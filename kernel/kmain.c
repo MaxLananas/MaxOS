@@ -1,9 +1,10 @@
 #include "screen.h"
 #include "keyboard.h"
-#include "idt.h"
-#include "timer.h"
 #include "mouse.h"
-#include "ata.h"
+#include "timer.h"
+#include "idt.h"
+#include "exceptions.h"
+#include "irq.h"
 
 void kmain(void) {
     screen_init();
@@ -13,11 +14,14 @@ void kmain(void) {
     idt_init();
     exceptions_init();
     irq_init();
-    timer_init(100);
     keyboard_init();
     mouse_init();
+    timer_init(100);
 
-    screen_writeln("All systems initialized", 0x0A);
+    screen_writeln("IDT initialized", 0x0A);
+    screen_writeln("Keyboard initialized", 0x0A);
+    screen_writeln("Mouse initialized", 0x0A);
+    screen_writeln("Timer initialized", 0x0A);
 
-    for (;;);
+    while (1);
 }

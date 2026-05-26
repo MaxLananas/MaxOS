@@ -1,4 +1,4 @@
-#include "exceptions.h"
+#include "idt.h"
 #include "fault_handler.h"
 
 void exceptions_init(void) {
@@ -15,7 +15,7 @@ void exceptions_init(void) {
     idt_set_gate(10, (unsigned int)isr10, 0x08, 0x8E);
     idt_set_gate(11, (unsigned int)isr11, 0x08, 0x8E);
     idt_set_gate(12, (unsigned int)isr12, 0x08, 0x8E);
-    idt_set_gate(13, (unsigned int)isisr13, 0x08, 0x8E);
+    idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
     idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
     idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
     idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);

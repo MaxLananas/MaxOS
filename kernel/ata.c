@@ -1,9 +1,6 @@
-unsigned int ata_read(unsigned int lba, unsigned char *buffer) {
-    // Implementation simplifiée sans block_device_t
-    return 0;
-}
+#include "ata.h"
+#include "screen.h"
 
-unsigned int ata_write(unsigned int lba, const unsigned char *buffer) {
-    // Implementation simplifiée
-    return 0;
+void ata_init(void) {
+    screen_writeln("ATA initialized", 0x0A);
 }

@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = $(SRC_DIR)
-
 .PHONY: all clean
 
 all: os.img
@@ -42,7 +40,9 @@ SRCS_C = \
 	mouse.c \
 	irq.c \
 	exceptions.c \
-	isr_handler.c \
+	mem.c \
+	paging.c \
+	heap.c \
 	ata.c
 
 OBJS = \

@@ -8,6 +8,8 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
 
+VPATH = kernel
+
 .PHONY: all clean
 
 all: os.img
@@ -21,10 +23,10 @@ $(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
 $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
+$(BUILD)/isr.o: isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
+$(BUILD)/irq.o: irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 $(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
