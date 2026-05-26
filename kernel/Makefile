@@ -2,11 +2,13 @@ AS     = nasm
 CC     = gcc
 LD     = ld
 CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
-LFLAGS = -m elf_i386 -T ../linker.ld --oformat binary
+LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
-BUILD  = ../build
+BUILD  = build
 SRC_DIR = .
+
+VPATH = $(SRC_DIR)
 
 .PHONY: all clean
 
@@ -36,9 +38,12 @@ SRCS_C = \
 	fault_handler.c \
 	keyboard.c \
 	screen.c \
-	terminal.c \
 	kmain.c \
-	mouse.c
+	mouse.c \
+	irq.c \
+	exceptions.c \
+	isr_handler.c \
+	ata.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

@@ -231,7 +231,7 @@ isr31:
     push dword 31
     jmp isr_common_stub
 
-; ISRs 32-47
+; ISRs 32-47 (IRQs)
 isr32:
     push dword 0
     push dword 32

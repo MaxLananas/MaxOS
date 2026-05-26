@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
 
-VPATH = $(SRC_DIR)
-
 .PHONY: all clean
 
 all: os.img
@@ -38,9 +36,14 @@ SRCS_C = \
 	fault_handler.c \
 	keyboard.c \
 	screen.c \
-	terminal.c \
 	kmain.c \
-	mouse.c
+	mouse.c \
+	irq.c \
+	exceptions.c \
+	mem.c \
+	paging.c \
+	heap.c \
+	ata.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

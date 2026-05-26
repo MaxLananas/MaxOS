@@ -1,70 +1,64 @@
-[bits 16]
+ORG 0x7C00
+BITS 16
 
-global _start
-
-section .text
-_start:
-    jmp 0x0000:flush_cs
-flush_cs:
+start:
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
 
-    ; Charger le kernel à 0x1000
-    mov ax, 0x1000
-    mov es, ax
-    xor bx, bx
-    mov dh, 64      ; Nombre de secteurs à lire
-    mov dl, [0x7DFE] ; Numéro du disque
-    mov ah, 0x02    ; Fonction de lecture
+    mov [BOOT_DRIVE], dl
+
+    mov bx, MSG_REAL_MODE
+    call print_string
+
+    mov bx, 0x1000
+    mov dh, 4
+    mov dl, [BOOT_DRIVE]
+    call disk_load
+
+    jmp 0x1000:0x0000
+
+    jmp $
+
+print_string:
+    pusha
+    mov ah, 0x0E
+    mov al, [bx]
+    cmp al, 0
+    je done
+    int 0x10
+    inc bx
+    jmp print_string
+done:
+    popa
+    ret
+
+disk_load:
+    pusha
+    push dx
+    mov ah, 0x02
     mov al, dh
-    mov ch, 0x00    ; Cylindre 0
-    mov cl, 0x02    ; Secteur 2
-    mov dh, 0x00    ; Tête 0
+    mov cl, 0x02
+    mov ch, 0x00
+    mov dh, 0x00
     int 0x13
+    jc disk_error
+    pop dx
+    cmp dh, al
+    jne disk_error
+    popa
+    ret
 
-    ; Passer en mode 32 bits
-    cli
-    lgdt [gdtr]
-    mov eax, cr0
-    or eax, 0x1
-    mov cr0, eax
+disk_error:
+    mov bx, DISK_ERROR_MSG
+    call print_string
+    jmp $
 
-    jmp 0x08:flush_gdt
+BOOT_DRIVE db 0
+MSG_REAL_MODE db "Booting from 16-bit Real Mode", 0
+DISK_ERROR_MSG db "Disk read error!", 0
 
-[bits 32]
-flush_gdt:
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    jmp 0x10000
-
-; GDT
-gdt_start:
-    gdt_null:
-        dd 0x0
-        dd 0x0
-    gdt_code:
-        dw 0xFFFF
-        dw 0x0
-        db 0x0
-        db 0x9A
-        db 0xCF
-        db 0x0
-    gdt_data:
-        dw 0xFFFF
-        dw 0x0
-        db 0x0
-        db 0x92
-        db 0xCF
-        db 0x0
-gdt_end:
-
-gdtr:
-    dw gdt_end - gdt_start - 1
-    dd gdt_start
+times 510-($-$$) db 0
+dw 0xAA55

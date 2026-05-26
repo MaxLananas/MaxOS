@@ -1,6 +1,5 @@
 [bits 32]
 
-; IRQs 0-15 (PIC1 et PIC2)
 global irq0
 global irq1
 global irq2
@@ -20,7 +19,6 @@ global irq15
 
 extern irq_handler
 
-; Common IRQ stub
 irq_common_stub:
     pusha
     push ds
@@ -43,7 +41,6 @@ irq_common_stub:
     add esp, 8
     iret
 
-; IRQs 0-15
 irq0:
     push dword 0
     push dword 32

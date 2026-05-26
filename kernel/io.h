@@ -31,8 +31,11 @@ static inline unsigned int inl(unsigned short port) {
     return val;
 }
 
-static inline void io_wait(void) {
-    outb(0x80, 0x00);
+static inline void pic_send_eoi(unsigned char irq) {
+    if (irq >= 8) {
+        outb(0xA0, 0x20);
+    }
+    outb(0x20, 0x20);
 }
 
 #endif
