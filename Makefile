@@ -1,14 +1,12 @@
 AS     = nasm
 CC     = gcc
 LD     = ld
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -Ikernel
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = kernel
-
-VPATH = kernel
 
 .PHONY: all clean
 
@@ -23,10 +21,10 @@ $(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
 $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: isr.asm | $(BUILD)
+$(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: irq.asm | $(BUILD)
+$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 $(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
@@ -53,6 +51,8 @@ OBJS = \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
+
+VPATH = kernel
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
