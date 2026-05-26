@@ -1,6 +1,6 @@
 [bits 32]
 
-; IRQs 0-15
+; IRQs 0-15 (PIC1 et PIC2)
 global irq0
 global irq1
 global irq2
@@ -87,7 +87,7 @@ irq7:
 irq8:
     push dword 0
     push dword 40
-    jmap irq_common_stub
+    jmp irq_common_stub
 
 irq9:
     push dword 0

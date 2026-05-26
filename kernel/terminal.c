@@ -3,6 +3,8 @@
 #include "keyboard.h"
 
 void terminal_init(void) {
+    screen_init();
+    keyboard_init();
 }
 
 void terminal_run(void) {
