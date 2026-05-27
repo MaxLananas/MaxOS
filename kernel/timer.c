@@ -1,12 +1,12 @@
 #include "timer.h"
 #include "io.h"
 #include "irq.h"
-#include "screen.h"
+#include "idt.h"
 
-static unsigned int ticks = 0;
+unsigned int timer_ticks = 0;
 
-void timer_callback(void) {
-    ticks++;
+void timer_callback(struct regs *r) {
+    timer_ticks++;
 }
 
 void timer_init(unsigned int hz) {
@@ -15,4 +15,14 @@ void timer_init(unsigned int hz) {
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
     irq_set_handler(0, timer_callback);
+    idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
+}
+
+unsigned int timer_get_ticks(void) {
+    return timer_ticks;
+}
+
+void timer_sleep(unsigned int ms) {
+    unsigned int end = timer_ticks + ms;
+    while (timer_ticks < end);
 }

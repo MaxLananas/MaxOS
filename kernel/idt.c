@@ -1,7 +1,6 @@
 #include "idt.h"
 #include "io.h"
-#include "irq.h"
-#include "isr.h"
+#include "screen.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;
@@ -18,10 +17,9 @@ void idt_init(void) {
     idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
-    for (unsigned int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
 
     idt_load(&idt_ptr);
-    irq_init();
 }

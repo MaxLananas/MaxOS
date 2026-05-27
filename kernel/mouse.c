@@ -2,6 +2,7 @@
 #include "io.h"
 #include "irq.h"
 #include "screen.h"
+#include "idt.h"
 
 void mouse_wait(unsigned char type) {
     unsigned int timeout = 100000;
@@ -32,6 +33,14 @@ unsigned char mouse_read(void) {
     return inb(0x60);
 }
 
+void mouse_callback(struct regs *r) {
+    unsigned char status = inb(0x64);
+    if (status & 0x20) {
+        unsigned char mouse_data = inb(0x60);
+        // Process mouse data
+    }
+}
+
 void mouse_init(void) {
     mouse_wait(1);
     outb(0x64, 0xA8);
@@ -47,14 +56,6 @@ void mouse_init(void) {
     mouse_read();
     mouse_write(0xF4);
     mouse_read();
-    irq_set_handler(12, mouse_handler);
-}
-
-void mouse_handler(void) {
-    unsigned char status = inb(0x64);
-    if (status & 0x20) {
-        unsigned char data = inb(0x60);
-        screen_putchar('M', 0x0F);
-    }
-    pic_send_eoi(12);
+    irq_set_handler(12, mouse_callback);
+    idt_set_gate(44, (unsigned int)irq12, 0x08, 0x8E);
 }

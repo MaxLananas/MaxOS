@@ -6,6 +6,7 @@ LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
+SRC_DIR = .
 
 .PHONY: all clean
 
@@ -14,19 +15,19 @@ all: os.img
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/boot.bin: boot.asm | $(BUILD)
+$(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
 	$(AS) $(BFLAGS) $< -o $@
 
-$(BUILD)/kernel_entry.o: kernel_entry.asm | $(BUILD)
+$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: isr.asm | $(BUILD)
+$(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: irq.asm | $(BUILD)
+$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt_load.o: idt_load.asm | $(BUILD)
+$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
@@ -43,9 +44,10 @@ SRCS_C = \
 	paging.c \
 	heap.c \
 	ata.c \
-	acpi.c \
-	apic.c \
-	ioapic.c
+	terminal.c \
+	terminal_process.c \
+	devfs.c \
+	vfs.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -53,6 +55,8 @@ OBJS = \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
+
+VPATH = .:fs
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
