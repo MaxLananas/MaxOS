@@ -1,20 +1,20 @@
-#include "kmain.h"
 #include "screen.h"
 #include "keyboard.h"
-#include "idt.h"
 #include "timer.h"
-#include "exceptions.h"
+#include "idt.h"
+#include "terminal.h"
 
 void kmain(void) {
     screen_init();
+    screen_clear();
+    screen_set_color(0x0F);
+    screen_writeln("Booting...", 0x0F);
+
     idt_init();
-    exceptions_init();
     timer_init(100);
     keyboard_init();
-
-    screen_writeln("Kernel initialized successfully", 0x0A);
-    screen_writeln("Type commands below:", 0x0A);
-
     terminal_init();
+
+    screen_writeln("Ready.", 0x0F);
     terminal_run();
 }

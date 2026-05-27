@@ -1,41 +1,12 @@
 #ifndef IO_H
 #define IO_H
 
-static inline void outb(unsigned short port, unsigned char val) {
-    __asm__ volatile("outb %0, %1" :: "a"(val), "Nd"(port));
-}
-
-static inline unsigned char inb(unsigned short port) {
-    unsigned char val;
-    __asm__ volatile("inb %1, %0" : "=a"(val) : "Nd"(port));
-    return val;
-}
-
-static inline void outw(unsigned short port, unsigned short val) {
-    __asm__ volatile("outw %0, %1" :: "a"(val), "Nd"(port));
-}
-
-static inline unsigned short inw(unsigned short port) {
-    unsigned short val;
-    __asm__ volatile("inw %1, %0" : "=a"(val) : "Nd"(port));
-    return val;
-}
-
-static inline void outl(unsigned short port, unsigned int val) {
-    __asm__ volatile("outl %0, %1" :: "a"(val), "Nd"(port));
-}
-
-static inline unsigned int inl(unsigned short port) {
-    unsigned int val;
-    __asm__ volatile("inl %1, %0" : "=a"(val) : "Nd"(port));
-    return val;
-}
-
-static inline void pic_send_eoi(unsigned char irq) {
-    if (irq >= 8) {
-        outb(0xA0, 0x20);
-    }
-    outb(0x20, 0x20);
-}
+void outb(unsigned short port, unsigned char val);
+unsigned char inb(unsigned short port);
+void outw(unsigned short port, unsigned short val);
+unsigned short inw(unsigned short port);
+void outl(unsigned short port, unsigned int val);
+unsigned int inl(unsigned short port);
+void pic_send_eoi(unsigned char irq);
 
 #endif

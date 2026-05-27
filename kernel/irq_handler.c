@@ -1,19 +1,23 @@
-#include "irq_handler.h"
-#include "idt.h"
-#include "io.h"
-
-void *irq_routines[16] = {0};
+#include "irq.h"
+#include "timer.h"
+#include "keyboard.h"
+#include "mouse.h"
 
 void irq_handler(unsigned int num) {
-    void (*handler)(struct regs *r);
-
-    handler = irq_routines[num - 32];
-    if (handler) {
-        handler(0);
-    }
-
     if (num >= 40) {
         outb(0xA0, 0x20);
     }
     outb(0x20, 0x20);
+
+    switch(num) {
+        case 0:
+            timer_handler();
+            break;
+        case 1:
+            keyboard_handler();
+            break;
+        case 12:
+            mouse_handler();
+            break;
+    }
 }

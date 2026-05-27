@@ -36,7 +36,6 @@ SRCS_C = \
 	fault_handler.c \
 	keyboard.c \
 	screen.c \
-	main.c \
 	mouse.c \
 	irq.c \
 	exceptions.c \

@@ -1,31 +1,29 @@
-#include "keyboard.h"
 #include "io.h"
+#include "keyboard.h"
 #include "screen.h"
-#include "irq.h"
 
-static char keyboard_buffer[256];
-static unsigned int buffer_pos = 0;
+static char keyboard_map[128] = {
+    0, 27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+    '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
+    0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,
+    '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ',
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-', 0, 0, 0, '+', 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
 
-void keyboard_handler() {
-    unsigned char scancode = inb(0x60);
-    if (scancode & 0x80) {
-        // Key released
-    } else {
-        keyboard_buffer[buffer_pos++] = scancode;
-    }
-    outb(0x20, 0x20);
+void keyboard_init(void) {
 }
 
-void keyboard_init() {
-    irq_install_handler(1, keyboard_handler);
+char keyboard_getchar(void) {
+    return 0;
 }
 
-char keyboard_getchar() {
-    if (buffer_pos == 0) return 0;
-    char c = keyboard_buffer[0];
-    for (unsigned int i = 0; i < buffer_pos - 1; i++) {
-        keyboard_buffer[i] = keyboard_buffer[i + 1];
+void keyboard_handler(void) {
+    unsigned char status = inb(0x64);
+    if (status & 0x01) {
+        unsigned char keycode = inb(0x60);
+        if (keycode < 128) {
+            screen_putchar(keyboard_map[keycode], 0x0F);
+        }
     }
-    buffer_pos--;
-    return c;
 }

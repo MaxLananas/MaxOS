@@ -1,21 +1,8 @@
 [bits 32]
 
-global irq0
-global irq1
-global irq2
-global irq3
-global irq4
-global irq5
-global irq6
-global irq7
-global irq8
-global irq9
-global irq10
-global irq11
-global irq12
-global irq13
-global irq14
-global irq15
+; Déclarations globales pour toutes les IRQ
+global irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7
+global irq8, irq9, irq10, irq11, irq12, irq13, irq14, irq15
 
 extern irq_handler
 
@@ -30,8 +17,10 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    push esp
-    call irq_handler
+    mov eax, esp
+    push eax
+    mov eax, irq_handler
+    call eax
     add esp, 4
     pop gs
     pop fs
@@ -42,81 +31,81 @@ irq_common_stub:
     iret
 
 irq0:
-    push dword 0
-    push dword 32
+    push 0
+    push 32
     jmp irq_common_stub
 
 irq1:
-    push dword 0
-    push dword 33
+    push 0
+    push 33
     jmp irq_common_stub
 
 irq2:
-    push dword 0
-    push dword 34
+    push 0
+    push 34
     jmp irq_common_stub
 
 irq3:
-    push dword 0
-    push dword 35
+    push 0
+    push 35
     jmp irq_common_stub
 
 irq4:
-    push dword 0
-    push dword 36
+    push 0
+    push 36
     jmp irq_common_stub
 
 irq5:
-    push dword 0
-    push dword 37
+    push 0
+    push 37
     jmp irq_common_stub
 
 irq6:
-    push dword 0
-    push dword 38
+    push 0
+    push 38
     jmp irq_common_stub
 
 irq7:
-    push dword 0
-    push dword 39
+    push 0
+    push 39
     jmp irq_common_stub
 
 irq8:
-    push dword 0
-    push dword 40
+    push 0
+    push 40
     jmp irq_common_stub
 
 irq9:
-    push dword 0
-    push dword 41
+    push 0
+    push 41
     jmp irq_common_stub
 
 irq10:
-    push dword 0
-    push dword 42
+    push 0
+    push 42
     jmp irq_common_stub
 
 irq11:
-    push dword 0
-    push dword 43
+    push 0
+    push 43
     jmp irq_common_stub
 
 irq12:
-    push dword 0
-    push dword 44
+    push 0
+    push 44
     jmp irq_common_stub
 
 irq13:
-    push dword 0
-    push dword 45
+    push 0
+    push 45
     jmp irq_common_stub
 
 irq14:
-    push dword 0
-    push dword 46
+    push 0
+    push 46
     jmp irq_common_stub
 
 irq15:
-    push dword 0
-    push dword 47
+    push 0
+    push 47
     jmp irq_common_stub
