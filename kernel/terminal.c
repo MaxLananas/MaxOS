@@ -3,31 +3,40 @@
 #include "keyboard.h"
 #include "terminal_process.h"
 
-void terminal_init(void) {
+#define MAX_CMD 256
+
+static char cmd_buffer[MAX_CMD];
+static unsigned int cmd_pos = 0;
+
+void terminal_init() {
     screen_clear();
-    screen_writeln("Terminal initialized", 0x0F);
+    screen_writeln("Terminal initialized", 0x0A);
 }
 
-void terminal_run(void) {
-    char cmd[256];
-    unsigned int pos = 0;
-    char c;
-
+void terminal_run() {
+    screen_writeln("> ", 0x0F);
     while (1) {
-        c = keyboard_getchar();
-        if (c == '\n') {
-            cmd[pos] = 0;
-            screen_writeln("", 0x0F);
-            terminal_process(cmd);
-            pos = 0;
-        } else if (c == '\b') {
-            if (pos > 0) {
-                pos--;
-                screen_putchar('\b', 0x0F);
+        char c = keyboard_getchar();
+        if (c) {
+            if (c == '\n') {
+                cmd_buffer[cmd_pos] = 0;
+                terminal_process(cmd_buffer);
+                cmd_pos = 0;
+                screen_writeln("\n> ", 0x0F);
+            } else if (c == '\b') {
+                if (cmd_pos > 0) {
+                    cmd_pos--;
+                    screen_putchar(' ', 0x0F);
+                    screen_putchar('\b', 0x0F);
+                }
+            } else {
+                cmd_buffer[cmd_pos++] = c;
+                screen_putchar(c, 0x0F);
             }
-        } else {
-            cmd[pos++] = c;
-            screen_putchar(c, 0x0F);
         }
     }
+}
+
+void terminal_process(const char *cmd) {
+    // Process command
 }

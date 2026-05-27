@@ -5,7 +5,7 @@
 #include "mouse.h"
 #include "terminal.h"
 
-void kmain(void) {
+void kmain() {
     screen_init();
     idt_init();
     keyboard_init();

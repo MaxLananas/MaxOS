@@ -56,7 +56,7 @@ OBJS = \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-VPATH = kernel:kernel/fs
+VPATH = kernel
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
