@@ -286,5 +286,45 @@
   "Support du disque ATA PIO": {
     "consecutive_fails": 1,
     "last_fail": 1779791762
+  },
+  "Impl\u00e9mentation d'un allocateur m\u00e9moire dynamique (heap/kheap)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779854731
+  },
+  "Impl\u00e9mentation d'un scheduler pr\u00e9emptif": {
+    "consecutive_fails": 1,
+    "last_fail": 1779854906
+  },
+  "Impl\u00e9mentation d'un syst\u00e8me de fichiers journalis\u00e9 (ext2 ou propre)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779855139
+  },
+  "Impl\u00e9mentation d'un syst\u00e8me de gestion des appels syst\u00e8me complet": {
+    "consecutive_fails": 1,
+    "last_fail": 1779855308
+  },
+  "Impl\u00e9mentation d'un pilote pour le contr\u00f4leur SATA/NVMe": {
+    "consecutive_fails": 1,
+    "last_fail": 1779855516
+  },
+  "Impl\u00e9mentation d'un pilote pour le contr\u00f4leur USB": {
+    "consecutive_fails": 1,
+    "last_fail": 1779855716
+  },
+  "Impl\u00e9mentation d'un pilote pour le contr\u00f4leur graphique (VESA/framebuffer)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779855883
+  },
+  "Impl\u00e9mentation d'un syst\u00e8me de gestion des exceptions avanc\u00e9es (MCE, NMI)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779856054
+  },
+  "Impl\u00e9mentation d'un syst\u00e8me de gestion des interruptions avanc\u00e9es (ACPI, APIC)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779856242
+  },
+  "Impl\u00e9mentation d'un syst\u00e8me de gestion des p\u00e9riph\u00e9riques g\u00e9n\u00e9riques (devfs)": {
+    "consecutive_fails": 1,
+    "last_fail": 1779856416
   }
 }

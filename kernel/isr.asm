@@ -1,6 +1,5 @@
 [bits 32]
 
-; ISRs 0-31 (CPU exceptions)
 global isr0
 global isr1
 global isr2
@@ -33,8 +32,6 @@ global isr28
 global isr29
 global isr30
 global isr31
-
-; ISRs 32-47 (IRQs)
 global isr32
 global isr33
 global isr34
@@ -54,7 +51,6 @@ global isr47
 
 extern isr_handler
 
-; Common ISR stub
 isr_common_stub:
     pusha
     push ds
@@ -77,7 +73,6 @@ isr_common_stub:
     add esp, 8
     iret
 
-; ISRs 0-31
 isr0:
     push dword 0
     push dword 0
@@ -231,7 +226,6 @@ isr31:
     push dword 31
     jmp isr_common_stub
 
-; ISRs 32-47 (IRQs)
 isr32:
     push dword 0
     push dword 32

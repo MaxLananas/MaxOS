@@ -1,20 +1,20 @@
 #include "irq.h"
-#include "io.h"
 #include "idt.h"
-#include "fault_handler.h"
+#include "io.h"
+#include "isr.h"
 
-void *irq_routines[16] = {0};
+void (*irq_handlers[16])(void);
 
-void irq_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
-    idt_set_gate(num + 32, base, sel, flags);
+void irq_set_handler(unsigned char irq, void (*handler)(unsigned int)) {
+    irq_handlers[irq] = handler;
 }
 
 void irq_install_handler(unsigned char irq, void (*handler)(void)) {
-    irq_routines[irq] = handler;
+    irq_handlers[irq] = handler;
 }
 
 void irq_uninstall_handler(unsigned char irq) {
-    irq_routines[irq] = 0;
+    irq_handlers[irq] = 0;
 }
 
 void irq_remap(void) {
@@ -33,15 +33,15 @@ void irq_remap(void) {
 void irq_init(void) {
     irq_remap();
     for (unsigned int i = 0; i < 16; i++) {
-        irq_set_gate(i, (unsigned int)irq_stub_table[i], 0x08, 0x8E);
+        idt_set_gate(32 + i, (unsigned int)isr32 + i * 8, 0x08, 0x8E);
     }
 }
 
 void irq_handler(unsigned int num) {
     void (*handler)(void);
-    handler = irq_routines[num - 32];
-    if (handler != 0) {
+    handler = irq_handlers[num - 32];
+    if (handler) {
         handler();
     }
-    pic_send_eoi(num);
+    pic_send_eoi(num - 32);
 }

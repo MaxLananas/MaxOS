@@ -36,14 +36,18 @@ SRCS_C = \
 	fault_handler.c \
 	keyboard.c \
 	screen.c \
-	kmain.c \
+	main.c \
 	mouse.c \
 	irq.c \
 	exceptions.c \
 	mem.c \
 	paging.c \
 	heap.c \
-	ata.c
+	ata.c \
+	terminal.c \
+	terminal_process.c \
+	devfs.c \
+	vfs.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
@@ -52,7 +56,7 @@ OBJS = \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-VPATH = kernel
+VPATH = kernel:kernel/fs
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

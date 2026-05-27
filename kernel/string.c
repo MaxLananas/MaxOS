@@ -1,9 +1,25 @@
 #include "string.h"
 
-int strcmp(const char *str1, const char *str2) {
-    while(*str1 && (*str1 == *str2)) {
-        str1++;
-        str2++;
+unsigned int strlen(const char *str) {
+    unsigned int len = 0;
+    while (str[len]) len++;
+    return len;
+}
+
+void strcpy(char *dest, const char *src) {
+    unsigned int i = 0;
+    while (src[i]) {
+        dest[i] = src[i];
+        i++;
     }
-    return *(unsigned char *)str1 - *(unsigned char *)str2;
+    dest[i] = 0;
+}
+
+void strcat(char *dest, const char *src) {
+    unsigned int i = strlen(dest);
+    unsigned int j = 0;
+    while (src[j]) {
+        dest[i++] = src[j++];
+    }
+    dest[i] = 0;
 }

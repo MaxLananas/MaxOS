@@ -1,25 +1,19 @@
+#include "kmain.h"
 #include "screen.h"
 #include "keyboard.h"
-#include "timer.h"
 #include "idt.h"
-#include "fault_handler.h"
-#include "mouse.h"
-#include "mem.h"
-#include "paging.h"
-#include "heap.h"
+#include "timer.h"
+#include "exceptions.h"
 
 void kmain(void) {
     screen_init();
     idt_init();
-    keyboard_init();
+    exceptions_init();
     timer_init(100);
-    mouse_init();
-    mem_init(1024 * 1024);
-    paging_init();
-    heap_init((void *)0xC0000000, 1024 * 1024);
+    keyboard_init();
 
-    screen_writeln("Kernel initialized", 0x0A);
-    screen_writeln("Type 'help' for commands", 0x0F);
+    screen_writeln("Kernel initialized successfully", 0x0A);
+    screen_writeln("Type commands below:", 0x0A);
 
     terminal_init();
     terminal_run();

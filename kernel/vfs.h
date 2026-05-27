@@ -4,8 +4,8 @@
 typedef struct vfs_file {
     unsigned int type;
     union {
-        void *ptr;
-        struct device *dev;
+        void *fat32_file;
+        void *dev;
     } data;
 } vfs_file;
 
