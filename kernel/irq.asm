@@ -1,21 +1,7 @@
 [bits 32]
 
-global irq0
-global irq1
-global irq2
-global irq3
-global irq4
-global irq5
-global irq6
-global irq7
-global irq8
-global irq9
-global irq10
-global irq11
-global irq12
-global irq13
-global irq14
-global irq15
+global irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7
+global irq8, irq9, irq10, irq11, irq12, irq13, irq14, irq15
 
 extern irq_handler
 
@@ -32,7 +18,8 @@ irq_common_stub:
     mov gs, ax
     mov eax, esp
     push eax
-    call irq_handler
+    mov eax, irq_handler
+    call eax
     add esp, 4
     pop gs
     pop fs
