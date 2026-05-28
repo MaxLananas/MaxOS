@@ -16,10 +16,9 @@ void idt_init(void) {
     idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
-    for(unsigned int i = 0; i < 256; i++) {
+    for (unsigned int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
 
-    outb(0x21, 0xFF);
-    outb(0xA1, 0xFF);
+    idt_load(&idt_ptr);
 }

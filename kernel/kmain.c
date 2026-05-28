@@ -1,27 +1,21 @@
 #include "screen.h"
 #include "keyboard.h"
-#include "timer.h"
 #include "mouse.h"
+#include "timer.h"
 #include "idt.h"
 #include "irq.h"
-#include "exceptions.h"
 #include "fault_handler.h"
 
 void kmain(void) {
     screen_init();
-    screen_writeln("Kernel started", 0x0A);
-
     idt_init();
-    exceptions_init();
     irq_init();
     keyboard_init();
-    timer_init(100);
     mouse_init();
+    timer_init(100);
 
-    screen_writeln("IDT initialized", 0x0A);
-    screen_writeln("Keyboard initialized", 0x0A);
-    screen_writeln("Timer initialized", 0x0A);
-    screen_writeln("Mouse initialized", 0x0A);
+    screen_writeln("Kernel initialized", 0x0A);
+    screen_writeln("Welcome to Bare Metal OS", 0x0F);
 
-    for(;;);
+    for (;;);
 }
