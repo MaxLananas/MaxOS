@@ -74,6 +74,7 @@ isr7:
     push 7
     jmp isr_common_stub
 
+; ISR avec code d'erreur
 isr8:
     push 8
     jmp isr_common_stub

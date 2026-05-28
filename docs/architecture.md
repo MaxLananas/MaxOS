@@ -52,7 +52,7 @@
 | `si_key` | — | `;` |
 | `terminal_init` | — | `void terminal_init(void);` |
 | `terminal_run` | — | `;` |
-| `terminal_process` | — | `void terminal_process(const char *cmd);` |
+| `terminal_process` | — | `;` |
 | `ata_init` | — | `void ata_init(void) {` |
 | `keyboard_getchar` | — | `;` |
 | `keyboard_init` | — | `void keyboard_init(void);` |

@@ -1,22 +1,14 @@
 #include "mouse.h"
 #include "io.h"
-#include "irq.h"
 #include "screen.h"
+#include "irq.h"
 
 void mouse_wait(unsigned char type) {
     unsigned int timeout = 100000;
     if (type == 0) {
-        while (timeout--) {
-            if ((inb(0x64) & 0x01) != 0) {
-                return;
-            }
-        }
+        while (--timeout && (inb(0x64) & 1));
     } else {
-        while (timeout--) {
-            if ((inb(0x64) & 0x02) == 0) {
-                return;
-            }
-        }
+        while (--timeout && !(inb(0x64) & 2));
     }
 }
 
@@ -33,7 +25,7 @@ unsigned char mouse_read(void) {
 }
 
 void mouse_init(void) {
-    irq_set_mask(12, 0);
+    outb(0x64, 0xA8);
     mouse_write(0xF6);
     mouse_read();
     mouse_write(0xF4);
@@ -43,8 +35,8 @@ void mouse_init(void) {
 void mouse_handler(void) {
     unsigned char status = inb(0x64);
     if (status & 0x20) {
-        unsigned char data = inb(0x60);
-        screen_putchar('M', 0x0A);
+        unsigned char mouse_data = inb(0x60);
+        screen_putchar('M', 0x0F);
     }
-    pic_send_eoi(12);
+    outb(0x20, 0x20);
 }
