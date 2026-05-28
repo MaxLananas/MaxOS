@@ -1,3 +1,5 @@
+#include "io.h"
+
 void outb(unsigned short port, unsigned char val) {
     asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
@@ -29,8 +31,7 @@ unsigned int inl(unsigned short port) {
 }
 
 void pic_send_eoi(unsigned char irq) {
-    if (irq >= 8) {
+    if(irq >= 8)
         outb(0xA0, 0x20);
-    }
     outb(0x20, 0x20);
 }
