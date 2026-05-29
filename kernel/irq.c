@@ -19,6 +19,13 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
+void irq_handler(unsigned int num) {
+    if(num >= 40) {
+        outb(0xA0, 0x20);
+    }
+    outb(0x20, 0x20);
+}
+
 void irq_init(void) {
     idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
     idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
@@ -32,15 +39,4 @@ void irq_init(void) {
     idt_set_gate(41, (unsigned int)irq9, 0x08, 0x8E);
     idt_set_gate(42, (unsigned int)irq10, 0x08, 0x8E);
     idt_set_gate(43, (unsigned int)irq11, 0x08, 0x8E);
-    idt_set_gate(44, (unsigned int)irq12, 0x08, 0x8E);
-    idt_set_gate(45, (unsigned int)irq13, 0x08, 0x8E);
-    idt_set_gate(46, (unsigned int)irq14, 0x08, 0x8E);
-    idt_set_gate(47, (unsigned int)irq15, 0x08, 0x8E);
-}
-
-void irq_handler(unsigned int num) {
-    if (num >= 40) {
-        outb(0xA0, 0x20);
-    }
-    outb(0x20, 0x20);
-}
+    idt_set

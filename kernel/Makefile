@@ -30,6 +30,9 @@ $(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
 $(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
+$(BUILD)/io.o: $(SRC_DIR)/io.asm | $(BUILD)
+	$(AS) $(EFLAGS) $< -o $@
+
 SRCS_C = \
 	idt.c \
 	timer.c \
@@ -46,16 +49,18 @@ SRCS_C = \
 	terminal.c \
 	terminal_process.c \
 	devfs.c \
-	vfs.c
+	vfs.c \
+	kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt_load.o \
+	$(BUILD)/io.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-VPATH = .
+VPATH = $(SRC_DIR)
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -15,7 +15,8 @@ void screen_init(void) {
 }
 
 void screen_clear(void) {
-    for (unsigned int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
+    unsigned int i;
+    for(i = 0; i < MAX_ROWS * MAX_COLS; i++) {
         video_memory[i] = (color << 8) | ' ';
     }
     row = 0;
@@ -23,29 +24,30 @@ void screen_clear(void) {
 }
 
 void screen_putchar(char c, unsigned char color) {
-    if (c == '\n') {
+    if(c == '\n') {
         row++;
         col = 0;
-        if (row >= MAX_ROWS) {
+        if(row >= MAX_ROWS) {
             screen_scroll();
+            row = MAX_ROWS - 1;
         }
         return;
     }
 
     video_memory[row * MAX_COLS + col] = (color << 8) | c;
     col++;
-
-    if (col >= MAX_COLS) {
-        row++;
+    if(col >= MAX_COLS) {
         col = 0;
-        if (row >= MAX_ROWS) {
+        row++;
+        if(row >= MAX_ROWS) {
             screen_scroll();
+            row = MAX_ROWS - 1;
         }
     }
 }
 
 void screen_write(const char *str, unsigned char color) {
-    while (*str) {
+    while(*str) {
         screen_putchar(*str++, color);
     }
 }
@@ -64,13 +66,12 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (unsigned int i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
+    unsigned int i;
+    for(i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
         video_memory[i] = video_memory[i + MAX_COLS];
     }
-
-    for (unsigned int i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS * MAX_COLS; i++) {
+    for(i = (MAX_ROWS - 1) * MAX_COLS; i < MAX_ROWS * MAX_COLS; i++) {
         video_memory[i] = (color << 8) | ' ';
     }
-
-    if (row > 0) row--;
+    if(row > 0) row--;
 }
