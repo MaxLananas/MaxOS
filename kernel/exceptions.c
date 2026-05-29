@@ -1,7 +1,8 @@
-#include "idt.h"
+#include "exceptions.h"
 #include "fault_handler.h"
+#include "screen.h"
 
-void idt_init(void) {
+void exceptions_init(void) {
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
     idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
     idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
@@ -17,7 +18,7 @@ void idt_init(void) {
     idt_set_gate(12, (unsigned int)isr12, 0x08, 0x8E);
     idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
     idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
-    idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
+    idt_set_gate(15, (unsigned int)isis15, 0x08, 0x8E);
     idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
@@ -34,24 +35,4 @@ void idt_init(void) {
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
     idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
-    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
-    idt_set_gate(33, (unsigned int)isr33, 0x08, 0x8E);
-    idt_set_gate(34, (unsigned int)isr34, 0x08, 0x8E);
-    idt_set_gate(35, (unsigned int)isr35, 0x08, 0x8E);
-    idt_set_gate(36, (unsigned int)isr36, 0x08, 0x8E);
-    idt_set_gate(37, (unsigned int)isr37, 0x08, 0x8E);
-    idt_set_gate(38, (unsigned int)isr38, 0x08, 0x8E);
-    idt_set_gate(39, (unsigned int)isr39, 0x08, 0x8E);
-    idt_set_gate(40, (unsigned int)isr40, 0x08, 0x8E);
-    idt_set_gate(41, (unsigned int)isr41, 0x08, 0x8E);
-    idt_set_gate(42, (unsigned int)isr42, 0x08, 0x8E);
-    idt_set_gate(43, (unsigned int)isr43, 0x08, 0x8E);
-    idt_set_gate(44, (unsigned int)isr44, 0x08, 0x8E);
-    idt_set_gate(45, (unsigned int)isr45, 0x08, 0x8E);
-    idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
-    idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
-}
-
-void isr_handler(unsigned int num, unsigned int err) {
-    fault_handler(num, err);
 }

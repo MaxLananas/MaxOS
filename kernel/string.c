@@ -6,19 +6,27 @@ unsigned int strlen(const char *str) {
     return len;
 }
 
-void strcpy(char *dest, const char *src) {
-    while ((*dest++ = *src++));
-}
-
-void strcat(char *dest, const char *src) {
-    while (*dest) dest++;
-    while ((*dest++ = *src++));
-}
-
 int strcmp(const char *str1, const char *str2) {
     while (*str1 && (*str1 == *str2)) {
         str1++;
         str2++;
     }
     return *(unsigned char *)str1 - *(unsigned char *)str2;
+}
+
+void *memcpy(void *dest, const void *src, unsigned int n) {
+    char *d = (char *)dest;
+    const char *s = (const char *)src;
+    for (unsigned int i = 0; i < n; i++) {
+        d[i] = s[i];
+    }
+    return dest;
+}
+
+void *memset(void *s, int c, unsigned int n) {
+    unsigned char *p = (unsigned char *)s;
+    for (unsigned int i = 0; i < n; i++) {
+        p[i] = (unsigned char)c;
+    }
+    return s;
 }

@@ -292,8 +292,8 @@
     "last_fail": 1779854731
   },
   "Impl\u00e9mentation d'un scheduler pr\u00e9emptif": {
-    "consecutive_fails": 1,
-    "last_fail": 1779854906
+    "consecutive_fails": 2,
+    "last_fail": 1780069617
   },
   "Impl\u00e9mentation d'un syst\u00e8me de fichiers journalis\u00e9 (ext2 ou propre)": {
     "consecutive_fails": 1,
@@ -362,5 +362,41 @@
   "Gestion des p\u00e9riph\u00e9riques PCIe avanc\u00e9e": {
     "consecutive_fails": 1,
     "last_fail": 1779915624
+  },
+  "Gestion avanc\u00e9e de la m\u00e9moire virtuelle": {
+    "consecutive_fails": 1,
+    "last_fail": 1780069419
+  },
+  "Syst\u00e8me de fichiers complet": {
+    "consecutive_fails": 1,
+    "last_fail": 1780069852
+  },
+  "Gestion des appels syst\u00e8me avanc\u00e9e": {
+    "consecutive_fails": 1,
+    "last_fail": 1780070057
+  },
+  "Gestion des interruptions avanc\u00e9es": {
+    "consecutive_fails": 1,
+    "last_fail": 1780070259
+  },
+  "Gestion des modules noyau": {
+    "consecutive_fails": 1,
+    "last_fail": 1780070460
+  },
+  "Gestion des p\u00e9riph\u00e9riques dynamiques": {
+    "consecutive_fails": 1,
+    "last_fail": 1780070685
+  },
+  "Gestion des timers avanc\u00e9s": {
+    "consecutive_fails": 1,
+    "last_fail": 1780070956
+  },
+  "Gestion du SMP": {
+    "consecutive_fails": 1,
+    "last_fail": 1780071179
+  },
+  "Gestion du r\u00e9seau": {
+    "consecutive_fails": 1,
+    "last_fail": 1780071370
   }
 }

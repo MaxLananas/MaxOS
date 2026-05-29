@@ -27,18 +27,18 @@ $(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
 $(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
+$(BUILD)/idt_load.o: $(SRC_DIR)/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
 	idt.c \
 	timer.c \
-	fault_handler.c \
 	keyboard.c \
 	screen.c \
 	mouse.c \
 	irq.c \
 	exceptions.c \
+	fault_handler.c \
 	mem.c \
 	paging.c \
 	heap.c \
@@ -46,7 +46,8 @@ SRCS_C = \
 	terminal.c \
 	terminal_process.c \
 	devfs.c \
-	vfs.c
+	vfs.c \
+	kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

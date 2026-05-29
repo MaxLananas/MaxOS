@@ -7,6 +7,5 @@ void outw(unsigned short port, unsigned short val);
 unsigned short inw(unsigned short port);
 void outl(unsigned short port, unsigned int val);
 unsigned int inl(unsigned short port);
-void pic_send_eoi(unsigned char irq);
 
 #endif

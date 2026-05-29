@@ -1,7 +1,21 @@
 [bits 32]
 
-global irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7
-global irq8, irq9, irq10, irq11, irq12, irq13, irq14, irq15
+global irq0
+global irq1
+global irq2
+global irq3
+global irq4
+global irq5
+global irq6
+global irq7
+global irq8
+global irq9
+global irq10
+global irq11
+global irq12
+global irq13
+global irq14
+global irq15
 
 extern irq_handler
 
@@ -16,8 +30,7 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov eax, esp
-    push eax
+    push esp
     call irq_handler
     add esp, 4
     pop gs
@@ -29,81 +42,81 @@ irq_common_stub:
     iret
 
 irq0:
-    push 0
-    push 32
+    push byte 0
+    push byte 32
     jmp irq_common_stub
 
 irq1:
-    push 0
-    push 33
+    push byte 0
+    push byte 33
     jmp irq_common_stub
 
 irq2:
-    push 0
-    push 34
+    push byte 0
+    push byte 34
     jmp irq_common_stub
 
 irq3:
-    push 0
-    push 35
+    push byte 0
+    push byte 35
     jmp irq_common_stub
 
 irq4:
-    push 0
-    push 36
+    push byte 0
+    push byte 36
     jmp irq_common_stub
 
 irq5:
-    push 0
-    push 37
+    push byte 0
+    push byte 37
     jmp irq_common_stub
 
 irq6:
-    push 0
-    push 38
+    push byte 0
+    push byte 38
     jmp irq_common_stub
 
 irq7:
-    push 0
-    push 39
+    push byte 0
+    push byte 39
     jmp irq_common_stub
 
 irq8:
-    push 0
-    push 40
+    push byte 0
+    push byte 40
     jmp irq_common_stub
 
 irq9:
-    push 0
-    push 41
+    push byte 0
+    push byte 41
     jmp irq_common_stub
 
 irq10:
-    push 0
-    push 42
+    push byte 0
+    push byte 42
     jmp irq_common_stub
 
 irq11:
-    push 0
-    push 43
+    push byte 0
+    push byte 43
     jmp irq_common_stub
 
 irq12:
-    push 0
-    push 44
+    push byte 0
+    push byte 44
     jmp irq_common_stub
 
 irq13:
-    push 0
-    push 45
+    push byte 0
+    push byte 45
     jmp irq_common_stub
 
 irq14:
-    push 0
-    push 46
+    push byte 0
+    push byte 46
     jmp irq_common_stub
 
 irq15:
-    push 0
-    push 47
+    push byte 0
+    push byte 47
     jmp irq_common_stub

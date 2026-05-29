@@ -15,33 +15,30 @@ all: os.img
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
+$(BUILD)/boot.bin: boot.asm | $(BUILD)
 	$(AS) $(BFLAGS) $< -o $@
 
-$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
+$(BUILD)/kernel_entry.o: kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: $(SRC_DIR)/isr.asm | $(BUILD)
+$(BUILD)/isr.o: isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: $(SRC_DIR)/irq.asm | $(BUILD)
+$(BUILD)/irq.o: irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt_load.o: $(SRC_DIR)/idt_load.asm | $(BUILD)
-	$(AS) $(EFLAGS) $< -o $@
-
-$(BUILD)/io.o: $(SRC_DIR)/io.asm | $(BUILD)
+$(BUILD)/idt_load.o: idt_load.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \
 	idt.c \
 	timer.c \
-	fault_handler.c \
 	keyboard.c \
 	screen.c \
 	mouse.c \
 	irq.c \
 	exceptions.c \
+	fault_handler.c \
 	mem.c \
 	paging.c \
 	heap.c \
@@ -50,17 +47,21 @@ SRCS_C = \
 	terminal_process.c \
 	devfs.c \
 	vfs.c \
-	kmain.c
+	kmain.c \
+	net/ethernet.c \
+	net/ipv4.c \
+	net/tcp.c \
+	net/udp.c \
+	net/socket.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
 	$(BUILD)/isr.o \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt_load.o \
-	$(BUILD)/io.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
 
-VPATH = $(SRC_DIR)
+VPATH = .
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

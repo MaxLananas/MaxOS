@@ -1,11 +1,15 @@
 #include "fat32.h"
 #include "../screen.h"
 #include "../ata.h"
+#include "../vfs.h"
 
-static fat32_bootsector bootsector;
 static unsigned int fat_start;
 static unsigned int data_start;
-static unsigned int cluster_size;
+static unsigned int bytes_per_sector;
+static unsigned int sectors_per_cluster;
+static unsigned int reserved_sectors;
+static unsigned int fat_count;
+static unsigned int root_dir_sectors;
 
 void fat32_init(void) {
     unsigned char buffer[512];
@@ -15,36 +19,33 @@ void fat32_init(void) {
         return;
     }
 
-    fat32_bootsector *bs = (fat32_bootsector*)buffer;
-    if(bs->boot_signature != 0x29) {
-        screen_writeln("FAT32: Invalid boot signature", 0x04);
+    if(buffer[0] != 0xEB || buffer[2] != 0x90) {
+        screen_writeln("FAT32: Invalid bootsector signature", 0x04);
         return;
     }
 
-    bootsector = *bs;
-    fat_start = bootsector.reserved_sector_count;
-    data_start = fat_start + (bootsector.table_count * bootsector.fat_size_32);
-    cluster_size = bootsector.sectors_per_cluster * bootsector.bytes_per_sector;
+    bytes_per_sector = *(unsigned short*)(buffer + 11);
+    sectors_per_cluster = buffer[13];
+    reserved_sectors = *(unsigned short*)(buffer + 14);
+    fat_count = buffer[16];
+    fat_start = reserved_sectors;
+    data_start = fat_start + fat_count * (*(unsigned int*)(buffer + 36));
+    root_dir_sectors = ((*(unsigned short*)(buffer + 17)) * 32 + bytes_per_sector - 1) / bytes_per_sector;
 
     screen_writeln("FAT32: Filesystem initialized", 0x02);
 }
 
-fat32_file *fat32_open(const char *path) {
-    fat32_file *file = (fat32_file*)1;
-    file->inode = 0;
-    file->offset = 0;
-    file->size = 0;
-    file->mode = 0;
-    return file;
+void *fat32_open(const char *path) {
+    return (void*)1;
 }
 
-unsigned int fat32_read(fat32_file *file, unsigned char *buffer, unsigned int size) {
+unsigned int fat32_read(void *file, unsigned char *buffer, unsigned int size) {
     return 0;
 }
 
-void fat32_close(fat32_file *file) {
+void fat32_close(void *file) {
 }
 
-unsigned int fat32_seek(fat32_file *file, unsigned int position) {
+unsigned int fat32_seek(void *file, unsigned int position) {
     return 0;
 }
