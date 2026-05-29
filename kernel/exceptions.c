@@ -1,6 +1,5 @@
 #include "idt.h"
 #include "fault_handler.h"
-#include "io.h"
 
 void idt_init(void) {
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
@@ -51,4 +50,8 @@ void idt_init(void) {
     idt_set_gate(45, (unsigned int)isr45, 0x08, 0x8E);
     idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)isr47, 0x08, 0x8E);
+}
+
+void isr_handler(unsigned int num, unsigned int err) {
+    fault_handler(num, err);
 }
