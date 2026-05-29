@@ -1,7 +1,14 @@
 #ifndef IRQ_H
 #define IRQ_H
 
-void irq_init(void);
-void irq_set_handler(unsigned char irq, void (*handler)(void));
+struct regs {
+    unsigned int gs, fs, es, ds;
+    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    unsigned int int_no, err_code;
+    unsigned int eip, cs, eflags, useresp, ss;
+};
+
+void irq_set_handler(int irq, void (*handler)(struct regs *r));
+void irq_handler(struct regs *r);
 
 #endif

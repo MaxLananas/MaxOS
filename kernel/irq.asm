@@ -30,7 +30,8 @@ irq_common_stub:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    push esp
+    mov eax, esp
+    push eax
     call irq_handler
     add esp, 4
     pop gs

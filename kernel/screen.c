@@ -5,72 +5,67 @@
 #define VGA_HEIGHT 25
 #define VGA_MEMORY 0xB8000
 
-static unsigned char color = 0x0F;
-static unsigned short *video_memory = (unsigned short *)VGA_MEMORY;
-static unsigned int row = 0;
-static unsigned int col = 0;
+unsigned char color = 0x0F;
+unsigned short *video_memory = (unsigned short*)VGA_MEMORY;
+int row = 0;
+int column = 0;
 
-void screen_init(void) {
+void screen_init() {
     screen_clear();
 }
 
-void screen_clear(void) {
+void screen_clear() {
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
         video_memory[i] = (color << 8) | ' ';
     }
     row = 0;
-    col = 0;
+    column = 0;
 }
 
-void screen_putchar(char c, unsigned char new_color) {
-    if (new_color != color) {
-        color = new_color;
-    }
-
+void screen_putchar(char c, unsigned char col) {
     if (c == '\n') {
-        col = 0;
         row++;
+        column = 0;
     } else {
-        video_memory[row * VGA_WIDTH + col] = (color << 8) | c;
-        col++;
-        if (col >= VGA_WIDTH) {
-            col = 0;
+        video_memory[row * VGA_WIDTH + column] = (col << 8) | c;
+        column++;
+        if (column >= VGA_WIDTH) {
             row++;
+            column = 0;
         }
     }
-
     if (row >= VGA_HEIGHT) {
         screen_scroll();
     }
 }
 
-void screen_write(const char *str, unsigned char new_color) {
+void screen_write(const char *str, unsigned char col) {
     while (*str) {
-        screen_putchar(*str++, new_color);
+        screen_putchar(*str++, col);
     }
 }
 
-void screen_writeln(const char *str, unsigned char new_color) {
-    screen_write(str, new_color);
-    screen_putchar('\n', new_color);
+void screen_writeln(const char *str, unsigned char col) {
+    screen_write(str, col);
+    screen_putchar('\n', col);
 }
 
-void screen_set_color(unsigned char new_color) {
-    color = new_color;
+void screen_set_color(unsigned char col) {
+    color = col;
 }
 
-int screen_get_row(void) {
+int screen_get_row() {
     return row;
 }
 
-void screen_scroll(void) {
-    for (int i = 0; i < VGA_WIDTH * (VGA_HEIGHT - 1); i++) {
-        video_memory[i] = video_memory[i + VGA_WIDTH];
+void screen_scroll() {
+    for (int i = 0; i < VGA_HEIGHT - 1; i++) {
+        for (int j = 0; j < VGA_WIDTH; j++) {
+            video_memory[i * VGA_WIDTH + j] = video_memory[(i + 1) * VGA_WIDTH + j];
+        }
     }
-
-    for (int i = VGA_WIDTH * (VGA_HEIGHT - 1); i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        video_memory[i] = (color << 8) | ' ';
+    for (int j = 0; j < VGA_WIDTH; j++) {
+        video_memory[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (color << 8) | ' ';
     }
-
     row = VGA_HEIGHT - 1;
 }

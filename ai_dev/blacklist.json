@@ -1,7 +1,7 @@
 {
   "Makefile canonique + os.img garanti": {
-    "consecutive_fails": 17,
-    "last_fail": 1779897238
+    "consecutive_fails": 18,
+    "last_fail": 1780086736
   },
   "kernel/io.h + IDT + ISR complet": {
     "consecutive_fails": 18,
