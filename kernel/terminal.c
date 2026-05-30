@@ -3,40 +3,41 @@
 #include "keyboard.h"
 #include "string.h"
 
-void terminal_init(void) {
+#define MAX_CMD_LEN 100
+
+char cmd_buffer[MAX_CMD_LEN];
+unsigned int cmd_len = 0;
+
+void terminal_init(void)
+{
     screen_clear();
-    screen_writeln("Terminal initialized", 0x0A);
 }
 
-void terminal_run(void) {
-    char cmd[256];
-    unsigned int cmd_pos = 0;
-
+void terminal_run(void)
+{
     while (1) {
         char c = keyboard_getchar();
         if (c) {
             if (c == '\n') {
-                cmd[cmd_pos] = 0;
-                terminal_process(cmd);
-                cmd_pos = 0;
+                screen_putchar('\n', 0x07);
+                cmd_buffer[cmd_len] = 0;
+                terminal_process(cmd_buffer);
+                cmd_len = 0;
             } else if (c == '\b') {
-                if (cmd_pos > 0) {
-                    cmd_pos--;
-                    screen_putchar('\b', 0x0F);
-                    screen_putchar(' ', 0x0F);
-                    screen_putchar('\b', 0x0F);
+                if (cmd_len > 0) {
+                    cmd_len--;
+                    screen_putchar('\b', 0x07);
                 }
             } else {
-                cmd[cmd_pos++] = c;
-                screen_putchar(c, 0x0F);
+                cmd_buffer[cmd_len++] = c;
+                screen_putchar(c, 0x07);
             }
         }
     }
 }
 
-void terminal_process(const char *cmd) {
-    screen_writeln("", 0x0F);
-    screen_writeln("Command:", 0x0A);
-    screen_writeln(cmd, 0x0F);
-    screen_writeln("", 0x0F);
+void terminal_process(const char *cmd)
+{
+    screen_writeln("Command executed: ", 0x0A);
+    screen_writeln(cmd, 0x07);
 }

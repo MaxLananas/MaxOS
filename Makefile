@@ -23,13 +23,13 @@ $(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
 $(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/isr.o: kernel/isr.asm | $(BUILD)
+$(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/irq.o: kernel/irq.asm | $(BUILD)
+$(BUILD)/irq.o: $(SRC_DIR)/kernel/irq.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
-$(BUILD)/idt_load.o: kernel/idt_load.asm | $(BUILD)
+$(BUILD)/idt_load.o: $(SRC_DIR)/kernel/idt_load.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 SRCS_C = \

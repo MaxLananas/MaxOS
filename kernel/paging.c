@@ -1,10 +1,11 @@
 #include "paging.h"
-#include "mem.h"
+#include "screen.h"
 
-void paging_init(void) {
-    // Simple paging initialization
+void paging_init(void)
+{
+    screen_writeln("Paging initialized", 0x0A);
 }
 
-void paging_map(unsigned int virt, unsigned int phys, unsigned int flags) {
-    // Simple page mapping
+void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)
+{
 }
