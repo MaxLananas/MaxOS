@@ -2,12 +2,18 @@
 #include "screen.h"
 #include "keyboard.h"
 
-void terminal_init() {
+void terminal_init(void) {
+    screen_clear();
 }
 
-void terminal_run() {
+void terminal_run(void) {
+    while (1) {
+        char c = keyboard_getchar();
+        if (c != 0) {
+            screen_putchar(c, 0x0F);
+        }
+    }
 }
 
 void terminal_process(const char *cmd) {
-    (void)cmd;
 }

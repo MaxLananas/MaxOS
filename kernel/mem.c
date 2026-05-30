@@ -1,12 +1,18 @@
 #include "mem.h"
+#include "screen.h"
 
-unsigned int mem_size_kb = 0;
-unsigned int used_pages = 0;
+#define PAGE_SIZE 4096
+
+unsigned int mem_used = 0;
 
 void mem_init(unsigned int mem_size_kb) {
-    mem_size_kb = mem_size_kb;
+    mem_used = 0;
 }
 
-unsigned int mem_used_pages() {
-    return used_pages;
+void mem_free_page(void *addr) {
+    mem_used--;
+}
+
+unsigned int mem_used_pages(void) {
+    return mem_used;
 }

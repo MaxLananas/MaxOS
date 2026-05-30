@@ -8,7 +8,8 @@ struct regs {
     unsigned int eip, cs, eflags, useresp, ss;
 };
 
-void irq_set_handler(int irq, void (*handler)(struct regs *r));
-void irq_handler(struct regs *r);
+void irq_install_handler(int irq, void (*handler)(struct regs *r));
+void irq_uninstall_handler(int irq);
+void irq_init(void);
 
 #endif

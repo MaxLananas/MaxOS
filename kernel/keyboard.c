@@ -9,16 +9,18 @@ unsigned char keyboard_map[128] = {
     0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,
     '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ',
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-',
-    0, 0, 0, 0, '+', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    0, 0, 0, 0, '+', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0
 };
 
-void keyboard_init() {
-    irq_set_handler(1, keyboard_handler);
+void keyboard_callback(struct regs *r) {
+    unsigned char scancode = inb(0x60);
+    if (scancode & 0x80) {
+        return;
+    }
+    screen_putchar(keyboard_map[scancode], 0x0F);
 }
 
-void keyboard_handler() {
-    unsigned char scancode = inb(0x60);
-    if (scancode < 128) {
-        screen_putchar(keyboard_map[scancode], 0x0F);
-    }
+void keyboard_init(void) {
+    irq_install_handler(1, keyboard_callback);
 }
