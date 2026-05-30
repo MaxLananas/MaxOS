@@ -1,8 +1,7 @@
 [bits 32]
-global idt_load
-
 extern idt_ptr
 
+global idt_load
 idt_load:
     lidt [idt_ptr]
     ret

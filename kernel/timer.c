@@ -4,7 +4,7 @@
 
 unsigned int ticks = 0;
 
-void timer_callback(struct regs *r) {
+void timer_callback(void) {
     ticks++;
 }
 
@@ -22,7 +22,10 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = ticks;
-    unsigned int end = start + (ms * 1000) / 1000;
-    while (ticks < end)
-        asm volatile("hlt");
+    unsigned int end = start + ms;
+    if (end < start) {
+        while (ticks >= start || ticks < end);
+    } else {
+        while (ticks < end);
+    }
 }

@@ -1,7 +1,7 @@
 #include "paging.h"
 #include "screen.h"
 
-void paging_init(void) {
+void paging_init() {
     screen_writeln("Paging initialized", 0x0A);
 }
 

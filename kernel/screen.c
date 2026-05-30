@@ -7,34 +7,44 @@
 
 unsigned char color = 0x0F;
 unsigned short *vga_buffer = (unsigned short*)VGA_MEMORY;
-unsigned int vga_row = 0;
-unsigned int vga_col = 0;
+unsigned int cursor_row = 0;
+unsigned int cursor_col = 0;
 
 void screen_init(void) {
-    screen_clear();
+    for (int i = 0; i < VGA_HEIGHT; i++) {
+        for (int j = 0; j < VGA_WIDTH; j++) {
+            vga_buffer[i * VGA_WIDTH + j] = (color << 8) | ' ';
+        }
+    }
+    cursor_row = 0;
+    cursor_col = 0;
 }
 
 void screen_clear(void) {
-    for (unsigned int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        vga_buffer[i] = (color << 8) | ' ';
+    for (int i = 0; i < VGA_HEIGHT; i++) {
+        for (int j = 0; j < VGA_WIDTH; j++) {
+            vga_buffer[i * VGA_WIDTH + j] = (color << 8) | ' ';
+        }
     }
-    vga_row = 0;
-    vga_col = 0;
+    cursor_row = 0;
+    cursor_col = 0;
 }
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
-        vga_col = 0;
-        vga_row++;
+        cursor_col = 0;
+        cursor_row++;
     } else {
-        vga_buffer[vga_row * VGA_WIDTH + vga_col] = (color << 8) | c;
-        vga_col++;
+        vga_buffer[cursor_row * VGA_WIDTH + cursor_col] = (color << 8) | c;
+        cursor_col++;
     }
-    if (vga_col >= VGA_WIDTH) {
-        vga_col = 0;
-        vga_row++;
+
+    if (cursor_col >= VGA_WIDTH) {
+        cursor_col = 0;
+        cursor_row++;
     }
-    if (vga_row >= VGA_HEIGHT) {
+
+    if (cursor_row >= VGA_HEIGHT) {
         screen_scroll();
     }
 }
@@ -55,15 +65,19 @@ void screen_set_color(unsigned char new_color) {
 }
 
 int screen_get_row(void) {
-    return vga_row;
+    return cursor_row;
 }
 
 void screen_scroll(void) {
-    for (unsigned int i = 0; i < VGA_WIDTH * (VGA_HEIGHT - 1); i++) {
-        vga_buffer[i] = vga_buffer[i + VGA_WIDTH];
+    for (int i = 1; i < VGA_HEIGHT; i++) {
+        for (int j = 0; j < VGA_WIDTH; j++) {
+            vga_buffer[(i - 1) * VGA_WIDTH + j] = vga_buffer[i * VGA_WIDTH + j];
+        }
     }
-    for (unsigned int i = VGA_WIDTH * (VGA_HEIGHT - 1); i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        vga_buffer[i] = (color << 8) | ' ';
+
+    for (int j = 0; j < VGA_WIDTH; j++) {
+        vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (color << 8) | ' ';
     }
-    vga_row = VGA_HEIGHT - 1;
+
+    cursor_row--;
 }
