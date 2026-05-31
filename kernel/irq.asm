@@ -14,7 +14,7 @@ global irq10
 global irq11
 global irq12
 global irq13
-global irq14
+global irr14
 global irq15
 
 extern irq_handler

@@ -10,7 +10,7 @@ Voici la documentation technique complète pour MaxOS, formatée en Markdown.
 
 ## 1. Introduction
 
-MaxOS est un système d'exploitation expérimental en cours de développement, conçu pour fonctionner sur l'architecture x86. Actuellement au stade de prototype "bare metal" (score estimé : 35/10
+Bienvenue dans la documentation technique de MaxOS, un système d'exploitation bare-metal en cours de développement. MaxOS est un projet éducatif et expérimental visant à explorer les fondements de la création d'un système d'exploitation à
 
 ---
 *MaxOS AI v18.0*
