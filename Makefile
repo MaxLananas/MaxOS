@@ -20,7 +20,7 @@ $(BUILD):
 $(BUILD)/boot.bin: $(SRC_DIR)/boot.asm | $(BUILD)
 	$(AS) $(BFLAGS) $< -o $@
 
-$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel_entry.asm | $(BUILD)
+$(BUILD)/kernel_entry.o: $(SRC_DIR)/kernel/kernel_entry.asm | $(BUILD)
 	$(AS) $(EFLAGS) $< -o $@
 
 $(BUILD)/isr.o: $(SRC_DIR)/kernel/isr.asm | $(BUILD)

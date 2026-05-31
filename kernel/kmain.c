@@ -1,21 +1,24 @@
+#include "kmain.h"
 #include "screen.h"
-#include "keyboard.h"
 #include "idt.h"
 #include "timer.h"
+#include "keyboard.h"
 #include "mouse.h"
-#include "terminal.h"
+#include "exceptions.h"
 
 void kmain(void)
 {
     screen_init();
     idt_init();
-    keyboard_init();
     timer_init(100);
+    keyboard_init();
     mouse_init();
-    terminal_init();
+    exceptions_init();
 
-    screen_writeln("Kernel initialized", 0x0A);
-    screen_writeln("Type 'help' for commands", 0x07);
+    screen_writeln("Kernel started", 0x0A);
+    screen_writeln("Welcome to Bare Metal OS", 0x0F);
 
-    terminal_run();
+    while (1) {
+        asm volatile("hlt");
+    }
 }

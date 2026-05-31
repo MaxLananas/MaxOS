@@ -280,9 +280,7 @@ isr41:
 isr42:
     push byte 0
     push byte 42
-    jmp isr_common_stub
-
-isr43:
+    jmp isr_common_st43:
     push byte 0
     push byte 43
     jmp isr_common_stub

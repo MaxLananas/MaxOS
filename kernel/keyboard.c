@@ -1,27 +1,24 @@
 #include "keyboard.h"
 #include "io.h"
+#include "irq.h"
 #include "screen.h"
-#include "idt.h"
-
-#define KEYBOARD_DATA_PORT 0x60
-#define KEYBOARD_STATUS_PORT 0x64
 
 void keyboard_init(void)
 {
-    idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
-    outb(0x21, inb(0x21) & ~(1 << 1));
+    outb(0x64, 0xAE);
+    outb(0x64, 0x20);
+}
+
+char keyboard_getchar(void)
+{
+    return inb(0x60);
 }
 
 void keyboard_handler(void)
 {
-    unsigned char scancode = inb(KEYBOARD_DATA_PORT);
-
+    unsigned char scancode = inb(0x60);
     if (scancode & 0x80) {
-        // Key released
-    } else {
-        // Key pressed
-        screen_putchar(scancode, 0x07);
+        return;
     }
-
-    outb(0x20, 0x20);
+    screen_putchar(keyboard_getchar(), 0x0F);
 }
