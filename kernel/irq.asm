@@ -100,7 +100,7 @@ irq10:
 irq11:
     push byte 0
     push byte 43
-    jmp irq_common_stb
+    jmp irq_common_stub
 
 irq12:
     push byte 0
