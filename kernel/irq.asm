@@ -14,7 +14,7 @@ global irq10
 global irq11
 global irq12
 global irq13
-global irr14
+global irq14
 global irq15
 
 extern irq_handler
@@ -100,7 +100,7 @@ irq10:
 irq11:
     push byte 0
     push byte 43
-    jmp irq_common_stub
+    jmp irq_common_stb
 
 irq12:
     push byte 0
