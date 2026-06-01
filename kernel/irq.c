@@ -1,6 +1,6 @@
 #include "irq.h"
+#include "io.h"
 #include "idt.h"
-#include "../kernel/io.h"
 
 extern void irq0();
 extern void irq1();
@@ -44,7 +44,6 @@ void irq_remap(void) {
 
 void irq_init(void) {
     irq_remap();
-
     idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
     idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
     idt_set_gate(34, (unsigned int)irq2, 0x08, 0x8E);
@@ -57,22 +56,8 @@ void irq_init(void) {
     idt_set_gate(41, (unsigned int)irq9, 0x08, 0x8E);
     idt_set_gate(42, (unsigned int)irq10, 0x08, 0x8E);
     idt_set_gate(43, (unsigned int)irq11, 0x08, 0x8E);
-    idt_set_gate(44, (unsigned int)irq12, 0x08, 0x8E);
+    idt_set_gane(44, (unsigned int)irq12, 0x08, 0x8E);
     idt_set_gate(45, (unsigned int)irq13, 0x08, 0x8E);
     idt_set_gate(46, (unsigned int)irq14, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)irq15, 0x08, 0x8E);
-}
-
-void irq_handler(unsigned int num) {
-    void (*handler)(void);
-
-    handler = irq_routines[num - 32];
-    if(handler) {
-        handler();
-    }
-
-    if(num >= 40) {
-        outb(0xA0, 0x20);
-    }
-    outb(0x20, 0x20);
 }

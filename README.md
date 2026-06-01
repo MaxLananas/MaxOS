@@ -7,9 +7,9 @@
 | Métrique | Valeur |
 |---|---|
 | 🎯 Score | **35/100** |
-| 📈 Niveau | desc |
-| 📁 Fichiers | 172 |
-| 📝 Lignes | 3,621 |
+| 📈 Niveau | Prototype bare metal |
+| 📁 Fichiers | 177 |
+| 📝 Lignes | 3,540 |
 | 💾 os.img | ✅ Bootable |
 | 🔐 Boot sector | Signature 0xAA55 ✅ | 1474560 bytes |
 
@@ -25,51 +25,14 @@ qemu-system-i386 -drive format=raw,file=os.img,if=floppy -boot a -vga std -k fr 
 
 ## ✅ Fonctionnalités présentes
 
-- Bootloader fonctionnel (boot.asm)
-- GDT et IDT initialisées (idt.asm, idt.c)
-- ISR et IRQ configurés (isr.asm, irq.asm)
-- Gestion des exceptions (fault_handler.c)
-- Paging basique (paging.c)
-- Heap basique (heap.c)
-- PIT Timer (timer.c)
-- Clavier PS/2 (keyboard.c)
-- Écran VGA (screen.c)
-- Terminal basique (terminal.c)
-- Gestion des processus (process.c)
-- SMP basique (smp.c)
-- VFS et FAT32 (vfs.c, fat32.c)
-- ATA PIO (ata.c)
-- GUI basique (ui.c, widget.c)
-- Système de fichiers (devfs.c)
-- RTC (rtc.c)
-- HPET (hpet.c)
-- NVMe basique (nvme.c)
-- Mouse PS/2 (mouse.c)
-- PIC/APIC (pic.c)
-- Syscalls (syscall.c)
+- Boot x86
+- VGA texte 80x25
 
 ## 🚧 En développement
 
-- Gestion avancée de la mémoire (buddy allocator, slab)
-- Multitâche préemptif complet
-- SMP avancé (IPI, TLB shootdown)
-- Gestion des interruptions APIC
-- Système de fichiers journalisé
-- Gestion des périphériques USB
-- ACPI complet (tables, parsing)
-- Gestion des exceptions avancées (MCE, NMI)
-- Optimisation du VMM (shadow paging, EPT)
-- Système de fichiers réseau (NFS, SMB)
-- Gestion des threads utilisateur
-- Système de fichiers temporaires (tmpfs)
-- Gestion des signaux
-- Optimisation du scheduler
-- Gestion des interruptions MSI
-- Système de fichiers crypté
-- Gestion des interruptions virtuelles
-- Optimisation du VFS (caching)
-- Gestion des interruptions par vecteur dynamique
-- Système de fichiers distribué
+- IDT+PIC
+- Timer
+- Mémoire
 
 ## 📈 Progression
 
