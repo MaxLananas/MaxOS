@@ -1,7 +1,6 @@
 #include "timer.h"
 #include "io.h"
 #include "irq.h"
-#include "screen.h"
 
 static unsigned int timer_ticks = 0;
 
@@ -14,7 +13,7 @@ void timer_init(unsigned int hz) {
     outb(0x43, 0x36);
     outb(0x40, divisor & 0xFF);
     outb(0x40, (divisor >> 8) & 0xFF);
-    irq_set_handler(0, timer_handler);
+    irq_install_handler(0, timer_handler);
 }
 
 unsigned int timer_get_ticks(void) {
@@ -22,7 +21,7 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start = timer_ticks;
-    unsigned int wait = ms / 10;
-    while((timer_ticks - start) < wait);
+    unsigned int start = timer_get_ticks();
+    unsigned int wait = ms * 1000 / 18;
+    while (timer_get_ticks() - start < wait);
 }
