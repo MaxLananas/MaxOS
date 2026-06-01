@@ -1,6 +1,11 @@
 #ifndef FAT32_H
 #define FAT32_H
 
+typedef struct {
+    unsigned int cluster;
+    unsigned int position;
+} fat32_file;
+
 void fat32_init(void);
 void *fat32_open(const char *path);
 unsigned int fat32_read(void *file, unsigned char *buffer, unsigned int size);

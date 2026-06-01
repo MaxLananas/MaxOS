@@ -1,11 +1,13 @@
 #ifndef VFS_H
 #define VFS_H
 
-typedef struct vfs_file {
-    unsigned int type;
+typedef struct {
+    unsigned char type;
     union {
         void *ptr;
-        struct device *dev;
+        struct {
+            void *fat32_file;
+        } fat32;
     } data;
 } vfs_file;
 

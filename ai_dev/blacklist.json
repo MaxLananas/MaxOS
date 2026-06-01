@@ -398,5 +398,45 @@
   "Gestion du r\u00e9seau": {
     "consecutive_fails": 1,
     "last_fail": 1780071370
+  },
+  "Impl\u00e9mentation compl\u00e8te du VMM avec shadow paging et optimisations EPT": {
+    "consecutive_fails": 1,
+    "last_fail": 1780314255
+  },
+  "SMP avanc\u00e9 avec IPI et gestion des TLB": {
+    "consecutive_fails": 1,
+    "last_fail": 1780314594
+  },
+  "ACPI complet avec parsing des tables": {
+    "consecutive_fails": 1,
+    "last_fail": 1780314806
+  },
+  "Gestion des exceptions avanc\u00e9es (MCE, NMI)": {
+    "consecutive_fails": 1,
+    "last_fail": 1780315007
+  },
+  "Gestion des interruptions APIC et MSI": {
+    "consecutive_fails": 1,
+    "last_fail": 1780315216
+  },
+  "Gestion des signaux": {
+    "consecutive_fails": 1,
+    "last_fail": 1780315384
+  },
+  "Optimisation du scheduler pour le multit\u00e2che pr\u00e9emptif": {
+    "consecutive_fails": 1,
+    "last_fail": 1780315593
+  },
+  "Support des threads utilisateur": {
+    "consecutive_fails": 1,
+    "last_fail": 1780315791
+  },
+  "Syst\u00e8me de fichiers journalis\u00e9 (ext4 ou propre)": {
+    "consecutive_fails": 1,
+    "last_fail": 1780316007
+  },
+  "Syst\u00e8me de fichiers temporaires (tmpfs)": {
+    "consecutive_fails": 1,
+    "last_fail": 1780316177
   }
 }

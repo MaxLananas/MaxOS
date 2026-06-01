@@ -1,6 +1,6 @@
 #include "vmm.h"
-#include "mem.h"
+#include "screen.h"
 
-void heap_init(void *start, unsigned int size) {
-    // Implémentation de base
+void vmm_init(void) {
+    screen_writeln("Virtual memory manager initialized", 0x0F);
 }

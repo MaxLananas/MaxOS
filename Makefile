@@ -1,7 +1,7 @@
 AS     = nasm
 CC     = gcc
 LD     = ld
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -Ikernel
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
@@ -48,7 +48,15 @@ SRCS_C = \
 	kernel/terminal.c \
 	kernel/devfs.c \
 	kernel/vfs.c \
-	kernel/kmain.c
+	kernel/kmain.c \
+	kernel/vmm.c \
+	kernel/vmm_shadow.c \
+	kernel/vmm_ept.c \
+	kernel/mmu.c \
+	kernel/pmm.c \
+	kernel/mce.c \
+	kernel/nmi_handler.c \
+	kernel/mce_handler.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
