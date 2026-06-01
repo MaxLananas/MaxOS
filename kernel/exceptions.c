@@ -1,23 +1,8 @@
 #include "exceptions.h"
-#include "screen.h"
 #include "fault_handler.h"
+#include "screen.h"
 
-void exceptions_init(void) {
-    idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
-    idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
-    idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
-    idt_set_gate(3, (unsigned int)isr3, 0x08, 0x8E);
-    idt_set_gate(4, (unsigned int)isr4, 0x08, 0x8E);
-    idt_set_gate(5, (unsigned int)isr5, 0x08, 0x8E);
-    idt_set_gate(6, (unsigned int)isr6, 0x08, 0x8E);
-    idt_set_gate(7, (unsigned int)isr7, 0x08, 0x8E);
-    idt_set_gate(8, (unsigned int)isr8, 0x08, 0x8E);
-    idt_set_gate(9, (unsigned int)isr9, 0x08, 0x8E);
-    idt_set_gate(10, (unsigned int)isr10, 0x08, 0x8E);
-    idt_set_gate(11, (unsigned int)isr11, 0x08, 0x8E);
-    idt_set_g2, (unsigned int)isr12, 0x08, 0x8E);
-    idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
-    idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
-    idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
-    idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
-    idt_set_gate(17, (unsigned int)is
+void exceptions_init(void)
+{
+    screen_writeln("Exceptions initialized", 0x0F);
+}

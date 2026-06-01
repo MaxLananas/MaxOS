@@ -9,36 +9,40 @@ static unsigned char color = 0x0F;
 static unsigned int row = 0;
 static unsigned int col = 0;
 
-void screen_init(void) {
+void screen_init(void)
+{
     screen_clear();
 }
 
-void screen_clear(void) {
+void screen_clear(void)
+{
     unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
-
     for (unsigned int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
         video_memory[i] = (color << 8) | ' ';
     }
-
     row = 0;
     col = 0;
 }
 
-void screen_putchar(char c, unsigned char color) {
+void screen_putchar(char c, unsigned char color)
+{
     unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
 
     if (c == '\n') {
         row++;
         col = 0;
-        return;
-    }
-
-    video_memory[row * MAX_COLS + col] = (color << 8) | c;
-    col++;
-
-    if (col >= MAX_COLS) {
-        row++;
-        col = 0;
+    } else if (c == '\b') {
+        if (col > 0) {
+            col--;
+            video_memory[row * MAX_COLS + col] = (color << 8) | ' ';
+        }
+    } else {
+        video_memory[row * MAX_COLS + col] = (color << 8) | c;
+        col++;
+        if (col >= MAX_COLS) {
+            row++;
+            col = 0;
+        }
     }
 
     if (row >= MAX_ROWS) {
@@ -46,26 +50,31 @@ void screen_putchar(char c, unsigned char color) {
     }
 }
 
-void screen_write(const char *str, unsigned char color) {
+void screen_write(const char *str, unsigned char color)
+{
     while (*str) {
         screen_putchar(*str++, color);
     }
 }
 
-void screen_writeln(const char *str, unsigned char color) {
+void screen_writeln(const char *str, unsigned char color)
+{
     screen_write(str, color);
     screen_putchar('\n', color);
 }
 
-void screen_set_color(unsigned char color) {
-    this->color = color;
+void screen_set_color(unsigned char new_color)
+{
+    color = new_color;
 }
 
-int screen_get_row(void) {
+int screen_get_row(void)
+{
     return row;
 }
 
-void screen_scroll(void) {
+void screen_scroll(void)
+{
     unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
 
     for (unsigned int i = 0; i < (MAX_ROWS - 1) * MAX_COLS; i++) {
