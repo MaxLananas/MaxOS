@@ -1,42 +1,69 @@
-[bits 16]
 [org 0x7C00]
+[bits 16]
 
 start:
-    jmp 0x0000:continue
-continue:
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
 
-    mov [boot_drive], dl
+    mov [BOOT_DRIVE], dl
 
-    mov si, msg_loading
+    mov bx, MSG_REAL_MODE
     call print_string
 
-    mov ah, 0x02
-    mov al, 4
-    mov ch, 0
-    mov dh, 0
-    mov cl, 2
-    mov dl, [boot_drive]
     mov bx, 0x1000
-    int 0x13
+    mov dh, 4
+    mov dl, [BOOT_DRIVE]
+    call disk_load
 
     jmp 0x10000
 
+    jmp $
+
 print_string:
-    lodsb
-    or al, al
-    jz .done
+    pusha
     mov ah, 0x0E
-    int 0x10
-    jmp print_string
-.done:
+    .loop:
+        mov al, [bx]
+        cmp al, 0
+        je .done
+        int 0x10
+        inc bx
+        jmp .loop
+    .done:
+        popa
+        ret
+
+disk_load:
+    pusha
+    push dx
+
+    mov ah, 0x02
+    mov al, dh
+    mov ch, 0x00
+    mov dh, 0x00
+    mov cl, 0x02
+
+    int 0x13
+
+    jc disk_error
+
+    pop dx
+    cmp al, dh
+    jne disk_error
+    popa
     ret
 
-msg_loading db "Loading OS...", 0
-boot_drive db 0
+disk_error:
+    mov bx, DISK_ERROR_MSG
+    call print_string
+    jmp $
+
+BOOT_DRIVE: db 0
+MSG_REAL_MODE: db "Booting from 16-bit Real Mode", 0
+DISK_ERROR_MSG: db "Disk read error!", 0
+
 times 510-($-$$) db 0
 dw 0xAA55

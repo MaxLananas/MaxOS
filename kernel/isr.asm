@@ -171,7 +171,7 @@ isr20:
     push byte 20
     jmp isr_common_stub
 
-isis21:
+isr21:
     push byte 0
     push byte 21
     jmp isr_common_stub

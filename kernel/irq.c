@@ -1,6 +1,6 @@
 #include "irq.h"
 #include "io.h"
-#include "idt.h"
+#include "screen.h"
 
 extern void irq0();
 extern void irq1();
@@ -19,7 +19,10 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-void *irq_routines[16] = {0};
+void *irq_routines[16] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
 
 void irq_install_handler(unsigned int irq, void (*handler)(void)) {
     irq_routines[irq] = handler;
