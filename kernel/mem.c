@@ -1,13 +1,12 @@
 #include "mem.h"
 
-void mem_init(unsigned int mem_size_kb) {
-    // Simple memory initialization
-}
+unsigned int mem_size_kb = 0;
+unsigned int used_pages = 0;
 
-void mem_free_page(void *addr) {
-    // Simple page free
+void mem_init(unsigned int mem_size_kb) {
+    mem_size_kb = mem_size_kb;
 }
 
 unsigned int mem_used_pages(void) {
-    return 0;
+    return used_pages;
 }

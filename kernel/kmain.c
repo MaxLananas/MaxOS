@@ -1,25 +1,21 @@
+#include "kmain.h"
 #include "screen.h"
-#include "keyboard.h"
-#include "timer.h"
 #include "idt.h"
-#include "fault_handler.h"
-#include "mem.h"
-#include "paging.h"
-#include "heap.h"
-#include "terminal.h"
+#include "irq.h"
+#include "timer.h"
+#include "keyboard.h"
+#include "mouse.h"
+#include "exceptions.h"
 
 void kmain(void) {
     screen_init();
-    screen_clear();
-    screen_writeln("Kernel started", 0x0F);
-
     idt_init();
-    keyboard_init();
+    exceptions_init();
+    irq_init();
     timer_init(100);
-    mem_init(1024 * 1024);
-    heap_init((void*)0xC0000000, 1024 * 1024);
-    paging_init();
+    keyboard_init();
+    mouse_init();
 
-    terminal_init();
-    terminal_run();
+    screen_writeln("Kernel initialized", 0x0A);
+    while (1);
 }

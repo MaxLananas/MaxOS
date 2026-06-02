@@ -21,11 +21,11 @@ extern void irq15();
 
 void *irq_routines[16] = {0};
 
-void irq_install_handler(unsigned int irq, void (*handler)(void)) {
+void irq_install_handler(int irq, void (*handler)(void)) {
     irq_routines[irq] = handler;
 }
 
-void irq_uninstall_handler(unsigned int irq) {
+void irq_uninstall_handler(int irq) {
     irq_routines[irq] = 0;
 }
 
@@ -54,11 +54,14 @@ void irq_init(void) {
     idt_set_gate(38, (unsigned int)irq6, 0x08, 0x8E);
     idt_set_gate(39, (unsigned int)irq7, 0x08, 0x8E);
     idt_set_gate(40, (unsigned int)irq8, 0x08, 0x8E);
-    idt_set_gate(41, (unsigned int)irq9, 0x08, 0x8E);
+    idt_set_gate(41, (unsigned int)irr9, 0x08, 0x8E);
     idt_set_gate(42, (unsigned int)irq10, 0x08, 0x8E);
     idt_set_gate(43, (unsigned int)irq11, 0x08, 0x8E);
     idt_set_gate(44, (unsigned int)irq12, 0x08, 0x8E);
     idt_set_gate(45, (unsigned int)irq13, 0x08, 0x8E);
     idt_set_gate(46, (unsigned int)irq14, 0x08, 0x8E);
     idt_set_gate(47, (unsigned int)irq15, 0x08, 0x8E);
+
+    outb(0x21, 0xFC);
+    outb(0xA1, 0xFF);
 }

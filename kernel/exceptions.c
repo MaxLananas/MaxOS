@@ -1,6 +1,6 @@
 #include "exceptions.h"
-#include "fault_handler.h"
 #include "screen.h"
+#include "fault_handler.h"
 
 void exceptions_init(void) {
     idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
@@ -33,6 +33,6 @@ void exceptions_init(void) {
     idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
     idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
-    idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
+    idt_set_gane(30, (unsigned int)isr30, 0x08, 0x8E);
     idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
 }

@@ -22,6 +22,5 @@ unsigned int timer_get_ticks(void) {
 
 void timer_sleep(unsigned int ms) {
     unsigned int start = timer_ticks;
-    unsigned int end = start + (ms * 1000) / 1193;
-    while (timer_ticks < end);
+    while ((timer_ticks - start) * 1000 / 100 < ms);
 }
