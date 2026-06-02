@@ -13,20 +13,34 @@ void terminal_run(void) {
     unsigned int pos = 0;
 
     while (1) {
-        char c = keyboard_getchar();
-        if (c) {
+        screen_putchar('>', 0x0F);
+        screen_putchar(' ', 0x0F);
+
+        pos = 0;
+        while (1) {
+            char c = keyboard_getchar();
             if (c == '\n') {
                 cmd[pos] = 0;
-                terminal_process(cmd);
-                pos = 0;
-            } else {
+                screen_writeln("", 0x0F);
+                break;
+            } else if (c == '\b' && pos > 0) {
+                pos--;
+                screen_putchar('\b', 0x0F);
+                screen_putchar(' ', 0x0F);
+                screen_putchar('\b', 0x0F);
+            } else if (c >= ' ' && c <= '~') {
                 cmd[pos++] = c;
                 screen_putchar(c, 0x0F);
             }
         }
+
+        terminal_process(cmd);
     }
 }
 
 void terminal_process(const char *cmd) {
+    if (cmd[0] == 0) return;
+
+    screen_writeln("Command executed:", 0x0E);
     screen_writeln(cmd, 0x0F);
 }

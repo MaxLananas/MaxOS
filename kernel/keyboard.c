@@ -1,34 +1,38 @@
 #include "keyboard.h"
 #include "io.h"
+#include "irq.h"
 #include "screen.h"
-#include "idt.h"
 
-#define KEYBOARD_DATA_PORT 0x60
-#define KEYBOARD_STATUS_PORT 0x64
-
-static char keyboard_buffer[256];
-static unsigned int buffer_pos = 0;
+unsigned char keyboard_map[128] = {
+    0,  27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',
+    '\t', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',
+    0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', 0,
+    '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 0, '*', 0, ' ',
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '-',
+    0, 0, 0, 0, '+', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0
+};
 
 void keyboard_init(void) {
-    idt_set_gate(33, (unsigned int)keyboard_handler, 0x08, 0x8E);
-    outb(0x21, inb(0x21) & 0xFD);
-}
-
-void keyboard_handler(void) {
-    unsigned char scancode = inb(KEYBOARD_DATA_PORT);
-
-    if (scancode & 0x80) {
-        // Key released
-    } else {
-        keyboard_buffer[buffer_pos++] = scancode;
-    }
-
-    outb(0x20, 0x20);
+    irq_install_handler(1, keyboard_handler);
 }
 
 char keyboard_getchar(void) {
-    if (buffer_pos > 0) {
-        return keyboard_buffer[--buffer_pos];
+    static unsigned char buffer[128];
+    static unsigned int head = 0;
+    static unsigned int tail = 0;
+
+    if (head == tail) return 0;
+
+    unsigned char c = buffer[tail];
+    tail = (tail + 1) % 128;
+    return c;
+}
+
+void keyboard_handler(void) {
+    unsigned char scancode = inb(0x60);
+    if (scancode < 128) {
+        buffer[head] = keyboard_map[scancode];
+        head = (head + 1) % 128;
     }
-    return 0;
 }

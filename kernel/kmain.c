@@ -17,10 +17,9 @@ void kmain(void) {
     keyboard_init();
     timer_init(100);
     mem_init(1024 * 1024);
-    paging_init();
     heap_init((void*)0xC0000000, 1024 * 1024);
-    terminal_init();
+    paging_init();
 
-    screen_writeln("All systems ready", 0x0A);
+    terminal_init();
     terminal_run();
 }
