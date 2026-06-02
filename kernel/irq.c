@@ -1,6 +1,6 @@
 #include "irq.h"
 #include "io.h"
-#include "screen.h"
+#include "idt.h"
 
 extern void irq0();
 extern void irq1();
@@ -19,35 +19,14 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-void *irq_routines[16] = {
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
-};
-
-void irq_install_handler(unsigned int irq, void (*handler)(void)) {
-    irq_routines[irq] = handler;
-}
-
-void irq_uninstall_handler(unsigned int irq) {
-    irq_routines[irq] = 0;
-}
-
-void irq_remap(void) {
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
-    outb(0x21, 0x0);
-    outb(0xA1, 0x0);
+void irq_handler(unsigned int num) {
+    outb(0x20, 0x20);
+    if (num >= 40) {
+        outb(0xA0, 0x20);
+    }
 }
 
 void irq_init(void) {
-    irq_remap();
-
     idt_set_gate(32, (unsigned int)irq0, 0x08, 0x8E);
     idt_set_gate(33, (unsigned int)irq1, 0x08, 0x8E);
     idt_set_gate(34, (unsigned int)irq2, 0x08, 0x8E);
