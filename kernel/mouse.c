@@ -7,11 +7,15 @@ void mouse_wait(unsigned char type) {
     unsigned int timeout = 100000;
     if (type == 0) {
         while (timeout--) {
-            if ((inb(0x64) & 1) == 1) return;
+            if ((inb(0x64) & 1) == 1) {
+                return;
+            }
         }
     } else {
         while (timeout--) {
-            if ((inb(0x64) & 2) == 0) return;
+            if ((inb(0x64) & 2) == 0) {
+                return;
+            }
         }
     }
 }
@@ -31,7 +35,7 @@ unsigned char mouse_read(void) {
 void mouse_handler(void) {
     unsigned char status = inb(0x64);
     if (status & 0x20) {
-        unsigned char mouse_data = inb(0x60);
+        unsigned char data = inb(0x60);
         screen_putchar('M', 0x0F);
     }
 }

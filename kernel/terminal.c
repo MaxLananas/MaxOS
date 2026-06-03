@@ -4,11 +4,10 @@
 
 void terminal_init(void) {
     screen_init();
-    keyboard_init();
+    screen_writeln("Terminal initialized", 0x0F);
 }
 
 void terminal_run(void) {
-    screen_writeln("Terminal ready", 0x0A);
 }
 
 void terminal_process(const char *cmd) {

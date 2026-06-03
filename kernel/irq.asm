@@ -84,6 +84,7 @@ irq7:
 irq8:
     push byte 0
     push byte 40
+    push byte 0
     jmp irq_common_stub
 
 irq9:
