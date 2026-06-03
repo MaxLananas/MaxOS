@@ -3,5 +3,5 @@
 
 void vfs_init(void)
 {
-    screen_writeln("VFS initialized", 0x0F);
+    screen_writeln("VFS initialized", 0x0A);
 }

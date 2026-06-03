@@ -48,7 +48,7 @@ void idt_init(void)
     idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
     idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
     idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
-    idt_set_gare(24, (unsigned int)isr24, 0x08, 0x8E);
+    idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
     idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
     idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
@@ -67,7 +67,7 @@ void idt_init(void)
     idt_set_gate(39, (unsigned int)irq7, 0x08, 0x8E);
     idt_set_gate(40, (unsigned int)irq8, 0x08, 0x8E);
     idt_set_gate(41, (unsigned int)irq9, 0x08, 0x8E);
-    idt_set_gate(42, (unsigned int)isr10, 0x08, 0x8E);
+    idt_set_gate(42, (unsigned int)irq10, 0x08, 0x8E);
     idt_set_gate(43, (unsigned int)irq11, 0x08, 0x8E);
     idt_set_gate(44, (unsigned int)irq12, 0x08, 0x8E);
     idt_set_gate(45, (unsigned int)irq13, 0x08, 0x8E);
