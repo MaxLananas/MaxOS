@@ -1,7 +1,8 @@
 #include "exceptions.h"
-#include "screen.h"
 #include "fault_handler.h"
+#include "screen.h"
 
-void exceptions_init(void) {
+void exceptions_init(void)
+{
     screen_writeln("Exceptions initialized", 0x0F);
 }

@@ -48,15 +48,7 @@ SRCS_C = \
 	kernel/terminal.c \
 	kernel/devfs.c \
 	kernel/vfs.c \
-	kernel/kmain.c \
-	kernel/vmm.c \
-	kernel/vmm_shadow.c \
-	kernel/vmm_ept.c \
-	kernel/mmu.c \
-	kernel/pmm.c \
-	kernel/mce.c \
-	kernel/nmi_handler.c \
-	kernel/mce_handler.c
+	kernel/kmain.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \
