@@ -3,20 +3,22 @@
 #include "idt.h"
 #include "timer.h"
 #include "mouse.h"
-#include "terminal.h"
 
-void kmain(void)
-{
+void kmain(void) {
     screen_init();
     screen_clear();
-    screen_writeln("Kernel started", 0x0F);
+    screen_set_color(0x0F);
+    screen_writeln("Kernel started successfully", 0x0A);
 
     idt_init();
     keyboard_init();
     timer_init(100);
     mouse_init();
-    terminal_init();
 
-    screen_writeln("All systems ready", 0x0A);
-    terminal_run();
+    screen_writeln("IDT initialized", 0x0A);
+    screen_writeln("Keyboard initialized", 0x0A);
+    screen_writeln("Timer initialized", 0x0A);
+    screen_writeln("Mouse initialized", 0x0A);
+
+    for(;;);
 }

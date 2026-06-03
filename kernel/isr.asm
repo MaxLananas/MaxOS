@@ -74,43 +74,43 @@ isr_common_stub:
     iret
 
 isr0:
-    push byte 0
-    push byte 0
+    push dword 0
+    push dword 0
     jmp isr_common_stub
 
 isr1:
-    push byte 0
-    push byte 1
+    push dword 0
+    push dword 1
     jmp isr_common_stub
 
 isr2:
-    push byte 0
-    push byte 2
+    push dword 0
+    push dword 2
     jmp isr_common_stub
 
 isr3:
-    push byte 0
-    push byte 3
+    push dword 0
+    push dword 3
     jmp isr_common_stub
 
 isr4:
-    push byte 0
-    push byte 4
+    push dword 0
+    push dword 4
     jmp isr_common_stub
 
 isr5:
-    push byte 0
-    push byte 5
+    push dword 0
+    push dword 5
     jmp isr_common_stub
 
 isr6:
-    push byte 0
-    push byte 6
+    push dword 0
+    push dword 6
     jmp isr_common_stub
 
 isr7:
-    push byte 0
-    push byte 7
+    push dword 0
+    push dword 7
     jmp isr_common_stub
 
 isr8:
@@ -118,8 +118,8 @@ isr8:
     jmp isr_common_stub
 
 isr9:
-    push byte 0
-    push byte 9
+    push dword 0
+    push dword 9
     jmp isr_common_stub
 
 isr10:
@@ -143,13 +143,13 @@ isr14:
     jmp isr_common_stub
 
 isr15:
-    push byte 0
-    push byte 15
+    push dword 0
+    push dword 15
     jmp isr_common_stub
 
 isr16:
-    push byte 0
-    push byte 16
+    push dword 0
+    push dword 16
     jmp isr_common_stub
 
 isr17:
@@ -157,151 +157,151 @@ isr17:
     jmp isr_common_stub
 
 isr18:
-    push byte 0
-    push byte 18
+    push dword 0
+    push dword 18
     jmp isr_common_stub
 
 isr19:
-    push byte 0
-    push byte 19
+    push dword 0
+    push dword 19
     jmp isr_common_stub
 
 isr20:
-    push byte 0
-    push byte 20
+    push dword 0
+    push dword 20
     jmp isr_common_stub
 
 isr21:
-    push byte 0
-    push byte 21
+    push dword 0
+    push dword 21
     jmp isr_common_stub
 
 isr22:
-    push byte 0
-    push byte 22
+    push dword 0
+    push dword 22
     jmp isr_common_stub
 
 isr23:
-    push byte 0
-    push byte 23
+    push dword 0
+    push dword 23
     jmp isr_common_stub
 
 isr24:
-    push byte 0
-    push byte 24
+    push dword 0
+    push dword 24
     jmp isr_common_stub
 
 isr25:
-    push byte 0
-    push byte 25
+    push dword 0
+    push dword 25
     jmp isr_common_stub
 
 isr26:
-    push byte 0
-    push byte 26
+    push dword 0
+    push dword 26
     jmp isr_common_stub
 
 isr27:
-    push byte 0
-    push byte 27
+    push dword 0
+    push dword 27
     jmp isr_common_stub
 
 isr28:
-    push byte 0
-    push byte 28
+    push dword 0
+    push dword 28
     jmp isr_common_stub
 
 isr29:
-    push byte 0
-    push byte 29
+    push dword 0
+    push dword 29
     jmp isr_common_stub
 
 isr30:
-    push byte 0
-    push byte 30
+    push dword 0
+    push dword 30
     jmp isr_common_stub
 
 isr31:
-    push byte 0
-    push byte 31
+    push dword 0
+    push dword 31
     jmp isr_common_stub
 
 isr32:
-    push byte 0
-    push byte 32
+    push dword 0
+    push dword 32
     jmp isr_common_stub
 
 isr33:
-    push byte 0
-    push byte 33
+    push dword 0
+    push dword 33
     jmp isr_common_stub
 
 isr34:
-    push byte 0
-    push byte 34
+    push dword 0
+    push dword 34
     jmp isr_common_stub
 
 isr35:
-    push byte 0
-    push byte 35
+    push dword 0
+    push dword 35
     jmp isr_common_stub
 
 isr36:
-    push byte 0
-    push byte 36
+    push dword 0
+    push dword 36
     jmp isr_common_stub
 
 isr37:
-    push byte 0
-    push byte 37
+    push dword 0
+    push dword 37
     jmp isr_common_stub
 
 isr38:
-    push byte 0
-    push byte 38
+    push dword 0
+    push dword 38
     jmp isr_common_stub
 
 isr39:
-    push byte 0
-    push byte 39
+    push dword 0
+    push dword 39
     jmp isr_common_stub
 
 isr40:
-    push byte 0
-    push byte 40
+    push dword 0
+    push dword 40
     jmp isr_common_stub
 
 isr41:
-    push byte 0
-    push byte 41
+    push dword 0
+    push dword 41
     jmp isr_common_stub
 
 isr42:
-    push byte 0
-    push byte 42
+    push dword 0
+    push dword 42
     jmp isr_common_stub
 
 isr43:
-    push byte 0
-    push byte 43
+    push dword 0
+    push dword 43
     jmp isr_common_stub
 
 isr44:
-    push byte 0
-    push byte 44
+    push dword 0
+    push dword 44
     jmp isr_common_stub
 
 isr45:
-    push byte 0
-    push byte 45
+    push dword 0
+    push dword 45
     jmp isr_common_stub
 
 isr46:
-    push byte 0
-    push byte 46
+    push dword 0
+    push dword 46
     jmp isr_common_stub
 
 isr47:
-    push byte 0
-    push byte 47
+    push dword 0
+    push dword 47
     jmp isr_common_stub
