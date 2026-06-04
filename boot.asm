@@ -8,18 +8,20 @@ start:
     mov ss, ax
     mov sp, 0x7C00
 
-    mov si, msg
+    mov [BOOT_DRIVE], dl
+
+    mov si, msg_boot
     call print_string
 
-    mov ah, 0x02
-    mov al, 4
-    mov ch, 0
-    mov dh, 0
-    mov cl, 2
     mov bx, 0x1000
-    int 0x13
+    mov dh, 64
+    mov dl, [BOOT_DRIVE]
+    call disk_load
 
     jmp 0x1000:0x0000
+
+    cli
+    hlt
 
 print_string:
     lodsb
@@ -31,7 +33,29 @@ print_string:
 .done:
     ret
 
-msg db "Booting...", 0
+disk_load:
+    push dx
+    mov ah, 0x02
+    mov al, dh
+    mov ch, 0x00
+    mov dh, 0x00
+    mov cl, 0x02
+    int 0x13
+    jc disk_error
+    pop dx
+    cmp dh, al
+    jne disk_error
+    ret
 
-times 510-($-$$) db 0
+disk_error:
+    mov si, msg_disk_error
+    call print_string
+    jmp $
+
+msg_boot db "Booting OS...", 0
+msg_disk_error db "Disk read error!", 0
+
+BOOT_DRIVE db 0
+
+times 510 - ($ - $$) db 0
 dw 0xAA55

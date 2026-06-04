@@ -39,7 +39,8 @@ SRCS_C = \
 	kernel/irq.c \
 	kernel/exceptions.c \
 	kernel/fault_handler.c \
-	kernel/kmain.c
+	kernel/kmain.c \
+	kernel/terminal.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

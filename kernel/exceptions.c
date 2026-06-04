@@ -1,71 +1,39 @@
-#include "exceptions.h"
-#include "idt.h"
 #include "screen.h"
+#include "fault_handler.h"
 
-extern void isr0();
-extern void isr1();
-extern void isr2();
-extern void isr3();
-extern void isr4();
-extern void isr5();
-extern void isr6();
-extern void isr7();
-extern void isr8();
-extern void isr9();
-extern void isr10();
-extern void isr11();
-extern void isr12();
-extern void isr13();
-extern void isr14();
-extern void isr15();
-extern void isr16();
-extern void isr17();
-extern void isr18();
-extern void isr19();
-extern void isr20();
-extern void isr21();
-extern void isr22();
-extern void isr23();
-extern void isr24();
-extern void isr25();
-extern void isr26();
-extern void isr27();
-extern void isr28();
-extern void isr29();
-extern void isr30();
-extern void isr31();
+void fault_handler(unsigned int num, unsigned int err)
+{
+    screen_set_color(0x0C);
+    screen_writeln("EXCEPTION OCCURRED", 0x0C);
 
-void exceptions_init(void) {
-    idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
-    idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
-    idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
-    idt_set_gate(3, (unsigned int)isr3, 0x08, 0x8E);
-    idt_set_gate(4, (unsigned int)isr4, 0x08, 0x8E);
-    idt_set_gate(5, (unsigned int)isr5, 0x08, 0x8E);
-    idt_set_gate(6, (unsigned int)isr6, 0x08, 0x8E);
-    idt_set_gate(7, (unsigned int)isr7, 0x08, 0x8E);
-    idt_set_gate(8, (unsigned int)isr8, 0x08, 0x8E);
-    idt_set_gate(9, (unsigned int)isr9, 0x08, 0x8E);
-    idt_set_gate(10, (unsigned int)isr10, 0x08, 0x8E);
-    idt_set_gate(11, (unsigned int)isr11, 0x08, 0x8E);
-    idt_set_gate(12, (unsigned int)isr12, 0x08, 0x8E);
-    idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
-    idt_set_gate(14, (unsigned int)isir14, 0x08, 0x8E);
-    idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
-    idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
-    idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
-    idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
-    idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
-    idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
-    idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
-    idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
-    idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
-    idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
-    idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
-    idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
-    idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
-    idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
-    idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
-    idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
-    idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
+    switch(num) {
+        case 0: screen_writeln("Divide by zero", 0x0C); break;
+        case 1: screen_writeln("Debug", 0x0C); break;
+        case 2: screen_writeln("Non-maskable interrupt", 0x0C); break;
+        case 3: screen_writeln("Breakpoint", 0x0C); break;
+        case 4: screen_writeln("Overflow", 0x0C); break;
+        case 5: screen_writeln("Bound range exceeded", 0x0C); break;
+        case 6: screen_writeln("Invalid opcode", 0x0C); break;
+        case 7: screen_writeln("Device not available", 0x0C); break;
+        case 8: screen_writeln("Double fault", 0x0C); break;
+        case 9: screen_writeln("Coprocessor segment overrun", 0x0C); break;
+        case 10: screen_writeln("Invalid TSS", 0x0C); break;
+        case 11: screen_writeln("Segment not present", 0x0C); break;
+        case 12: screen_writeln("Stack segment fault", 0x0C); break;
+        case 13: screen_writeln("General protection fault", 0x0C); break;
+        case 14: screen_writeln("Page fault", 0x0C); break;
+        case 15: screen_writeln("Reserved", 0x0C); break;
+        case 16: screen_writeln("x87 FPU error", 0x0C); break;
+        case 17: screen_writeln("Alignment check", 0x0C); break;
+        case 18: screen_writeln("Machine check", 0x0C); break;
+        case 19: screen_writeln("SIMD FPU exception", 0x0C); break;
+        default: screen_writeln("Unknown exception", 0x0C); break;
+    }
+
+    if (err != 0) {
+        screen_writeln("Error code: ", 0x0C);
+        screen_putchar('0' + err, 0x0C);
+    }
+
+    while(1);
 }
