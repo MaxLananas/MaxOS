@@ -1,5 +1,6 @@
 #include "idt.h"
 #include "io.h"
+#include "irq.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;

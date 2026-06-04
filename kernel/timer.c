@@ -1,9 +1,8 @@
 #include "timer.h"
 #include "io.h"
 #include "irq.h"
-#include "screen.h"
 
-static unsigned int timer_ticks = 0;
+unsigned int timer_ticks = 0;
 
 void timer_init(unsigned int hz) {
     unsigned int divisor = 1193180 / hz;
@@ -18,15 +17,6 @@ unsigned int timer_get_ticks(void) {
 }
 
 void timer_sleep(unsigned int ms) {
-    unsigned int start_ticks = timer_ticks;
-    unsigned int ticks_to_wait = ms * 100 / 1193;
-
-    while ((timer_ticks - start_ticks) < ticks_to_wait) {
-        asm volatile("hlt");
-    }
-}
-
-void timer_handler(void) {
-    timer_ticks++;
-    outb(0x20, 0x20);
+    unsigned int start = timer_ticks;
+    while ((timer_ticks - start) * 1000 / 1193 < ms);
 }
