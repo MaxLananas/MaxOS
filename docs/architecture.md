@@ -39,7 +39,7 @@
 | `paging_init` | `void paging_init(void)` |
 | `paging_map` | `void paging_map(unsigned int virt, unsigned int phys, unsigned int flags)` |
 
-## Fonctions implémentées (150)
+## Fonctions implémentées (148)
 
 | Fonction | Fichier | Signature |
 |---|---|---|
@@ -55,9 +55,9 @@
 | `terminal_process` | — | `void terminal_process(const char *cmd);` |
 | `ata_init` | — | `void ata_init(void) {` |
 | `keyboard_getchar` | — | `;` |
-| `keyboard_init` | — | `;` |
-| `keyboard_handler` | — | `void keyboard_handler(void);` |
-| `mouse_init` | — | `;` |
+| `keyboard_init` | — | `void keyboard_init(void);` |
+| `keyboard_handler` | — | `;` |
+| `mouse_init` | — | `void mouse_init(void);` |
 | `mouse_handler` | — | `void mouse_handler(void) {` |
 | `pci_init` | — | `void pci_init(void);` |
 | `screen_init` | — | `void screen_init(void);` |

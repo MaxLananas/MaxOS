@@ -54,6 +54,7 @@ irq1:
 irq2:
     push dword 0
     push dword 34
+    push dword 0
     jmp irq_common_stub
 
 irq3:
