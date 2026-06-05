@@ -20,7 +20,7 @@ void exceptions_init(void) {
     idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
     idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
     idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
-    idt_set_g20, (unsigned int)isr17, 0x08, 0x8E);
+    idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
     idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
     idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
@@ -30,7 +30,7 @@ void exceptions_init(void) {
     idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
     idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
-    idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
+    idt_set_gane(27, (unsigned int)isr27, 0x08, 0x8E);
     idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);

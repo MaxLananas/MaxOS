@@ -7,6 +7,7 @@
 void kmain(void) {
     screen_init();
     screen_clear();
+    screen_writeln("Kernel started", 0x0F);
     keyboard_init();
     timer_init(100);
     mouse_init();

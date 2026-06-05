@@ -3,50 +3,75 @@
 #include "screen.h"
 #include "irq.h"
 
-#define MOUSE_DATA_PORT 0x60
-#define MOUSE_CMD_PORT 0x64
+static int mouse_x = 40;
+static int mouse_y = 12;
 
-static int mouse_x = 0;
-static int mouse_y = 0;
-static unsigned char mouse_cycle = 0;
-static unsigned char mouse_byte[3];
+void mouse_wait(unsigned char type) {
+    unsigned int timeout = 100000;
+    if (type == 0) {
+        while (timeout--) {
+            if ((inb(0x64) & 1) == 1) {
+                return;
+            }
+        }
+    } else {
+        while (timeout--) {
+            if ((inb(0x64) & 2) == 0) {
+                return;
+            }
+        }
+    }
+}
+
+void mouse_write(unsigned char data) {
+    mouse_wait(1);
+    outb(0x64, 0xD4);
+    mouse_wait(1);
+    outb(0x60, data);
+}
+
+unsigned char mouse_read(void) {
+    mouse_wait(0);
+    return inb(0x60);
+}
 
 void mouse_init(void) {
-    outb(MOUSE_CMD_PORT, 0xA8);
-    outb(MOUSE_CMD_PORT, 0x20);
-    unsigned char status = inb(MOUSE_DATA_PORT) | 2;
-    outb(MOUSE_CMD_PORT, 0x60);
-    outb(MOUSE_DATA_PORT, status);
-    outb(MOUSE_CMD_PORT, 0xD4);
-    outb(MOUSE_DATA_PORT, 0xF4);
+    mouse_wait(1);
+    outb(0x64, 0xA8);
+    mouse_wait(1);
+    outb(0x64, 0x20);
+    mouse_wait(0);
+    unsigned char status = inb(0x60) | 2;
+    mouse_wait(1);
+    outb(0x64, 0x60);
+    mouse_wait(1);
+    outb(0x60, status);
+    mouse_write(0xF6);
+    mouse_read();
+    mouse_write(0xF4);
+    mouse_read();
     irq_install_handler(12, mouse_handler);
 }
 
 void mouse_handler(void) {
-    unsigned char data = inb(MOUSE_DATA_PORT);
-
-    switch (mouse_cycle) {
-        case 0:
-            mouse_byte[0] = data;
-            mouse_cycle++;
-            break;
-        case 1:
-            mouse_byte[1] = data;
-            mouse_cycle++;
-            break;
-        case 2:
-            mouse_byte[2] = data;
-            mouse_cycle = 0;
-
-            if (mouse_byte[0] & 0x80 || mouse_byte[0] & 0x40) {
-                break;
-            }
-
-            mouse_x += mouse_byte[1];
-            mouse_y -= mouse_byte[2];
-
+    mouse_wait(0);
+    unsigned char status = inb(0x64);
+    if (status & 0x20) {
+        static unsigned char cycle = 0;
+        static unsigned char mouse_data[3];
+        mouse_data[cycle++] = inb(0x60);
+        if (cycle == 3) {
+            cycle = 0;
+            int dx = mouse_data[1];
+            int dy = mouse_data[2];
+            if (dx > 127) dx -= 256;
+            if (dy > 127) dy -= 256;
+            mouse_x += dx;
+            mouse_y -= dy;
             if (mouse_x < 0) mouse_x = 0;
             if (mouse_y < 0) mouse_y = 0;
-            break;
+            if (mouse_x >= 80) mouse_x = 79;
+            if (mouse_y >= 25) mouse_y = 24;
+        }
     }
 }
