@@ -1,6 +1,11 @@
 [bits 32]
 
-global outb, inb, outw, inw, outl, inl, pic_send_eoi
+global outb
+global inb
+global outw
+global inw
+global outl
+global inl
 
 outb:
     mov dx, [esp + 4]
@@ -33,9 +38,4 @@ outl:
 inl:
     mov dx, [esp + 4]
     in eax, dx
-    ret
-
-pic_send_eoi:
-    mov al, [esp + 4]
-    out 0x20, al
     ret

@@ -2,36 +2,20 @@
 #include "screen.h"
 #include "keyboard.h"
 
-#define MAX_CMD_LEN 64
-
-static char cmd_buffer[MAX_CMD_LEN];
-static unsigned int cmd_len = 0;
-
 void terminal_init(void) {
-    screen_writeln("Terminal initialized", 0x0A);
+    screen_clear();
 }
 
 void terminal_run(void) {
-    screen_writeln("Type 'help' for commands", 0x0F);
-    while (1) {
-        asm volatile("hlt");
-    }
+    screen_set_color(0x0F);
+    screen_writeln("Terminal ready", 0x0A);
 }
 
 void terminal_process(const char *cmd) {
-    if (*cmd == '\n') {
-        cmd_buffer[cmd_len] = '\0';
-        screen_writeln(cmd_buffer, 0x0F);
-        cmd_len = 0;
-    } else if (*cmd == '\b') {
-        if (cmd_len > 0) {
-            cmd_len--;
-            screen_putchar('\b', 0x0F);
-        }
+    if (cmd[0] == 'h' && cmd[1] == 'e' && cmd[2] == 'l' && cmd[3] == 'p') {
+        screen_writeln("Available commands:", 0x0A);
+        screen_writeln("  help - Show this help", 0x0F);
     } else {
-        if (cmd_len < MAX_CMD_LEN - 1) {
-            cmd_buffer[cmd_len++] = *cmd;
-            screen_putchar(*cmd, 0x0F);
-        }
+        screen_writeln("Unknown command", 0x0C);
     }
 }

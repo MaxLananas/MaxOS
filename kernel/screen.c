@@ -1,12 +1,12 @@
 #include "screen.h"
 #include "io.h"
 
-#define VGA_WIDTH 80
-#define VGA_HEIGHT 25
-#define VGA_MEMORY 0xB8000
+#define VIDEO_MEMORY 0xB8000
+#define MAX_ROWS 25
+#define MAX_COLS 80
 
 static unsigned char color = 0x0F;
-static unsigned short *vga_buffer = (unsigned short*)VGA_MEMORY;
+static unsigned short *video_memory = (unsigned short *)VIDEO_MEMORY;
 static unsigned int row = 0;
 static unsigned int col = 0;
 
@@ -15,8 +15,8 @@ void screen_init(void) {
 }
 
 void screen_clear(void) {
-    for (unsigned int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++) {
-        vga_buffer[i] = (unsigned char)' ' | (color << 8);
+    for (unsigned int i = 0; i < MAX_ROWS * MAX_COLS; i++) {
+        video_memory[i] = (color << 8) | ' ';
     }
     row = 0;
     col = 0;
@@ -24,18 +24,23 @@ void screen_clear(void) {
 
 void screen_putchar(char c, unsigned char color) {
     if (c == '\n') {
+        row++;
+        col = 0;
+        if (row >= MAX_ROWS) {
+            screen_scroll();
+        }
+        return;
+    }
+
+    unsigned short *pos = video_memory + (row * MAX_COLS + col);
+    *pos = (color << 8) | (unsigned char)c;
+    col++;
+    if (col >= MAX_COLS) {
         col = 0;
         row++;
-    } else {
-        vga_buffer[row * VGA_WIDTH + col] = (unsigned char)c | (color << 8);
-        col++;
-        if (col >= VGA_WIDTH) {
-            col = 0;
-            row++;
+        if (row >= MAX_ROWS) {
+            screen_scroll();
         }
-    }
-    if (row >= VGA_HEIGHT) {
-        screen_scroll();
     }
 }
 
@@ -59,14 +64,13 @@ int screen_get_row(void) {
 }
 
 void screen_scroll(void) {
-    for (unsigned int i = 0; i < VGA_HEIGHT - 1; i++) {
-        for (unsigned int j = 0; j < VGA_WIDTH; j++) {
-            vga_buffer[i * VGA_WIDTH + j] = vga_buffer[(i + 1) * VGA_WIDTH + j];
+    for (unsigned int i = 0; i < MAX_ROWS - 1; i++) {
+        for (unsigned int j = 0; j < MAX_COLS; j++) {
+            video_memory[i * MAX_COLS + j] = video_memory[(i + 1) * MAX_COLS + j];
         }
     }
-    for (unsigned int j = 0; j < VGA_WIDTH; j++) {
-        vga_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = (unsigned char)' ' | (color << 8);
+    for (unsigned int j = 0; j < MAX_COLS; j++) {
+        video_memory[(MAX_ROWS - 1) * MAX_COLS + j] = (color << 8) | ' ';
     }
-    row = VGA_HEIGHT - 1;
-    col = 0;
+    row--;
 }

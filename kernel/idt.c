@@ -1,10 +1,9 @@
 #include "idt.h"
 #include "io.h"
+#include "screen.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;
-
-extern void idt_load(struct IDTPtr *idt_ptr);
 
 void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
     idt_entries[num].base_lo = base & 0xFFFF;

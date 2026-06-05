@@ -1,16 +1,24 @@
+#include "kmain.h"
 #include "screen.h"
-#include "keyboard.h"
+#include "idt.h"
+#include "irq.h"
 #include "timer.h"
+#include "keyboard.h"
 #include "mouse.h"
-#include "terminal.h"
+#include "exceptions.h"
 
 void kmain(void) {
     screen_init();
-    screen_clear();
-    screen_writeln("Kernel started", 0x0F);
-    keyboard_init();
+    idt_init();
+    exceptions_init();
+    irq_init();
     timer_init(100);
+    keyboard_init();
     mouse_init();
-    terminal_init();
-    terminal_run();
+
+    screen_set_color(0x0A);
+    screen_writeln("Kernel initialized", 0x0A);
+    screen_writeln("Type 'help' for commands", 0x0F);
+
+    for (;;);
 }
