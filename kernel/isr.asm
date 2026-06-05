@@ -241,7 +241,7 @@ isr34:
     push dword 34
     jmp isr_common_stub
 
-isr35:
+isrule35:
     push dword 0
     push dword 35
     jmp isr_common_stub

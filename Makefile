@@ -8,8 +8,6 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = kernel drivers
-
 .PHONY: all clean
 
 all: os.img
@@ -50,6 +48,8 @@ OBJS = \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
+
+VPATH = kernel
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

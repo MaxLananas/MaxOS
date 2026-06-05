@@ -4,18 +4,38 @@
 
 void terminal_init(void) {
     screen_clear();
-}
-
-void terminal_run(void) {
-    screen_set_color(0x0F);
     screen_writeln("Terminal ready", 0x0A);
 }
 
-void terminal_process(const char *cmd) {
-    if (cmd[0] == 'h' && cmd[1] == 'e' && cmd[2] == 'l' && cmd[3] == 'p') {
-        screen_writeln("Available commands:", 0x0A);
-        screen_writeln("  help - Show this help", 0x0F);
-    } else {
-        screen_writeln("Unknown command", 0x0C);
+void terminal_run(void) {
+    char cmd[256];
+    unsigned int pos = 0;
+    char c;
+
+    while (1) {
+        c = keyboard_getchar();
+        if (c) {
+            if (c == '\n') {
+                cmd[pos] = 0;
+                screen_putchar('\n', 0x0F);
+                terminal_process(cmd);
+                pos = 0;
+            } else if (c == '\b') {
+                if (pos > 0) {
+                    pos--;
+                    screen_putchar('\b', 0x0F);
+                    screen_putchar(' ', 0x0F);
+                    screen_putchar('\b', 0x0F);
+                }
+            } else {
+                cmd[pos++] = c;
+                screen_putchar(c, 0x0F);
+            }
+        }
     }
+}
+
+void terminal_process(const char *cmd) {
+    screen_writeln("Command executed:", 0x0A);
+    screen_writeln(cmd, 0x0F);
 }
