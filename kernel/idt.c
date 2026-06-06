@@ -1,11 +1,12 @@
 #include "idt.h"
-#include "isr.h"
 #include "io.h"
+#include "isr.h"
 
 struct IDTEntry idt_entries[256];
 struct IDTPtr idt_ptr;
 
-void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags) {
+void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsigned char flags)
+{
     idt_entries[num].base_lo = base & 0xFFFF;
     idt_entries[num].base_hi = (base >> 16) & 0xFFFF;
     idt_entries[num].sel = sel;
@@ -13,11 +14,12 @@ void idt_set_gate(unsigned char num, unsigned int base, unsigned short sel, unsi
     idt_entries[num].flags = flags;
 }
 
-void idt_init(void) {
+void idt_init(void)
+{
     idt_ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
     idt_ptr.base = (unsigned int)&idt_entries;
 
-    for (unsigned int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
 
@@ -53,6 +55,22 @@ void idt_init(void) {
     idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
     idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
     idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
+    idt_set_gate(32, (unsigned int)isr32, 0x08, 0x8E);
+    idt_set_gate(33, (unsigned int)isr33, 0x08, 0x8E);
+    idt_set_gate(34, (unsigned int)isr34, 0x08, 0x8E);
+    idt_set_gate(35, (unsigned int)isr35, 0x08, 0x8E);
+    idt_set_gate(36, (unsigned int)isr36, 0x08, 0x8E);
+    idt_set_gate(37, (unsigned int)isr37, 0x08, 0x8E);
+    idt_set_gate(38, (unsigned int)isr38, 0x08, 0x8E);
+    idt_set_gate(39, (unsigned int)isr39, 0x08, 0x8E);
+    idt_set_gate(40, (unsigned int)isr40, 0x08, 0x8E);
+    idt_set_gate(41, (unsigned int)isr41, 0x08, 0x8E);
+    idt_set_gate(42, (unsigned int)isr42, 0x08, 0x8E);
+    idt_set_gate(43, (unsigned int)isr43, 0x08, 0x8E);
+    idt_set_gate(44, (unsigned int)isr44, 0x08, 0x8E);
+    idt_set_gate(45, (unsigned int)isr45, 0x08, 0x8E);
+    idt_set_gate(46, (unsigned int)isr46, 0x08, 0x8E);
+    idt_set_gate(47, (unsigned missing)isr47, 0x08, 0x8E);
 
     idt_load(&idt_ptr);
 }

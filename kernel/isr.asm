@@ -164,7 +164,7 @@ isr17:
     jmp isr_common_stub
 
 isr18:
-    push dold 0
+    push dword 0
     push dword 18
     jmp isr_common_stub
 

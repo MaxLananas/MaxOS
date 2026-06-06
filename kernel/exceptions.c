@@ -1,33 +1,124 @@
 #include "exceptions.h"
-#include "screen.h"
 #include "fault_handler.h"
+#include "screen.h"
 
-void exceptions_init(void) {
-    idt_set_gate(0, (unsigned int)isr0, 0x08, 0x8E);
-    idt_set_gate(1, (unsigned int)isr1, 0x08, 0x8E);
-    idt_set_gate(2, (unsigned int)isr2, 0x08, 0x8E);
-    idt_set_gate(3, (unsigned int)isr3, 0x08, 0x8E);
-    idt_set_gate(4, (unsigned int)isr4, 0x08, 0x8E);
-    idt_set_gate(5, (unsigned int)isr5, 0x08, 0x8E);
-    idt_set_gate(6, (unsigned int)isr6, 0x08, 0x8E);
-    idt_set_gate(7, (unsigned int)isr7, 0x08, 0x8E);
-    idt_set_gate(8, (unsigned int)isr8, 0x08, 0x8E);
-    idt_set_gate(9, (unsigned int)isr9, 0x08, 0x8E);
-    idt_set_gate(10, (unsigned int)isr10, 0x08, 0x8E);
-    idt_set_gate(11, (unsigned int)isr11, 0x08, 0x8E);
-    idt_set_gate(12, (unsigned int)isr12, 0x08, 0x8E);
-    idt_set_gate(13, (unsigned int)isr13, 0x08, 0x8E);
-    idt_set_gate(14, (unsigned int)isr14, 0x08, 0x8E);
-    idt_set_gate(15, (unsigned int)isr15, 0x08, 0x8E);
-    idt_set_gate(16, (unsigned int)isr16, 0x08, 0x8E);
-    idt_set_gate(17, (unsigned int)isr17, 0x08, 0x8E);
-    idt_set_gate(18, (unsigned int)isr18, 0x08, 0x8E);
-    idt_set_gate(19, (unsigned int)isr19, 0x08, 0x8E);
-    idt_set_gate(20, (unsigned int)isr20, 0x08, 0x8E);
-    idt_set_gate(21, (unsigned int)isr21, 0x08, 0x8E);
-    idt_set_gate(22, (unsigned int)isr22, 0x08, 0x8E);
-    idt_set_gate(23, (unsigned int)isr23, 0x08, 0x8E);
-    idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
-    idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
-    idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
-    idt_set_gate(27, (unsigned int)isr27, 0x08,
+void exceptions_init(void)
+{
+    screen_writeln("Exceptions initialized", 0x0F);
+}
+
+void divide_error(void)
+{
+    screen_writeln("Divide Error", 0x0C);
+    fault_handler(0, 0);
+}
+
+void debug_exception(void)
+{
+    screen_writeln("Debug Exception", 0x0C);
+    fault_handler(1, 0);
+}
+
+void nmi_interrupt(void)
+{
+    screen_writeln("NMI Interrupt", 0x0C);
+    fault_handler(2, 0);
+}
+
+void breakpoint_exception(void)
+{
+    screen_writeln("Breakpoint Exception", 0x0C);
+    fault_handler(3, 0);
+}
+
+void overflow_exception(void)
+{
+    screen_writeln("Overflow Exception", 0x0C);
+    fault_handler(4, 0);
+}
+
+void bound_range_exceeded(void)
+{
+    screen_writeln("Bound Range Exceeded", 0x0C);
+    fault_handler(5, 0);
+}
+
+void invalid_opcode(void)
+{
+    screen_writeln("Invalid Opcode", 0x0C);
+    fault_handler(6, 0);
+}
+
+void device_not_available(void)
+{
+    screen_writeln("Device Not Available", 0x0C);
+    fault_handler(7, 0);
+}
+
+void double_fault_exception(void)
+{
+    screen_writeln("Double Fault Exception", 0x0C);
+    fault_handler(8, 0);
+}
+
+void coprocessor_segment_overrun(void)
+{
+    screen_writeln("Coprocessor Segment Overrun", 0x0C);
+    fault_handler(9, 0);
+}
+
+void invalid_tss_exception(void)
+{
+    screen_writeln("Invalid TSS Exception", 0x0C);
+    fault_handler(10, 0);
+}
+
+void segment_not_present(void)
+{
+    screen_writeln("Segment Not Present", 0x0C);
+    fault_handler(11, 0);
+}
+
+void stack_segment_fault(void)
+{
+    screen_writeln("Stack Segment Fault", 0x0C);
+    fault_handler(12, 0);
+}
+
+void general_protection_fault(void)
+{
+    screen_writeln("General Protection Fault", 0x0C);
+    fault_handler(13, 0);
+}
+
+void page_fault(void)
+{
+    unsigned int fault_addr;
+    asm volatile("mov %%cr2, %0" : "=r" (fault_addr));
+    screen_writeln("Page Fault", 0x0C);
+    fault_handler(14, fault_addr);
+}
+
+void x87_fpu_error(void)
+{
+    screen_writeln("x87 FPU Error", 0x0C);
+    fault_handler(16, 0);
+}
+
+void alignment_check(void)
+{
+    screen_writeln("Alignment Check", 0x0C);
+    fault_handler(17, 0);
+}
+
+void machine_check(void)
+{
+    screen_writeln("Machine Check", 0x0C);
+    fault_handler(18, 0);
+}
+
+void simd_fpu_exception(void)
+{
+    screen_writeln("SIMD FPU Exception", 0x0C);
+    fault_handler(19, 0);
+}
