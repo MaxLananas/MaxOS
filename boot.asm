@@ -1,5 +1,5 @@
-[org 0x7C00]
 [bits 16]
+org 0x7C00
 
 start:
     jmp 0x0000:flush_cs
@@ -10,30 +10,26 @@ flush_cs:
     mov ss, ax
     mov sp, 0x7C00
 
-    mov si, msg
-    call print_string
+    mov [drive_number], dl
 
-    mov ah, 0x02
-    mov al, 1
-    mov ch, 0
-    mov dh, 0
-    mov cl, 2
-    mov bx, 0x1000
-    int 0x13
+    mov eax, 0x10000
+    mov cr0, eax
+
+    jmp 0x08:flush_cs32
+
+[bits 32]
+flush_cs32:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x90000
 
     jmp 0x10000
 
-print_string:
-    lodsb
-    or al, al
-    jz .done
-    mov ah, 0x0E
-    int 0x10
-    jmp print_string
-.done:
-    ret
-
-msg db "Booting...", 0
+drive_number db 0
 
 times 510-($-$$) db 0
 dw 0xAA55

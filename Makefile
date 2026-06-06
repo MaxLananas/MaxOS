@@ -8,7 +8,7 @@ EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
 
-VPATH = kernel
+VPATH = kernel drivers
 
 .PHONY: all clean
 
@@ -44,8 +44,8 @@ SRCS_C = \
 	kernel/kmain.c \
 	kernel/terminal.c \
 	kernel/mem.c \
-    kernel/heap.c \
-    kernel/paging.c
+	kernel/heap.c \
+	kernel/paging.c
 
 OBJS = \
 	$(BUILD)/kernel_entry.o \

@@ -1,71 +1,71 @@
-ORG 0x7C00
 BITS 16
+ORG 0x7C00
 
 start:
+    cli
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
+    sti
 
-    mov [BOOT_DRIVE], dl
+    mov [boot_drive], dl
 
+    mov ah, 0x02
+    mov al, 32
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [boot_drive]
     mov bx, 0x1000
     mov es, bx
-    mov bx, 0x0
-
-    mov dh, 64
-    mov dl, [BOOT_DRIVE]
-    mov cx, 0x0002
-    call disk_load
-
-    jmp 0x1000:0x0000
-
-    jmp $
-
-disk_load:
-    pusha
-    mov di, 3
-.read_sector:
-    mov ah, 0x02
-    mov al, 0x01
-    mov ch, 0x00
-    mov cl, byte [bp + 6]
-    mov dh, 0x00
+    mov bx, 0x0000
     int 0x13
-    jnc .next_sector
-    dec di
-    jnz .read_sector
-    jmp disk_error
-.next_sector:
-    mov si, [bp + 6]
-    inc si
-    mov [bp + 6], si
-    mov ax, [bp + 2]
-    add ax, 0x200
-    mov [bp + 2], ax
-    cmp si, dh
-    jl .read_sector
-    popa
-    ret
+    jc disk_error
+
+    cli
+    lgdt [gdt_descriptor]
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+    jmp 0x08:protected_mode
 
 disk_error:
-    mov si, DISK_ERROR_MSG
-    call print_string
-    jmp $
-
-print_string:
+    mov si, err_msg
+.loop:
     lodsb
     or al, al
     jz .done
     mov ah, 0x0E
     int 0x10
-    jmp print_string
+    jmp .loop
 .done:
-    ret
+    hlt
 
-BOOT_DRIVE: db 0
-DISK_ERROR_MSG: db "Disk read error", 0
+BITS 32
+protected_mode:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x90000
+    jmp 0x10000
+
+gdt_start:
+    dq 0x0000000000000000
+    dq 0x00CF9A000000FFFF
+    dq 0x00CF92000000FFFF
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
+
+boot_drive: db 0
+err_msg: db 'Disk error', 0
 
 times 510-($-$$) db 0
 dw 0xAA55
