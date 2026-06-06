@@ -4,8 +4,8 @@
     "last_fail": 1780671635
   },
   "kernel/io.h + IDT + ISR complet": {
-    "consecutive_fails": 21,
-    "last_fail": 1780520577
+    "consecutive_fails": 22,
+    "last_fail": 1780717501
   },
   "Impl\u00e9mentation des syscalls": {
     "consecutive_fails": 1,

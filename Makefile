@@ -1,12 +1,14 @@
 AS     = nasm
 CC     = gcc
 LD     = ld
-CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -Ikernel
+CFLAGS = -m32 -ffreestanding -fno-builtin -nostdlib -nostdinc -fno-pic -fno-pie -Wall -O2 -I.
 LFLAGS = -m elf_i386 -T linker.ld --oformat binary
 BFLAGS = -f bin
 EFLAGS = -f elf
 BUILD  = build
 SRC_DIR = .
+
+VPATH = kernel:drivers
 
 .PHONY: all clean
 
@@ -48,8 +50,6 @@ OBJS = \
 	$(BUILD)/irq.o \
 	$(BUILD)/idt_load.o \
 	$(patsubst %.c,$(BUILD)/%.o,$(SRCS_C))
-
-VPATH = kernel
 
 $(BUILD)/%.o: %.c | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@

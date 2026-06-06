@@ -30,9 +30,4 @@ void exceptions_init(void) {
     idt_set_gate(24, (unsigned int)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned int)isr25, 0x08, 0x8E);
     idt_set_gate(26, (unsigned int)isr26, 0x08, 0x8E);
-    idt_set_gate(27, (unsigned int)isr27, 0x08, 0x8E);
-    idt_set_gate(28, (unsigned int)isr28, 0x08, 0x8E);
-    idt_set_gate(29, (unsigned int)isr29, 0x08, 0x8E);
-    idt_set_gate(30, (unsigned int)isr30, 0x08, 0x8E);
-    idt_set_gate(31, (unsigned int)isr31, 0x08, 0x8E);
-}
+    idt_set_gate(27, (unsigned int)isr27, 0x08,
